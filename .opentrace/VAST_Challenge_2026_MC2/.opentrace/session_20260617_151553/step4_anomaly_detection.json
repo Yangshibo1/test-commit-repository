@@ -1,0 +1,164 @@
+{
+  "person": "person:john_windward",
+  "post_count": 19,
+  "avg_post_count_others": 21.5,
+  "post_count_diff": -2.5,
+  "content_length_avg": 59.0,
+  "content_length_others_avg": 60.62,
+  "patterns": {
+    "sla": 6,
+    "work_order": 8,
+    "package": 5,
+    "amenity": 2,
+    "resident": 12,
+    "maintenance": 6
+  },
+  "total_words": 132,
+  "pattern_density": {
+    "sla": 4.55,
+    "work_order": 6.06,
+    "package": 3.79,
+    "amenity": 1.52,
+    "resident": 9.09,
+    "maintenance": 4.55
+  },
+  "posts": [
+    {
+      "id": 349624,
+      "when": 2409847676.0,
+      "person": "person:john_windward",
+      "content": "SLA Tracking: Work-Order Triage Status Updates for Maintenance Requests",
+      "forum": "general"
+    },
+    {
+      "id": 456886,
+      "when": 2411303090.0,
+      "person": "person:john_windward",
+      "content": "SLA Tracking for Maintenance Requests—On-Time Updates for Residents",
+      "forum": "general"
+    },
+    {
+      "id": 459094,
+      "when": 2411326791.0,
+      "person": "person:john_windward",
+      "content": "Resident Messaging: Building Announcement Updates",
+      "forum": "general"
+    },
+    {
+      "id": 459356,
+      "when": 2411329710.0,
+      "person": "person:john_windward",
+      "content": "Resident messaging: package notifications and pickup updates",
+      "forum": "general"
+    },
+    {
+      "id": 460638,
+      "when": 2411343407.0,
+      "person": "person:john_windward",
+      "content": "Work-Order Triage Updates for Maintenance Requests",
+      "forum": "general"
+    },
+    {
+      "id": 461126,
+      "when": 2411349507.0,
+      "person": "person:john_windward",
+      "content": "Work-order triage for maintenance requests—SLA tracking in TenantThread Technologies",
+      "forum": "general"
+    },
+    {
+      "id": 489599,
+      "when": 2411747172.0,
+      "person": "person:john_windward",
+      "content": "Work-order triage: SLA tracking for maintenance requests",
+      "forum": "general"
+    },
+    {
+      "id": 489819,
+      "when": 2411749255.0,
+      "person": "person:john_windward",
+      "content": "Resident Messaging: Building Announcements & Work-Order Triage",
+      "forum": "general"
+    },
+    {
+      "id": 491074,
+      "when": 2411762020.0,
+      "person": "person:john_windward",
+      "content": "Work-Order Triage Updates for Residents",
+      "forum": "general"
+    },
+    {
+      "id": 542986,
+      "when": 2412493843.0,
+      "person": "person:john_windward",
+      "content": "Package Notification Alerts from HarborCrest ResidentEdge",
+      "forum": "general"
+    },
+    {
+      "id": 543012,
+      "when": 2412493999.0,
+      "person": "person:john_windward",
+      "content": "Work-order triage: vendor dispatch and status changes",
+      "forum": "general"
+    },
+    {
+      "id": 568873,
+      "when": 2412865154.0,
+      "person": "person:john_windward",
+      "content": "Amenity Reservations: Unit-Turn Coordination & Vendor Dispatch",
+      "forum": "general"
+    },
+    {
+      "id": 569483,
+      "when": 2412873335.0,
+      "person": "person:john_windward",
+      "content": "Package Notifications: Fast Alerts for Residents",
+      "forum": "general"
+    },
+    {
+      "id": 572569,
+      "when": 2412912740.0,
+      "person": "person:john_windward",
+      "content": "Work-Order Triage: Faster Resolution Updates for Residents",
+      "forum": "general"
+    },
+    {
+      "id": 574631,
+      "when": 2412934285.0,
+      "person": "person:john_windward",
+      "content": "Package Notifications and Building Announcement Alerts",
+      "forum": "general"
+    },
+    {
+      "id": 593270,
+      "when": 2413183408.0,
+      "person": "person:john_windward",
+      "content": "Package Notifications: Resident Messaging from HarborCrest ResidentEdge",
+      "forum": "general"
+    },
+    {
+      "id": 651104,
+      "when": 2413952512.0,
+      "person": "person:john_windward",
+      "content": "SLA Tracking & Vendor Dispatch Status for Property Staff",
+      "forum": "general"
+    },
+    {
+      "id": 697047,
+      "when": 2414574284.0,
+      "person": "person:john_windward",
+      "content": "SLA Tracking for Maintenance Requests at HarborCrest ResidentEdge",
+      "forum": "general"
+    },
+    {
+      "id": 698111,
+      "when": 2414585158.0,
+      "person": "person:john_windward",
+      "content": "Amenity reservations reminders for HarborCrest ResidentEdge",
+      "forum": "general"
+    }
+  ],
+  "detected_anomalies": [
+    "Excessive SLA mentions",
+    "Work-order focus anomaly"
+  ]
+}

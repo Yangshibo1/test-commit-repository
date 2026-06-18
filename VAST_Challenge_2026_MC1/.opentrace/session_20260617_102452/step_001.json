@@ -1,0 +1,11 @@
+{
+  "step_id": "step_001",
+  "step_name": "数据加载",
+  "operation": "load_mc1_data",
+  "description": "加载MC1数据（轮次格式）",
+  "timestamp": "2026-06-17T10:24:52.529235",
+  "metadata": {
+    "total_rounds": 23
+  },
+  "mappings": []
+}

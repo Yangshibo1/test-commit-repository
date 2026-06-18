@@ -1,0 +1,142 @@
+{
+  "case": "VAST MC2 - John Windward Anomalous SaidIT Post Investigation",
+  "investigation_date": "2024-06-17",
+  "session_id": "session_20260617_144434",
+  "summary": {
+    "finding": "Coordinated campaign involving anomalous SaidIT posts",
+    "severity": "High",
+    "confidence": "Very High"
+  },
+  "key_findings": [
+    {
+      "id": 1,
+      "category": "Anomalous Pattern",
+      "description": "John Windward published 3 SaidIT posts using .txt files as content source (out of 108 total SaidIT posts)",
+      "evidence": [
+        "HiddenOrca.txt - Event ID: 27290 (2046-05-10)",
+        "MellowOtter.txt - Event ID: 98591 (2046-05-11)",
+        "SwiftWren.txt - Event ID: 373902 (2046-05-17)"
+      ]
+    },
+    {
+      "id": 2,
+      "category": "Behavioral Pattern",
+      "description": "Consistent behavior: Receive file → Immediately publish SaidIT post → Immediately delete source file",
+      "evidence": [
+        "SwiftWren.txt: Posted at 19:21:15, Deleted at 19:21:17 (2 seconds later)",
+        "MellowOtter.txt: Posted at 08:56:04, Deleted at 08:56:06 (2 seconds later)",
+        "HiddenOrca.txt: Posted at 20:45:42, Deleted at 20:45:44 (2 seconds later)"
+      ]
+    },
+    {
+      "id": 3,
+      "category": "Propagation Network",
+      "description": "10 individuals participated in all three file propagation chains",
+      "evidence": [
+        "Common participants: lily_anchorline, john_windward, gabriel_sonar, olivia_keel, mia_fender, evelyn_dock, zoey_drydock, levi_signal, owen_hatch, victoria_rigging"
+      ]
+    },
+    {
+      "id": 4,
+      "category": "Key Spreaders",
+      "description": "Identified high-frequency spreaders in the network",
+      "evidence": [
+        "Evelyn Dock: 34 participations (SwiftWren chain)",
+        "Gabriel Sonar: 32 participations (SwiftWren chain)",
+        "Levi Signal: 30 participations (SwiftWren chain)"
+      ]
+    },
+    {
+      "id": 5,
+      "category": "File Origins",
+      "description": "Different creators for each file, suggesting coordinated campaign",
+      "evidence": [
+        "HiddenOrca.txt: Pre-existing (no creation event in data)",
+        "MellowOtter.txt: Created by noah_mariner (2046-05-10)",
+        "SwiftWren.txt: Created by emma_harbor (2046-05-09)"
+      ]
+    }
+  ],
+  "timeline": {
+    "2046-05-09": [
+      "23:02:01 - Emma Harbor creates SwiftWren.txt"
+    ],
+    "2046-05-10": [
+      "20:45:40 - Chloe Ballast transfers HiddenOrca.txt to John Windward",
+      "20:45:42 - John Windward publishes SaidIT post using HiddenOrca.txt",
+      "20:45:44 - John Windward deletes HiddenOrca.txt"
+    ],
+    "2046-05-10": [
+      "23:02:01 - Noah Mariner creates MellowOtter.txt"
+    ],
+    "2046-05-11": [
+      "08:56:02 - Lily Anchorline transfers MellowOtter.txt to John Windward",
+      "08:56:04 - John Windward publishes SaidIT post using MellowOtter.txt",
+      "08:56:06 - John Windward deletes MellowOtter.txt"
+    ],
+    "2046-05-17": [
+      "19:21:13 - Chloe Ballast transfers SwiftWren.txt to John Windward",
+      "19:21:15 - John Windward publishes SaidIT post using SwiftWren.txt",
+      "19:21:17 - John Windward deletes SwiftWren.txt"
+    ]
+  },
+  "network_analysis": {
+    "total_participants": 18,
+    "common_to_all_files": 10,
+    "file_specific": {
+      "HiddenOrca.txt": {
+        "events": 42,
+        "duration": "Unknown to 2046-05-10",
+        "top_spreaders": ["zoey_drydock", "victoria_rigging", "gabriel_sonar"]
+      },
+      "MellowOtter.txt": {
+        "events": 15,
+        "duration": "1 day",
+        "creator": "noah_mariner",
+        "top_spreaders": ["john_windward", "noah_mariner", "victoria_rigging"]
+      },
+      "SwiftWren.txt": {
+        "events": 191,
+        "duration": "7.8 days",
+        "creator": "emma_harbor",
+        "top_spreaders": ["evelyn_dock", "gabriel_sonar", "levi_signal"]
+      }
+    },
+    "transfer_to_john": {
+      "HiddenOrca.txt": "chloe_ballast",
+      "MellowOtter.txt": "lily_anchorline",
+      "SwiftWren.txt": "olivia_keel"
+    }
+  },
+  "conclusions": [
+    "John Windward is participating in a coordinated campaign to publish anomalous content on SaidIT",
+    "The campaign involves a network of at least 10 individuals",
+    "Three separate .txt files were used as content sources, each following the same operational pattern",
+    "The network exhibits hierarchical structure with key spreaders (Evelyn Dock, Gabriel Sonar, Levi Signal)",
+    "Files are systematically deleted after posting to avoid detection"
+  ],
+  "recommendations": [
+    "Investigate the role of key spreaders (Evelyn Dock, Gabriel Sonar, Levi Signal)",
+    "Examine the content of the .txt files to understand the nature of the anomalous posts",
+    "Review John Windward's connections to the transfer agents (Chloe Ballast, Lily Anchorline, Olivia Keel)",
+    "Investigate the file creators (Emma Harbor, Noah Mariner) for potential involvement",
+    "Monitor SaidIT for similar patterns in the future"
+  ],
+  "data_lineage": {
+    "source": "MC2 data.json - 185,147 events",
+    "processing_steps": 6,
+    "intermediate_datasets": [
+      "step1_stats.json",
+      "step2_john_events.json",
+      "step2_swiftwren_chain.json",
+      "step3_propagation.json",
+      "step4_similar_cases.json",
+      "step5_network.json"
+    ],
+    "final_outputs": [
+      "final_analysis_report.json",
+      "data_flow_visualization.txt",
+      "step_details.json"
+    ]
+  }
+}

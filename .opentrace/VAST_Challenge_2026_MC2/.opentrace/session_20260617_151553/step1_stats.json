@@ -1,0 +1,40 @@
+{
+  "total_saidit_posts": 133,
+  "unique_authors": 6,
+  "unique_forums": 2,
+  "time_range": "2409442306.0 to 2415312933.0",
+  "top_authors": {
+    "Unknown": 28,
+    "person:ava_tiller": 25,
+    "person:aria_towline": 23,
+    "person:anthony_reef": 22,
+    "person:john_windward": 19,
+    "person:dylan_hawser": 16
+  },
+  "forums": {
+    "general": 105,
+    "Unknown": 28
+  },
+  "john_windward_posts": 19,
+  "john_windward_post_ids": [
+    349624,
+    456886,
+    459094,
+    459356,
+    460638,
+    461126,
+    489599,
+    489819,
+    491074,
+    542986,
+    543012,
+    568873,
+    569483,
+    572569,
+    574631,
+    593270,
+    651104,
+    697047,
+    698111
+  ]
+}

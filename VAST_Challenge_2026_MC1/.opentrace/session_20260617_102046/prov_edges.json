@@ -1,0 +1,12 @@
+{
+  "edges": [
+    {
+      "id": "edge_75dff12e",
+      "from": "activity_d1c30412",
+      "to": "entity_8b790a08",
+      "relation": "used",
+      "timestamp": "2026-06-17T10:20:46.649266",
+      "attributes": {}
+    }
+  ]
+}

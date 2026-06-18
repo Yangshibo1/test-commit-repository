@@ -1,0 +1,39 @@
+{
+  "total_rounds": 23,
+  "total_communications": 912,
+  "agents": [
+    {
+      "id": "intern_agent",
+      "label": "Intern-Agent"
+    },
+    {
+      "id": "judge_agent",
+      "label": "Judge-Agent"
+    },
+    {
+      "id": "legal_agent",
+      "label": "Legal-Agent"
+    },
+    {
+      "id": "pr_agent",
+      "label": "PR-Agent"
+    },
+    {
+      "id": "pr_intern_agent",
+      "label": "PR-Intern-Agent"
+    },
+    {
+      "id": "quality_agent",
+      "label": "Platform-Trust-Agent"
+    },
+    {
+      "id": "social_media_agent",
+      "label": "Social-Manager-Agent"
+    }
+  ],
+  "date_range": {
+    "start": "2046-05-17T09:00:00",
+    "end": "2046-06-05T18:00:00"
+  },
+  "total_hours": 23
+}

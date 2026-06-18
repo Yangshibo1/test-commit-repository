@@ -1,0 +1,68 @@
+{
+  "nodes": {
+    "entity_823236c0": {
+      "id": "entity_823236c0",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "input.csv",
+      "attributes": {},
+      "timestamp": "2026-06-16T17:34:19.099706"
+    },
+    "entity_1fe96494": {
+      "id": "entity_1fe96494",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "output.csv",
+      "attributes": {},
+      "timestamp": "2026-06-16T17:34:19.099729"
+    },
+    "activity_9d7305cf": {
+      "id": "activity_9d7305cf",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "测试筛选",
+      "attributes": {},
+      "timestamp": "2026-06-16T17:34:19.099742"
+    },
+    "agent_1c6bf471": {
+      "id": "agent_1c6bf471",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "test_agent",
+      "attributes": {},
+      "timestamp": "2026-06-16T17:34:19.099753"
+    },
+    "entity_7bc6ae44": {
+      "id": "entity_7bc6ae44",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "input.csv",
+      "attributes": {},
+      "timestamp": "2026-06-16T17:34:25.179044"
+    },
+    "entity_ee7bd7f4": {
+      "id": "entity_ee7bd7f4",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "output.csv",
+      "attributes": {},
+      "timestamp": "2026-06-16T17:34:25.179059"
+    },
+    "activity_3d137b42": {
+      "id": "activity_3d137b42",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "test",
+      "attributes": {},
+      "timestamp": "2026-06-16T17:34:25.179068"
+    },
+    "agent_e29549e9": {
+      "id": "agent_e29549e9",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "agent1",
+      "attributes": {},
+      "timestamp": "2026-06-16T17:34:25.179074"
+    }
+  }
+}

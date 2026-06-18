@@ -1,0 +1,9 @@
+{
+  "step_id": "step_001",
+  "step_name": "筛选SwiftWren事件",
+  "operation": "filter",
+  "description": "从事件中筛选包含SwiftWren的事件",
+  "timestamp": "2026-06-15T10:59:57.590905",
+  "metadata": {},
+  "mappings": []
+}

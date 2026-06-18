@@ -1,0 +1,66 @@
+{
+  "report_title": "VAST MC2 - John Windward SaidIT 异常帖子追踪报告",
+  "generated_at": "2026-06-17T15:27:10.814633",
+  "task_description": "VAST MC2 - John Windward 异常 SaidIT 帖子追踪",
+  "summary": {
+    "total_saidit_posts": 133,
+    "unique_authors": 6,
+    "john_windward_posts": 19,
+    "anomalies_detected": [
+      "Excessive SLA mentions",
+      "Work-order focus anomaly"
+    ]
+  },
+  "key_findings": [
+    "John Windward 在 SaidIT 上发布了 19 条帖子",
+    "其帖子内容异常集中在 SLA 跟踪和工作订单处理上",
+    "检测到 2 个异常模式",
+    "主要异常模式包括: Excessive SLA mentions, Work-order focus anomaly"
+  ],
+  "detailed_analysis": {
+    "posting_patterns": {
+      "SLA": 6,
+      "Work-Order": 8,
+      "Resident": 11,
+      "Package": 5,
+      "Amenity": 2
+    },
+    "content_analysis": {
+      "top_topics": [
+        "sla",
+        "work_order",
+        "package",
+        "amenity",
+        "resident"
+      ],
+      "avg_post_length": 59.0
+    },
+    "temporal_analysis": {
+      "time_range": "2409847676.0 to 2414585158.0",
+      "post_frequency": 19
+    }
+  },
+  "anomaly_details": {
+    "flagged_behaviors": [
+      "Excessive SLA mentions",
+      "Work-order focus anomaly"
+    ],
+    "pattern_density": {
+      "sla": 4.55,
+      "work_order": 6.06,
+      "package": 3.79,
+      "amenity": 1.52,
+      "resident": 9.09,
+      "maintenance": 4.55
+    },
+    "comparison_with_baseline": {
+      "post_count_vs_avg": -2.5
+    }
+  },
+  "data_sources": [
+    "step1_stats.json",
+    "step2_john_analysis.json",
+    "step3_author_comparison.json",
+    "step4_anomaly_detection.json"
+  ]
+}

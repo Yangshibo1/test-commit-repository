@@ -1,0 +1,38 @@
+{
+  "file_name": "SwiftWren.txt",
+  "creation_event": null,
+  "access_events": [],
+  "read_events": [],
+  "share_events": [],
+  "saidit_posts": [
+    {
+      "event_id": 373902,
+      "event_type": "saidit_post",
+      "when": 2410168875.0,
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "details": {
+        "forum": "general",
+        "content_source": "SwiftWren.txt"
+      }
+    }
+  ],
+  "related_participants": [],
+  "timeline": [
+    {
+      "event_id": 373902,
+      "event_type": "saidit_post",
+      "when": 2410168875.0,
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "details": {
+        "forum": "general",
+        "content_source": "SwiftWren.txt"
+      }
+    }
+  ]
+}

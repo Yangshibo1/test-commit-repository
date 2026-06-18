@@ -1,0 +1,52 @@
+{
+  "edges": [
+    {
+      "id": "edge_d1cd33fd",
+      "from": "activity_950ba7e4",
+      "to": "entity_1b289a43",
+      "relation": "used",
+      "timestamp": "2026-06-16T16:44:36.722603",
+      "attributes": {}
+    },
+    {
+      "id": "edge_50f8c0f8",
+      "from": "entity_25df0585",
+      "to": "activity_950ba7e4",
+      "relation": "wasGeneratedBy",
+      "timestamp": "2026-06-16T16:44:36.722611",
+      "attributes": {}
+    },
+    {
+      "id": "edge_8bd44bd6",
+      "from": "activity_950ba7e4",
+      "to": "agent_f343a463",
+      "relation": "wasAssociatedWith",
+      "timestamp": "2026-06-16T16:44:36.722617",
+      "attributes": {}
+    },
+    {
+      "id": "edge_739e8a27",
+      "from": "entity_25df0585",
+      "to": "entity_1b289a43",
+      "relation": "wasDerivedFrom",
+      "timestamp": "2026-06-16T16:44:36.722622",
+      "attributes": {}
+    },
+    {
+      "id": "edge_8a4980fa",
+      "from": "activity_adf878e1",
+      "to": "entity_a897526f",
+      "relation": "used",
+      "timestamp": "2026-06-16T18:19:10.033788",
+      "attributes": {}
+    },
+    {
+      "id": "edge_da0d5d88",
+      "from": "activity_adf878e1",
+      "to": "agent_40594f34",
+      "relation": "wasAssociatedWith",
+      "timestamp": "2026-06-16T18:19:10.033797",
+      "attributes": {}
+    }
+  ]
+}

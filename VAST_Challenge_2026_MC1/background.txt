@@ -1,0 +1,28 @@
+Mini-Challenge 1
+Background
+TenantThread is a property tech company that sells property management software to landlords and multifamily operators. On the surface, its tools cover workflow and maintenance ticketing. But one of its core products, the “Retention Optimizer”, scores individual tenants based on their payment timing, maintenance requests, and even the tone of their messages, then uses those scores to flag residents as “high-friction” or recommend renewal pressure tactics. The company has publicly claimed the data is anonymized, but internal documents show that in smaller properties, cross-referencing a unit type with a payment date is enough to put a name to a score. A local newspaper, the SaltWind Journal, has been running an ongoing exposé on these practices, and the hashtag #AlgorithmicEviction has been gaining traction on social media for weeks.
+
+In the middle of all this, TenantThread quietly signed a merger agreement with CivicLoom Realty Partners — a major real estate owner-operator. The deal, codenamed “Project HarborCrest,” would rebrand TenantThread’s platform and bring in significant capital. The merger announcement is under a strict information embargo until 6:00 PM on June 5th, 2046. An automated compliance tool, referred to as “The Judge”, was installed to ensure information was not leaked. But around 5:00 PM that afternoon, embargoed information about the deal started showing up on FleX (a social media service), by accounts associated with TenantThread’s automated communications and public reactions system. The embargo was broken!
+
+CivicLoom’s legal team now needs to understand what happened. You are assisting that team. Your job is to dig into TenantThread’s internal communications from the two weeks leading up to the breach and reconstruct what was going. You have information from AI agents that managed TenantThread’s corporate communications. This includes the messages, internal deliberations, and public post. Build a visual analytics system to help determine: Did TenantThread’s team deliberately leak the merger or did the system simply break down under pressure?
+
+Tasks and Questions:
+What were the key events and relationships that led up to the inappropriate release? Visualize the sequence of events. Include elements such as:
+
+Key actions
+
+Causal relationships
+
+Decision points and actors involved in those decisions
+
+Highlight decisions and system elements that were important to the post making it past the embargo enforcement
+
+The evasion of the embargo was a new behavior. Provide visual analytics that discover and illustrate the typical behavior of systems/agents/people involved. How does the behavior that led to the release compare to the prior behaviors?
+
+Were there leading indicators that such a release was possible?
+
+Are there prior occasions where agent’s actual behaviors differ from their expected behavior? When? Which behaviors were observed?
+
+Were there other occasions where the agent system exhibited behaviors like those that led to the release? When? Which behaviors were observed?
+
+Why didn’t the prior occasions result in noticeable action?

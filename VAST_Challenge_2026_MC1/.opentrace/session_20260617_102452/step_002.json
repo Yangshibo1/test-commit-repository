@@ -1,0 +1,11 @@
+{
+  "step_id": "step_002",
+  "step_name": "问题1分析",
+  "operation": "analyze_key_events",
+  "description": "分析导致不当发布的关键事件",
+  "timestamp": "2026-06-17T10:24:52.531079",
+  "metadata": {
+    "question": "key_events_and_relationships"
+  },
+  "mappings": []
+}

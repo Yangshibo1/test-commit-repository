@@ -1,0 +1,236 @@
+======================================================================
+PROV DAG 可视化
+======================================================================
+
+节点统计:
+  实体: 26
+  活动: 8
+  代理: 8
+  边: 41
+
+======================================================================
+数据流图 (实体→处理→产物)
+======================================================================
+
+【输入】C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2 data.json
+      ↓ [load] 加载MC2原始数据和组织架构
+      by: step1_load_data
+      【输出】.opentrace\session_20260617_110202\loaded_data.json
+
+【输入】C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\org_chart.json
+      ↓ [load] 加载MC2原始数据和组织架构
+      by: step1_load_data
+      【输出】.opentrace\session_20260617_110202\loaded_data.json
+
+【输入】.opentrace\session_20260617_110202\loaded_data.json
+      ↓ [filter] 查找关键时刻的John Windward SaidIT事件
+      by: step2_find_key_event
+      【输出】.opentrace\session_20260617_110202\step2_key_events.json
+            属性: events=0, john_saidit=0
+
+【输入】C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2 data.json
+      ↓ [filter] 深入分析可疑SaidIT事件及其前因后果
+      by: step2_focus_event
+      【输出】.opentrace\session_20260617_110202\step2_suspect_event.json
+            属性: target_event=373902
+
+【输入】C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2 data.json
+      ↓ [trace] 追踪SwiftWren.txt起源和Agent级联传播链
+      by: step3_trace_swiftwren
+      【输出】.opentrace\session_20260617_110202\step3_swiftwren_origin.json
+            属性: events=191, agents=18
+
+【输入】.opentrace\session_20260617_110202\step2_suspect_event.json
+      ↓ [trace] 追踪SwiftWren.txt起源和Agent级联传播链
+      by: step3_trace_swiftwren
+      【输出】.opentrace\session_20260617_110202\step3_swiftwren_origin.json
+            属性: events=191, agents=18
+
+【输入】C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2 data.json
+      ↓ [analyze] 分析内容质量和历史异常模式
+      by: step4_analyze_content
+      【输出】.opentrace\session_20260617_110202\step4_content_analysis.json
+
+【输入】.opentrace\session_20260617_110202\step3_swiftwren_origin.json
+      ↓ [analyze] 分析内容质量和历史异常模式
+      by: step4_analyze_content
+      【输出】.opentrace\session_20260617_110202\step4_content_analysis.json
+
+【输入】C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2 data.json
+      ↓ [compare] 比较三个异常案例的模式
+      by: step4b_compare_anomalies
+      【输出】.opentrace\session_20260617_110202\step4b_anomaly_comparison.json
+
+【输入】.opentrace\session_20260617_110202\step4_content_analysis.json
+      ↓ [compare] 比较三个异常案例的模式
+      by: step4b_compare_anomalies
+      【输出】.opentrace\session_20260617_110202\step4b_anomaly_comparison.json
+
+【输入】C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2 data.json
+      ↓ [trace] 完整追踪三个文件的级联传播
+      by: step4c_full_trace
+      【输出】.opentrace\session_20260617_110202\step4c_full_trace.json
+
+【输入】.opentrace\session_20260617_110202\step4b_anomaly_comparison.json
+      ↓ [trace] 完整追踪三个文件的级联传播
+      by: step4c_full_trace
+      【输出】.opentrace\session_20260617_110202\step4c_full_trace.json
+
+【输入】.opentrace\session_20260617_110202\loaded_data.json
+      ↓ [aggregate] 汇总所有分析结果生成最终报告
+      by: step5_final_report
+      【输出】.opentrace\session_20260617_110202\final_report.json
+
+【输入】.opentrace\session_20260617_110202\step2_suspect_event.json
+      ↓ [aggregate] 汇总所有分析结果生成最终报告
+      by: step5_final_report
+      【输出】.opentrace\session_20260617_110202\final_report.json
+
+【输入】.opentrace\session_20260617_110202\step3_swiftwren_origin.json
+      ↓ [aggregate] 汇总所有分析结果生成最终报告
+      by: step5_final_report
+      【输出】.opentrace\session_20260617_110202\final_report.json
+
+【输入】.opentrace\session_20260617_110202\step4_content_analysis.json
+      ↓ [aggregate] 汇总所有分析结果生成最终报告
+      by: step5_final_report
+      【输出】.opentrace\session_20260617_110202\final_report.json
+
+【输入】.opentrace\session_20260617_110202\step4b_anomaly_comparison.json
+      ↓ [aggregate] 汇总所有分析结果生成最终报告
+      by: step5_final_report
+      【输出】.opentrace\session_20260617_110202\final_report.json
+
+【输入】.opentrace\session_20260617_110202\step4c_full_trace.json
+      ↓ [aggregate] 汇总所有分析结果生成最终报告
+      by: step5_final_report
+      【输出】.opentrace\session_20260617_110202\final_report.json
+
+======================================================================
+节点详情
+======================================================================
+
+ENTITY 节点:
+  - C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2 data.json (属性: {})
+  - C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\org_chart.json (属性: {})
+  - .opentrace\session_20260617_110202\loaded_data.json (属性: {})
+  - .opentrace\session_20260617_110202\loaded_data.json (属性: {})
+  - .opentrace\session_20260617_110202\step2_key_events.json (属性: {'events': 0, 'john_saidit': 0})
+  - C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2 data.json (属性: {})
+  - .opentrace\session_20260617_110202\step2_suspect_event.json (属性: {'target_event': 373902})
+  - C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2 data.json (属性: {})
+  - .opentrace\session_20260617_110202\step2_suspect_event.json (属性: {})
+  - .opentrace\session_20260617_110202\step3_swiftwren_origin.json (属性: {'events': 191, 'agents': 18})
+  - C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2 data.json (属性: {})
+  - .opentrace\session_20260617_110202\step3_swiftwren_origin.json (属性: {})
+  - .opentrace\session_20260617_110202\step4_content_analysis.json (属性: {})
+  - C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2 data.json (属性: {})
+  - .opentrace\session_20260617_110202\step4_content_analysis.json (属性: {})
+  - .opentrace\session_20260617_110202\step4b_anomaly_comparison.json (属性: {})
+  - C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2 data.json (属性: {})
+  - .opentrace\session_20260617_110202\step4b_anomaly_comparison.json (属性: {})
+  - .opentrace\session_20260617_110202\step4c_full_trace.json (属性: {})
+  - .opentrace\session_20260617_110202\loaded_data.json (属性: {})
+  - .opentrace\session_20260617_110202\step2_suspect_event.json (属性: {})
+  - .opentrace\session_20260617_110202\step3_swiftwren_origin.json (属性: {})
+  - .opentrace\session_20260617_110202\step4_content_analysis.json (属性: {})
+  - .opentrace\session_20260617_110202\step4b_anomaly_comparison.json (属性: {})
+  - .opentrace\session_20260617_110202\step4c_full_trace.json (属性: {})
+  - .opentrace\session_20260617_110202\final_report.json (属性: {})
+
+ACTIVITY 节点:
+  - 加载MC2原始数据和组织架构 (属性: {})
+  - 查找关键时刻的John Windward SaidIT事件 (属性: {})
+  - 深入分析可疑SaidIT事件及其前因后果 (属性: {})
+  - 追踪SwiftWren.txt起源和Agent级联传播链 (属性: {'duration_hours': 188.32055555555556})
+  - 分析内容质量和历史异常模式 (属性: {})
+  - 比较三个异常案例的模式 (属性: {})
+  - 完整追踪三个文件的级联传播 (属性: {})
+  - 汇总所有分析结果生成最终报告 (属性: {})
+
+AGENT 节点:
+  - step1_load_data (属性: {})
+  - step2_find_key_event (属性: {})
+  - step2_focus_event (属性: {})
+  - step3_trace_swiftwren (属性: {})
+  - step4_analyze_content (属性: {})
+  - step4b_compare_anomalies (属性: {})
+  - step4c_full_trace (属性: {})
+  - step5_final_report (属性: {})
+
+======================================================================
+关系详情
+======================================================================
+  activity_78ba359d --[used]--> entity_a6b20a6c
+  activity_78ba359d --[used]--> entity_ddf36651
+  entity_fd5611e9 --[wasGeneratedBy]--> activity_78ba359d
+  activity_78ba359d --[wasAssociatedWith]--> agent_fe0d3a69
+  entity_fd5611e9 --[wasDerivedFrom]--> entity_a6b20a6c
+  activity_05902cd5 --[used]--> entity_64b8c576
+  entity_5c7a45ec --[wasGeneratedBy]--> activity_05902cd5
+  activity_05902cd5 --[wasAssociatedWith]--> agent_22f05d9e
+  entity_5c7a45ec --[wasDerivedFrom]--> entity_64b8c576
+  activity_930c8bfd --[used]--> entity_06794bc7
+  ... 还有 31 个关系
+
+======================================================================
+Mermaid 格式 (可在支持 Mermaid 的平台渲染)
+======================================================================
+graph TD
+    classDef entity fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef artifact fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef agent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,stroke-dasharray: 5 5
+    C_\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2_data_json["C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2 data.json"]:::entity
+    _opentrace\session_20260617_110202\loaded_data_json[".opentrace\session_20260617_110202\loaded_data.json"]:::entity
+    C_\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\org_chart_json["C:\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\org_chart.json"]:::entity
+    _opentrace\session_20260617_110202\step2_key_events_json[".opentrace\session_20260617_110202\step2_key_events.json"]:::entity
+    _opentrace\session_20260617_110202\step2_suspect_event_json[".opentrace\session_20260617_110202\step2_suspect_event.json"]:::entity
+    _opentrace\session_20260617_110202\step3_swiftwren_origin_json[".opentrace\session_20260617_110202\step3_swiftwren_origin.json"]:::entity
+    _opentrace\session_20260617_110202\step4_content_analysis_json[".opentrace\session_20260617_110202\step4_content_analysis.json"]:::entity
+    _opentrace\session_20260617_110202\step4b_anomaly_comparison_json[".opentrace\session_20260617_110202\step4b_anomaly_comparison.json"]:::entity
+    _opentrace\session_20260617_110202\step4c_full_trace_json[".opentrace\session_20260617_110202\step4c_full_trace.json"]:::entity
+    _opentrace\session_20260617_110202\final_report_json[".opentrace\session_20260617_110202\final_report.json"]:::artifact
+    agent_fe0d3a69["step1_load_data"]:::agent
+    agent_22f05d9e["step2_find_key_event"]:::agent
+    agent_65a932d8["step2_focus_event"]:::agent
+    agent_352d9cff["step3_trace_swiftwren"]:::agent
+    agent_ac8b349c["step4_analyze_content"]:::agent
+    agent_096aebac["step4b_compare_anomalies"]:::agent
+    agent_3145f5a6["step4c_full_trace"]:::agent
+    agent_9c126ee6["step5_final_report"]:::agent
+    C_\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2_data_json ==>|"load"| agent_fe0d3a69
+    agent_fe0d3a69 -.->|output| _opentrace\session_20260617_110202\loaded_data_json
+    C_\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\org_chart_json ==>|"load"| agent_fe0d3a69
+    agent_fe0d3a69 -.->|output| _opentrace\session_20260617_110202\loaded_data_json
+    _opentrace\session_20260617_110202\loaded_data_json ==>|"filter"| agent_22f05d9e
+    agent_22f05d9e -.->|output| _opentrace\session_20260617_110202\step2_key_events_json
+    C_\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2_data_json ==>|"filter"| agent_65a932d8
+    agent_65a932d8 -.->|output| _opentrace\session_20260617_110202\step2_suspect_event_json
+    C_\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2_data_json ==>|"trace"| agent_352d9cff
+    agent_352d9cff -.->|output| _opentrace\session_20260617_110202\step3_swiftwren_origin_json
+    _opentrace\session_20260617_110202\step2_suspect_event_json ==>|"trace"| agent_352d9cff
+    agent_352d9cff -.->|output| _opentrace\session_20260617_110202\step3_swiftwren_origin_json
+    C_\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2_data_json ==>|"analyze"| agent_ac8b349c
+    agent_ac8b349c -.->|output| _opentrace\session_20260617_110202\step4_content_analysis_json
+    _opentrace\session_20260617_110202\step3_swiftwren_origin_json ==>|"analyze"| agent_ac8b349c
+    agent_ac8b349c -.->|output| _opentrace\session_20260617_110202\step4_content_analysis_json
+    C_\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2_data_json ==>|"compare"| agent_096aebac
+    agent_096aebac -.->|output| _opentrace\session_20260617_110202\step4b_anomaly_comparison_json
+    _opentrace\session_20260617_110202\step4_content_analysis_json ==>|"compare"| agent_096aebac
+    agent_096aebac -.->|output| _opentrace\session_20260617_110202\step4b_anomaly_comparison_json
+    C_\Users\83734\Desktop\opentrace\VAST_Challenge_2026_MC2\VAST_Challenge_2026_MC2\MC2_data_json ==>|"trace"| agent_3145f5a6
+    agent_3145f5a6 -.->|output| _opentrace\session_20260617_110202\step4c_full_trace_json
+    _opentrace\session_20260617_110202\step4b_anomaly_comparison_json ==>|"trace"| agent_3145f5a6
+    agent_3145f5a6 -.->|output| _opentrace\session_20260617_110202\step4c_full_trace_json
+    _opentrace\session_20260617_110202\loaded_data_json ==>|"aggregate"| agent_9c126ee6
+    agent_9c126ee6 -.->|output| _opentrace\session_20260617_110202\final_report_json
+    _opentrace\session_20260617_110202\step2_suspect_event_json ==>|"aggregate"| agent_9c126ee6
+    agent_9c126ee6 -.->|output| _opentrace\session_20260617_110202\final_report_json
+    _opentrace\session_20260617_110202\step3_swiftwren_origin_json ==>|"aggregate"| agent_9c126ee6
+    agent_9c126ee6 -.->|output| _opentrace\session_20260617_110202\final_report_json
+    _opentrace\session_20260617_110202\step4_content_analysis_json ==>|"aggregate"| agent_9c126ee6
+    agent_9c126ee6 -.->|output| _opentrace\session_20260617_110202\final_report_json
+    _opentrace\session_20260617_110202\step4b_anomaly_comparison_json ==>|"aggregate"| agent_9c126ee6
+    agent_9c126ee6 -.->|output| _opentrace\session_20260617_110202\final_report_json
+    _opentrace\session_20260617_110202\step4c_full_trace_json ==>|"aggregate"| agent_9c126ee6
+    agent_9c126ee6 -.->|output| _opentrace\session_20260617_110202\final_report_json

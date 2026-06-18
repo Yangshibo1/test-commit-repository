@@ -1,0 +1,11 @@
+{
+  "step_id": "step_004",
+  "step_name": "问题3分析",
+  "operation": "analyze_leading_indicators",
+  "description": "分析领先指标和先前异常情况",
+  "timestamp": "2026-06-17T09:36:53.364366",
+  "metadata": {
+    "question": "leading_indicators"
+  },
+  "mappings": []
+}

@@ -1,0 +1,12 @@
+{
+  "step_id": "step_001",
+  "step_name": "数据加载",
+  "operation": "load_mc2_data",
+  "description": "加载MC2事件数据和组织架构",
+  "timestamp": "2026-06-17T10:37:05.463702",
+  "metadata": {
+    "total_events": 185147,
+    "org_nodes": 75
+  },
+  "mappings": []
+}

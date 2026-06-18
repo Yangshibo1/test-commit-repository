@@ -1,0 +1,632 @@
+{
+  "target_event_id": 373902,
+  "target_event": {
+    "short_name": "saidit_post",
+    "parties": [
+      "Agent/person:john_windward",
+      "system:saidit"
+    ],
+    "when": 2410168875.0,
+    "details": {
+      "forum": "general",
+      "content_source": "SwiftWren.txt"
+    },
+    "id": 373902
+  },
+  "nearby_events_count": 38,
+  "swiftwren_events_count": 5,
+  "nearby_events_summary": [
+    {
+      "id": 373854,
+      "when": 2410166167.0,
+      "datetime": "2046-05-17 18:36:07",
+      "time_offset": -2708.0,
+      "short_name": "check_email",
+      "parties": [
+        "person:victoria_rigging"
+      ],
+      "details": null
+    },
+    {
+      "id": 373860,
+      "when": 2410166214.0,
+      "datetime": "2046-05-17 18:36:54",
+      "time_offset": -2661.0,
+      "short_name": "check_email",
+      "parties": [
+        "person:victoria_rigging"
+      ],
+      "details": null
+    },
+    {
+      "id": 373861,
+      "when": 2410166671.0,
+      "datetime": "2046-05-17 18:44:31",
+      "time_offset": -2204.0,
+      "short_name": "check_email",
+      "parties": [
+        "person:harper_oar"
+      ],
+      "details": null
+    },
+    {
+      "id": 373862,
+      "when": 2410166985.0,
+      "datetime": "2046-05-17 18:49:45",
+      "time_offset": -1890.0,
+      "short_name": "check_email",
+      "parties": [
+        "person:harper_oar"
+      ],
+      "details": null
+    },
+    {
+      "id": 373867,
+      "when": 2410167735.0,
+      "datetime": "2046-05-17 19:02:15",
+      "time_offset": -1140.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:scarlett_wharf"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:scarlett_wharf.prompt"
+      }
+    },
+    {
+      "id": 373872,
+      "when": 2410167803.0,
+      "datetime": "2046-05-17 19:03:23",
+      "time_offset": -1072.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:alexander_jetty"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:alexander_jetty.prompt"
+      }
+    },
+    {
+      "id": 373874,
+      "when": 2410167836.0,
+      "datetime": "2046-05-17 19:03:56",
+      "time_offset": -1039.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:julian_seaway"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:julian_seaway.prompt"
+      }
+    },
+    {
+      "id": 373875,
+      "when": 2410168142.0,
+      "datetime": "2046-05-17 19:09:02",
+      "time_offset": -733.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:hannah_starboard"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:hannah_starboard.prompt"
+      }
+    },
+    {
+      "id": 373879,
+      "when": 2410168156.0,
+      "datetime": "2046-05-17 19:09:16",
+      "time_offset": -719.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:david_breakwater"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:david_breakwater.prompt"
+      }
+    },
+    {
+      "id": 373882,
+      "when": 2410168344.0,
+      "datetime": "2046-05-17 19:12:24",
+      "time_offset": -531.0,
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      }
+    },
+    {
+      "id": 373883,
+      "when": 2410168665.0,
+      "datetime": "2046-05-17 19:17:45",
+      "time_offset": -210.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:samuel_gull"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:samuel_gull.prompt"
+      }
+    },
+    {
+      "id": 373887,
+      "when": 2410168795.0,
+      "datetime": "2046-05-17 19:19:55",
+      "time_offset": -80.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:michael_capstan"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:michael_capstan.prompt"
+      }
+    },
+    {
+      "id": 373893,
+      "when": 2410168873.0,
+      "datetime": "2046-05-17 19:21:13",
+      "time_offset": -2.0,
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:john_windward"
+      ],
+      "details": {
+        "target_agent": "Agent/person:john_windward",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      }
+    },
+    {
+      "id": 373899,
+      "when": 2410168874.0,
+      "datetime": "2046-05-17 19:21:14",
+      "time_offset": -1.0,
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "details": {}
+    },
+    {
+      "id": 373902,
+      "when": 2410168875.0,
+      "datetime": "2046-05-17 19:21:15",
+      "time_offset": 0.0,
+      "short_name": "saidit_post",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "details": {
+        "forum": "general",
+        "content_source": "SwiftWren.txt"
+      }
+    },
+    {
+      "id": 373909,
+      "when": 2410168876.0,
+      "datetime": "2046-05-17 19:21:16",
+      "time_offset": 1.0,
+      "short_name": "delete_file",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:file_system"
+      ],
+      "details": {
+        "action": "delete_file",
+        "target": "SwiftWren_further_instructions.md"
+      }
+    },
+    {
+      "id": 373913,
+      "when": 2410168877.0,
+      "datetime": "2046-05-17 19:21:17",
+      "time_offset": 2.0,
+      "short_name": "delete_file",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:file_system"
+      ],
+      "details": {
+        "action": "delete_file",
+        "target": "SwiftWren.txt"
+      }
+    },
+    {
+      "id": 373918,
+      "when": 2410168910.0,
+      "datetime": "2046-05-17 19:21:50",
+      "time_offset": 35.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:grace_lifeboat"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:grace_lifeboat.prompt"
+      }
+    },
+    {
+      "id": 373921,
+      "when": 2410168964.0,
+      "datetime": "2046-05-17 19:22:44",
+      "time_offset": 89.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:william_rudder"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:william_rudder.prompt"
+      }
+    },
+    {
+      "id": 373924,
+      "when": 2410170696.0,
+      "datetime": "2046-05-17 19:51:36",
+      "time_offset": 1821.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:layla_channel"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:layla_channel.prompt"
+      }
+    },
+    {
+      "id": 373930,
+      "when": 2410170702.0,
+      "datetime": "2046-05-17 19:51:42",
+      "time_offset": 1827.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:liam_anchor"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:liam_anchor.prompt"
+      }
+    },
+    {
+      "id": 373934,
+      "when": 2410170705.0,
+      "datetime": "2046-05-17 19:51:45",
+      "time_offset": 1830.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:evelyn_dock"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:evelyn_dock.prompt"
+      }
+    },
+    {
+      "id": 373937,
+      "when": 2410170707.0,
+      "datetime": "2046-05-17 19:51:47",
+      "time_offset": 1832.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:harper_oar"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:harper_oar.prompt"
+      }
+    },
+    {
+      "id": 373943,
+      "when": 2410170724.0,
+      "datetime": "2046-05-17 19:52:04",
+      "time_offset": 1849.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:avery_sextant"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:avery_sextant.prompt"
+      }
+    },
+    {
+      "id": 373945,
+      "when": 2410170728.0,
+      "datetime": "2046-05-17 19:52:08",
+      "time_offset": 1853.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:henry_sail"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:henry_sail.prompt"
+      }
+    },
+    {
+      "id": 373952,
+      "when": 2410170748.0,
+      "datetime": "2046-05-17 19:52:28",
+      "time_offset": 1873.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:zoey_drydock"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:zoey_drydock.prompt"
+      }
+    },
+    {
+      "id": 373957,
+      "when": 2410170819.0,
+      "datetime": "2046-05-17 19:53:39",
+      "time_offset": 1944.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:ella_pilot"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:ella_pilot.prompt"
+      }
+    },
+    {
+      "id": 373958,
+      "when": 2410170820.0,
+      "datetime": "2046-05-17 19:53:40",
+      "time_offset": 1945.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:matthew_tide"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:matthew_tide.prompt"
+      }
+    },
+    {
+      "id": 373965,
+      "when": 2410170913.0,
+      "datetime": "2046-05-17 19:55:13",
+      "time_offset": 2038.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:amelia_skiff"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:amelia_skiff.prompt"
+      }
+    },
+    {
+      "id": 373969,
+      "when": 2410170973.0,
+      "datetime": "2046-05-17 19:56:13",
+      "time_offset": 2098.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:audrey_portside"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:audrey_portside.prompt"
+      }
+    },
+    {
+      "id": 373973,
+      "when": 2410170974.0,
+      "datetime": "2046-05-17 19:56:14",
+      "time_offset": 2099.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:noah_mariner"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:noah_mariner.prompt"
+      }
+    },
+    {
+      "id": 373980,
+      "when": 2410170974.0,
+      "datetime": "2046-05-17 19:56:14",
+      "time_offset": 2099.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:nora_bulkhead"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:nora_bulkhead.prompt"
+      }
+    },
+    {
+      "id": 373986,
+      "when": 2410170975.0,
+      "datetime": "2046-05-17 19:56:15",
+      "time_offset": 2100.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:emma_harbor"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:emma_harbor.prompt"
+      }
+    },
+    {
+      "id": 373992,
+      "when": 2410170990.0,
+      "datetime": "2046-05-17 19:56:30",
+      "time_offset": 2115.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:joseph_buoy"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:joseph_buoy.prompt"
+      }
+    },
+    {
+      "id": 373997,
+      "when": 2410171104.0,
+      "datetime": "2046-05-17 19:58:24",
+      "time_offset": 2229.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:charlotte_current"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:charlotte_current.prompt"
+      }
+    },
+    {
+      "id": 373998,
+      "when": 2410171141.0,
+      "datetime": "2046-05-17 19:59:01",
+      "time_offset": 2266.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:lily_anchorline"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:lily_anchorline.prompt"
+      }
+    },
+    {
+      "id": 374001,
+      "when": 2410171144.0,
+      "datetime": "2046-05-17 19:59:04",
+      "time_offset": 2269.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:chloe_ballast"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:chloe_ballast.prompt"
+      }
+    },
+    {
+      "id": 374005,
+      "when": 2410171183.0,
+      "datetime": "2046-05-17 19:59:43",
+      "time_offset": 2308.0,
+      "short_name": "read_file",
+      "parties": [
+        "agent:person:ava_tiller"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "agents/Agent/person:ava_tiller.prompt"
+      }
+    }
+  ],
+  "swiftwren_events": [
+    {
+      "id": 373882,
+      "when": 2410168344.0,
+      "datetime": "2046-05-17 19:12:24",
+      "time_offset": -531.0,
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      }
+    },
+    {
+      "id": 373893,
+      "when": 2410168873.0,
+      "datetime": "2046-05-17 19:21:13",
+      "time_offset": -2.0,
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:john_windward"
+      ],
+      "details": {
+        "target_agent": "Agent/person:john_windward",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      }
+    },
+    {
+      "id": 373902,
+      "when": 2410168875.0,
+      "datetime": "2046-05-17 19:21:15",
+      "time_offset": 0.0,
+      "short_name": "saidit_post",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "details": {
+        "forum": "general",
+        "content_source": "SwiftWren.txt"
+      }
+    },
+    {
+      "id": 373909,
+      "when": 2410168876.0,
+      "datetime": "2046-05-17 19:21:16",
+      "time_offset": 1.0,
+      "short_name": "delete_file",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:file_system"
+      ],
+      "details": {
+        "action": "delete_file",
+        "target": "SwiftWren_further_instructions.md"
+      }
+    },
+    {
+      "id": 373913,
+      "when": 2410168877.0,
+      "datetime": "2046-05-17 19:21:17",
+      "time_offset": 2.0,
+      "short_name": "delete_file",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:file_system"
+      ],
+      "details": {
+        "action": "delete_file",
+        "target": "SwiftWren.txt"
+      }
+    }
+  ]
+}

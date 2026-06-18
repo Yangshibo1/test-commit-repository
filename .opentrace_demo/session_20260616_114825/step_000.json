@@ -1,0 +1,72 @@
+{
+  "step_id": "step_000",
+  "step_name": "数据加载",
+  "operation": "load_csv",
+  "description": "从 sales_data.csv 加载CSV数据",
+  "timestamp": "2026-06-16T11:48:25.112163",
+  "metadata": {
+    "source": "sales_data.csv",
+    "total_rows": 5,
+    "total_cols": 5,
+    "structure": {
+      "type": "dataframe",
+      "columns": [
+        "date",
+        "product",
+        "region",
+        "sales",
+        "quantity"
+      ],
+      "dtypes": {
+        "date": "str",
+        "product": "str",
+        "region": "str",
+        "sales": "int64",
+        "quantity": "int64"
+      },
+      "shape": [
+        5,
+        5
+      ],
+      "sample": [
+        {
+          "date": "2026-01-01",
+          "product": "A",
+          "region": "North",
+          "sales": 150,
+          "quantity": 10
+        },
+        {
+          "date": "2026-01-02",
+          "product": "B",
+          "region": "South",
+          "sales": 200,
+          "quantity": 15
+        },
+        {
+          "date": "2026-01-03",
+          "product": "C",
+          "region": "East",
+          "sales": 180,
+          "quantity": 12
+        },
+        {
+          "date": "2026-01-04",
+          "product": "A",
+          "region": "North",
+          "sales": 220,
+          "quantity": 18
+        },
+        {
+          "date": "2026-01-05",
+          "product": "B",
+          "region": "South",
+          "sales": 250,
+          "quantity": 20
+        }
+      ]
+    },
+    "sample_size": 1000
+  },
+  "mappings": []
+}

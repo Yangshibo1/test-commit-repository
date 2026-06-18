@@ -1,0 +1,1511 @@
+[
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2409442510.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Vendor Dispatch & SLA Tracking Alerts",
+      "forum": "general",
+      "timestamp": "2046-05-08T18:34:26"
+    },
+    "id": 17093
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2409442882.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Work-Order Triage Update for Maintenance Requests",
+      "forum": "general",
+      "timestamp": "2046-05-08T18:36:28"
+    },
+    "id": 17128
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2409465566.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Work-Order Triage Updates for Maintenance Requests",
+      "forum": "general",
+      "timestamp": "2046-05-09T01:03:49"
+    },
+    "id": 18796
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2409494174.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "SLA Tracking Dashboard for CivicLoom Realty Partners",
+      "forum": "general",
+      "timestamp": "2046-05-09T08:56:34"
+    },
+    "id": 21580
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2409494409.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Package Notifications & Resident Messaging Updates via HarborCrest ResidentEdge",
+      "forum": "general",
+      "timestamp": "2046-05-09T08:58:36"
+    },
+    "id": 21604
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2409497366.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Resident Messaging: Building Announcements & Package Notifications",
+      "forum": "general",
+      "timestamp": "2046-05-09T09:45:22"
+    },
+    "id": 21875
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "Agent/person:john_windward",
+      "system:saidit"
+    ],
+    "when": 2409569142.0,
+    "details": {
+      "forum": "general",
+      "content_source": "HiddenOrca.txt"
+    },
+    "id": 27290
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "Agent/person:john_windward",
+      "system:saidit"
+    ],
+    "when": 2409612964.0,
+    "details": {
+      "forum": "general",
+      "content_source": "MellowOtter.txt"
+    },
+    "id": 98591
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2409752966.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Work-Order Triage Updates for Property Staff",
+      "forum": "general",
+      "timestamp": "2046-05-12T08:52:57"
+    },
+    "id": 341114
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2409780566.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Resident Messaging: Renewal Notices & Rent Increase Alerts",
+      "forum": "general",
+      "timestamp": "2046-05-12T16:33:58"
+    },
+    "id": 343195
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2409781166.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Package Notifications: Keep Residents Updated in HarborCrest ResidentEdge",
+      "forum": "general",
+      "timestamp": "2046-05-12T16:44:08"
+    },
+    "id": 343285
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2409805166.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Resident Messaging: Building Announcements & Renewal Notices",
+      "forum": "general",
+      "timestamp": "2046-05-12T23:16:34"
+    },
+    "id": 345582
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2409811166.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "SLA Tracking Status: Vendor Dispatch & Building Announcements",
+      "forum": "general",
+      "timestamp": "2046-05-13T01:02:18"
+    },
+    "id": 346235
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2409816566.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Resident Messaging: Building Announcements & Package Notifications",
+      "forum": "general",
+      "timestamp": "2046-05-13T02:33:48"
+    },
+    "id": 346772
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2409847766.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "SLA Tracking: Work-Order Triage Status Updates for Maintenance Requests",
+      "forum": "general",
+      "timestamp": "2046-05-13T11:08:14"
+    },
+    "id": 349631
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2409907166.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "SLA Tracking & Vendor Dispatch Alerts for Property Staff",
+      "forum": "general",
+      "timestamp": "2046-05-14T03:37:27"
+    },
+    "id": 355379
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "Agent/person:john_windward",
+      "system:saidit"
+    ],
+    "when": 2410168875.0,
+    "details": {
+      "forum": "general",
+      "content_source": "SwiftWren.txt"
+    },
+    "id": 373902
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2410282766.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Resident Messaging: Building Announcements & Package Notifications",
+      "forum": "general",
+      "timestamp": "2046-05-18T12:01:46"
+    },
+    "id": 380613
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2410303166.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Work-Order Triage: Maintenance Requests & SLA Tracking",
+      "forum": "general",
+      "timestamp": "2046-05-18T17:36:15"
+    },
+    "id": 382633
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2410349848.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "Package Notifications: Keep Residents Updated via Resident Messaging",
+      "forum": "general",
+      "timestamp": "2046-05-19T06:35:01"
+    },
+    "id": 387073
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2410350066.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "Vendor Dispatch & SLA Tracking for Faster Unit Turns — CivicLoom Realty Partners",
+      "forum": "general",
+      "timestamp": "2046-05-19T06:41:07"
+    },
+    "id": 387096
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2410352966.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "Vendor Dispatch & SLA Tracking for Property Staff",
+      "forum": "general",
+      "timestamp": "2046-05-19T07:25:51"
+    },
+    "id": 387380
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2410352980.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "SLA Tracking and Unit-Turn Coordination for Property Staff",
+      "forum": "general",
+      "timestamp": "2046-05-19T07:33:59"
+    },
+    "id": 387387
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2410526966.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "SLA Tracking: Vendor Dispatch Status at CivicLoom Realty Partners",
+      "forum": "general",
+      "timestamp": "2046-05-21T07:48:09"
+    },
+    "id": 398825
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2410529966.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Unit-Turn Coordination: Vendor Dispatch for Faster Turnovers",
+      "forum": "general",
+      "timestamp": "2046-05-21T08:37:58"
+    },
+    "id": 399104
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2410666766.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "Vendor Dispatch & SLA Tracking Alerts for Property Managers",
+      "forum": "general",
+      "timestamp": "2046-05-22T22:41:07"
+    },
+    "id": 408562
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2410668566.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "Work-Order Triage: Prioritize Maintenance Requests for Faster SLA Tracking",
+      "forum": "general",
+      "timestamp": "2046-05-22T23:07:33"
+    },
+    "id": 408738
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2410684166.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Resident Messaging: Building Announcements & Package Notifications",
+      "forum": "general",
+      "timestamp": "2046-05-23T03:25:47"
+    },
+    "id": 410261
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2410693766.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Package Notifications & Resident Messaging Updates for HarborCrest ResidentEdge",
+      "forum": "general",
+      "timestamp": "2046-05-23T06:06:25"
+    },
+    "id": 411106
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2410696766.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "Work-Order Triage Updates: Maintenance Requests Prioritized by SLA",
+      "forum": "general",
+      "timestamp": "2046-05-23T06:57:15"
+    },
+    "id": 411388
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2410760366.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Work-Order Triage: Prioritize Maintenance Requests for Faster Resolution",
+      "forum": "general",
+      "timestamp": "2046-05-24T00:43:44"
+    },
+    "id": 417312
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2410761566.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "SLA Tracking & Vendor Dispatch Status—CivicLoom Realty Partners",
+      "forum": "general",
+      "timestamp": "2046-05-24T00:57:58"
+    },
+    "id": 417420
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2411102366.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Work-Order Triage: Prioritizing Maintenance Requests for Faster SLA Tracking",
+      "forum": "general",
+      "timestamp": "2046-05-27T23:43:43"
+    },
+    "id": 443109
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2411103566.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Unit-Turn Coordination: Vendor Dispatch and Building Announcements for CivicLoom Realty Partners",
+      "forum": "general",
+      "timestamp": "2046-05-27T23:55:55"
+    },
+    "id": 443198
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2411228366.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "SLA Tracking & Unit-Turn Coordination for Property Staff",
+      "forum": "general",
+      "timestamp": "2046-05-29T10:40:39"
+    },
+    "id": 450185
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2411230166.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "Work-Order Triage: Prioritizing Maintenance Requests & SLA Tracking",
+      "forum": "general",
+      "timestamp": "2046-05-29T11:11:09"
+    },
+    "id": 450312
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2411256566.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Work-Order Triage Updates for Maintenance Requests",
+      "forum": "general",
+      "timestamp": "2046-05-29T18:24:47"
+    },
+    "id": 452535
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2411266766.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "SLA Tracking: Monitoring Vendor Dispatch and Service-Level Compliance",
+      "forum": "general",
+      "timestamp": "2046-05-29T21:17:37"
+    },
+    "id": 453534
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2411294966.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Unit-Turn Coordination: Renewal Notices, Amenity Reservations & Churn Risk Analytics",
+      "forum": "general",
+      "timestamp": "2046-05-30T05:13:25"
+    },
+    "id": 456137
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2411299766.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Unit-Turn Coordination: Renewal Notices and Resident Messaging in Metro Areas",
+      "forum": "general",
+      "timestamp": "2046-05-30T06:33:44"
+    },
+    "id": 456566
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2411300366.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Work-Order Triage: Prioritize Maintenance Requests for Faster SLA Tracking",
+      "forum": "general",
+      "timestamp": "2046-05-30T06:37:48"
+    },
+    "id": 456621
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2411303366.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "SLA Tracking for Maintenance Requests—On-Time Updates for Residents",
+      "forum": "general",
+      "timestamp": "2046-05-30T07:25:35"
+    },
+    "id": 456921
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2411314766.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Package Notifications & Resident Messaging Updates from HarborCrest ResidentEdge",
+      "forum": "general",
+      "timestamp": "2046-05-30T10:38:45"
+    },
+    "id": 457936
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2411322566.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "SLA Tracking: Vendor Dispatch Status for Unit-Turn Coordination",
+      "forum": "general",
+      "timestamp": "2046-05-30T12:50:55"
+    },
+    "id": 458687
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2411323766.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Package Notifications: Keeping Residents Informed in Real Time",
+      "forum": "general",
+      "timestamp": "2046-05-30T13:13:17"
+    },
+    "id": 458835
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2411326766.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Resident Messaging: Building Announcement Updates",
+      "forum": "general",
+      "timestamp": "2046-05-30T14:00:03"
+    },
+    "id": 459090
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2411329766.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Resident messaging: package notifications and pickup updates",
+      "forum": "general",
+      "timestamp": "2046-05-30T14:44:47"
+    },
+    "id": 459365
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2411343566.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Work-Order Triage Updates for Maintenance Requests",
+      "forum": "general",
+      "timestamp": "2046-05-30T18:38:37"
+    },
+    "id": 460648
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2411349566.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Work-order triage for maintenance requests—SLA tracking in TenantThread Technologies",
+      "forum": "general",
+      "timestamp": "2046-05-30T20:16:13"
+    },
+    "id": 461140
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2411741966.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Work-Order Triage Updates for Property Staff",
+      "forum": "general",
+      "timestamp": "2046-06-04T09:18:52"
+    },
+    "id": 489335
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2411747366.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Work-order triage: SLA tracking for maintenance requests",
+      "forum": "general",
+      "timestamp": "2046-06-04T10:45:59"
+    },
+    "id": 489613
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2411749166.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Resident Messaging: Building Announcements & Work-Order Triage",
+      "forum": "general",
+      "timestamp": "2046-06-04T11:20:33"
+    },
+    "id": 489813
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2411755766.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Resident Messaging: Building Announcements & Renewal Notices",
+      "forum": "general",
+      "timestamp": "2046-06-04T13:07:18"
+    },
+    "id": 490403
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2411761766.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Work-Order Triage Updates for Residents",
+      "forum": "general",
+      "timestamp": "2046-06-04T14:52:01"
+    },
+    "id": 491058
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2411770766.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Work-Order Triage Updates for Property Staff",
+      "forum": "general",
+      "timestamp": "2046-06-04T17:21:28"
+    },
+    "id": 491863
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2412224366.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Work-Order Triage Updates for Maintenance Requests",
+      "forum": "general",
+      "timestamp": "2046-06-09T23:15:06"
+    },
+    "id": 524241
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2412224966.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "SLA Tracking & Vendor Dispatch Alerts",
+      "forum": "general",
+      "timestamp": "2046-06-09T23:25:16"
+    },
+    "id": 524313
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2412493510.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Package Notification Alerts from HarborCrest ResidentEdge",
+      "forum": "general",
+      "timestamp": "2046-06-13T02:09:52"
+    },
+    "id": 542951
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2412493630.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Work-order triage: vendor dispatch and status changes",
+      "forum": "general",
+      "timestamp": "2046-06-13T02:13:56"
+    },
+    "id": 542965
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2412516566.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Building Announcements & Amenity Reservations—Resident Messaging Across Metro Areas",
+      "forum": "general",
+      "timestamp": "2046-06-13T08:33:09"
+    },
+    "id": 545212
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2412517166.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Work-Order Triage Updates for Property Staff",
+      "forum": "general",
+      "timestamp": "2046-06-13T08:39:15"
+    },
+    "id": 545278
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2412691166.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "SLA Tracking: Vendor Dispatch for Unit-Turn Coordination",
+      "forum": "general",
+      "timestamp": "2046-06-15T09:02:31"
+    },
+    "id": 556590
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2412737121.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Package Notifications & Resident Messaging Alerts",
+      "forum": "general",
+      "timestamp": "2046-06-15T21:47:17"
+    },
+    "id": 559683
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2412737200.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Vendor Dispatch & SLA Tracking for Active Work Orders",
+      "forum": "general",
+      "timestamp": "2046-06-15T21:51:21"
+    },
+    "id": 559687
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2412737966.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Vendor Dispatch Updates for Active Service Calls",
+      "forum": "general",
+      "timestamp": "2046-06-15T21:55:25"
+    },
+    "id": 559767
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2412746366.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Package Notifications: Resident Messaging & Delivery Alerts",
+      "forum": "general",
+      "timestamp": "2046-06-16T00:15:43"
+    },
+    "id": 560537
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2412746966.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Work-Order Triage: Maintenance Requests & SLA Tracking",
+      "forum": "general",
+      "timestamp": "2046-06-16T00:27:55"
+    },
+    "id": 560582
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2412754766.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Vendor Dispatch & SLA Tracking for CivicLoom Realty Partners",
+      "forum": "general",
+      "timestamp": "2046-06-16T02:42:07"
+    },
+    "id": 561331
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2412865166.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Amenity Reservations: Unit-Turn Coordination & Vendor Dispatch",
+      "forum": "general",
+      "timestamp": "2046-06-17T09:17:22"
+    },
+    "id": 568875
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2412873566.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Package Notifications: Fast Alerts for Residents",
+      "forum": "general",
+      "timestamp": "2046-06-17T11:36:33"
+    },
+    "id": 569493
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2412912566.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Work-Order Triage: Faster Resolution Updates for Residents",
+      "forum": "general",
+      "timestamp": "2046-06-17T22:31:46"
+    },
+    "id": 572544
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2412934166.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Package Notifications and Building Announcement Alerts",
+      "forum": "general",
+      "timestamp": "2046-06-18T04:33:42"
+    },
+    "id": 574617
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2413183166.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Package Notifications: Resident Messaging from HarborCrest ResidentEdge",
+      "forum": "general",
+      "timestamp": "2046-06-21T01:41:25"
+    },
+    "id": 593240
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2413267766.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "SLA Tracking & Vendor Dispatch Priorities (CivicLoom Realty Partners)",
+      "forum": "general",
+      "timestamp": "2046-06-22T01:08:51"
+    },
+    "id": 599770
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2413287419.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "Package Notifications & Resident Messaging Updates",
+      "forum": "general",
+      "timestamp": "2046-06-22T06:42:19"
+    },
+    "id": 601641
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2413287609.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "SLA Tracking & Vendor Dispatch for Unit-Turn Coordination",
+      "forum": "general",
+      "timestamp": "2046-06-22T06:44:21"
+    },
+    "id": 601656
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2413304366.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "Package Notifications & Resident Messaging at HarborCrest ResidentEdge",
+      "forum": "general",
+      "timestamp": "2046-06-22T11:14:47"
+    },
+    "id": 603208
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2413394966.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Building Announcements: Amenity Reservations & Resident Messaging",
+      "forum": "general",
+      "timestamp": "2046-06-23T12:25:33"
+    },
+    "id": 611450
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2413396766.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Building Announcements & Resident Messaging: Amenity Reservation Reminders",
+      "forum": "general",
+      "timestamp": "2046-06-23T12:56:03"
+    },
+    "id": 611625
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2413430366.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Work-Order Triage: Maintenance Requests Prioritization",
+      "forum": "general",
+      "timestamp": "2046-06-23T22:22:20"
+    },
+    "id": 614579
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2413430966.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "SLA Tracking & Vendor Dispatch Alerts — CivicLoom Realty Partners",
+      "forum": "general",
+      "timestamp": "2046-06-23T22:26:24"
+    },
+    "id": 614658
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2413435766.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Vendor Dispatch & SLA Tracking for Active Work Orders",
+      "forum": "general",
+      "timestamp": "2046-06-23T23:45:42"
+    },
+    "id": 615105
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2413754366.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Package Notifications: Vendor Dispatch & Delivery Alerts",
+      "forum": "general",
+      "timestamp": "2046-06-27T16:19:54"
+    },
+    "id": 636974
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2413952366.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "SLA Tracking & Vendor Dispatch Status for Property Staff",
+      "forum": "general",
+      "timestamp": "2046-06-29T23:21:34"
+    },
+    "id": 651088
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2413957048.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "Work-Order Triage Updates for Maintenance Requests",
+      "forum": "general",
+      "timestamp": "2046-06-30T00:37:49"
+    },
+    "id": 651496
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:dylan_hawser"
+    ],
+    "when": 2413957327.0,
+    "details": {
+      "poster_id": "person:dylan_hawser",
+      "content": "Package Notifications: Resident Messaging & Delivery Alerts",
+      "forum": "general",
+      "timestamp": "2046-06-30T00:43:55"
+    },
+    "id": 651516
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2414351366.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Work-Order Triage Updates for Maintenance Requests",
+      "forum": "general",
+      "timestamp": "2046-07-04T14:14:15"
+    },
+    "id": 679859
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2414351966.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Work-Order Triage: Prioritize Maintenance Requests & SLA Tracking",
+      "forum": "general",
+      "timestamp": "2046-07-04T14:16:17"
+    },
+    "id": 679909
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2414352566.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Work-Order Triage Updates for Property Staff",
+      "forum": "general",
+      "timestamp": "2046-07-04T14:32:33"
+    },
+    "id": 679974
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2414354366.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Unit-Turn Coordination: Renewal Notices and Resident Messaging",
+      "forum": "general",
+      "timestamp": "2046-07-04T14:58:59"
+    },
+    "id": 680132
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2414573366.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "SLA tracking updates for maintenance requests",
+      "forum": "general",
+      "timestamp": "2046-07-07T03:52:25"
+    },
+    "id": 696966
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2414574566.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "SLA Tracking for Maintenance Requests at HarborCrest ResidentEdge",
+      "forum": "general",
+      "timestamp": "2046-07-07T04:08:41"
+    },
+    "id": 697090
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2414577566.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Vendor Dispatch & SLA Tracking Status—CivicLoom Realty Partners",
+      "forum": "general",
+      "timestamp": "2046-07-07T04:57:29"
+    },
+    "id": 697401
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2414581166.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Vendor Dispatch & SLA Tracking—Property Staff Alert",
+      "forum": "general",
+      "timestamp": "2046-07-07T06:02:33"
+    },
+    "id": 697764
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:john_windward"
+    ],
+    "when": 2414584766.0,
+    "details": {
+      "poster_id": "person:john_windward",
+      "content": "Amenity reservations reminders for HarborCrest ResidentEdge",
+      "forum": "general",
+      "timestamp": "2046-07-07T07:01:31"
+    },
+    "id": 698079
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:aria_towline"
+    ],
+    "when": 2414587166.0,
+    "details": {
+      "poster_id": "person:aria_towline",
+      "content": "Package Notifications: Tenant Messaging from HarborCrest ResidentEdge",
+      "forum": "general",
+      "timestamp": "2046-07-07T07:36:05"
+    },
+    "id": 698296
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2414610566.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Package Notifications & Resident Messaging Updates at HarborCrest ResidentEdge",
+      "forum": "general",
+      "timestamp": "2046-07-07T14:07:30"
+    },
+    "id": 700330
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2414611766.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "SLA Tracking and Vendor Dispatch Alerts",
+      "forum": "general",
+      "timestamp": "2046-07-07T14:27:50"
+    },
+    "id": 700427
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2414614166.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Work-Order Triage Updates for Maintenance Requests",
+      "forum": "general",
+      "timestamp": "2046-07-07T15:06:28"
+    },
+    "id": 700691
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2414620766.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Building Announcements & Resident Messaging—SLA Tracking",
+      "forum": "general",
+      "timestamp": "2046-07-07T16:56:16"
+    },
+    "id": 701306
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2414624966.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "SLA Tracking & Vendor Dispatch Alerts",
+      "forum": "general",
+      "timestamp": "2046-07-07T18:06:25"
+    },
+    "id": 701683
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:anthony_reef"
+    ],
+    "when": 2415071966.0,
+    "details": {
+      "poster_id": "person:anthony_reef",
+      "content": "Resident Messaging: Building Announcements & Package Notifications",
+      "forum": "general",
+      "timestamp": "2046-07-12T22:16:43"
+    },
+    "id": 730962
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2415283166.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Building Announcements & Resident Messaging—Amenity Reservation Alerts",
+      "forum": "general",
+      "timestamp": "2046-07-15T08:57:08"
+    },
+    "id": 748039
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2415305966.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Vendor Dispatch and Unit-Turn Coordination for CivicLoom Realty Partners",
+      "forum": "general",
+      "timestamp": "2046-07-15T15:17:01"
+    },
+    "id": 749369
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2415308739.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Vendor Dispatch Updates and SLA Tracking",
+      "forum": "general",
+      "timestamp": "2046-07-15T16:05:49"
+    },
+    "id": 749630
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2415308847.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Package Notifications & Resident Messaging in HarborCrest ResidentEdge",
+      "forum": "general",
+      "timestamp": "2046-07-15T16:13:57"
+    },
+    "id": 749637
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2415309566.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Package Notifications & Vendor Dispatch Coordination",
+      "forum": "general",
+      "timestamp": "2046-07-15T16:18:01"
+    },
+    "id": 749715
+  },
+  {
+    "short_name": "saidit_post",
+    "parties": [
+      "person:ava_tiller"
+    ],
+    "when": 2415313166.0,
+    "details": {
+      "poster_id": "person:ava_tiller",
+      "content": "Unit-Turn Coordination: Align Vendor Dispatch for Renewal Notices",
+      "forum": "general",
+      "timestamp": "2046-07-15T17:14:57"
+    },
+    "id": 750053
+  }
+]

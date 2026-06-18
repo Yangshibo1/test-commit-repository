@@ -1,0 +1,9 @@
+{
+  "step_id": "step_001",
+  "step_name": "统计 agent 参与次数",
+  "operation": "count_and_rank",
+  "description": "统计每个 agent 在任务传递链中的参与次数",
+  "timestamp": "2026-06-15T11:17:19.333071",
+  "metadata": {},
+  "mappings": []
+}

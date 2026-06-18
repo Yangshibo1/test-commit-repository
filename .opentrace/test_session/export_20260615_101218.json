@@ -1,0 +1,106 @@
+{
+  "metadata": {
+    "session_id": "test_session",
+    "created_at": "2026-06-15T10:12:18.045197",
+    "total_steps": 3
+  },
+  "steps": [
+    {
+      "step_id": "step_000",
+      "step_name": "数据加载",
+      "operation": "load_json",
+      "description": "从 test_data.json 加载JSON数据",
+      "timestamp": "2026-06-15T10:12:18.046245",
+      "metadata": {
+        "source": "test_data.json",
+        "total_rows": 3,
+        "total_size_mb": 0.0,
+        "structure": {
+          "type": "list",
+          "length": 3,
+          "item_type": "dict",
+          "fields": {
+            "id": {
+              "type": "str",
+              "value": "user_001"
+            },
+            "name": {
+              "type": "str",
+              "value": "Alice"
+            },
+            "age": {
+              "type": "int",
+              "value": 25
+            },
+            "orders": {
+              "type": "list",
+              "length": 2,
+              "item_type": "dict",
+              "fields": {
+                "id": {
+                  "type": "str",
+                  "value": "order_A"
+                },
+                "amount": {
+                  "type": "int",
+                  "value": 100
+                }
+              }
+            }
+          }
+        },
+        "sample_size": 1000,
+        "lazy_id_generation": true
+      },
+      "mappings": []
+    },
+    {
+      "step_id": "step_001",
+      "step_name": "数据清洗",
+      "operation": "fillna",
+      "description": "填充缺失的age字段",
+      "timestamp": "2026-06-15T10:12:18.048767",
+      "metadata": {},
+      "mappings": [
+        {
+          "from_ids": [
+            "root[1].age"
+          ],
+          "to_id": "root[1].age_cleaned",
+          "operation": "fillna(0)",
+          "timestamp": "2026-06-15T10:12:18.049806",
+          "value_info": {
+            "root[1].age": {
+              "old": null,
+              "new": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "step_id": "step_002",
+      "step_name": "计算总金额",
+      "operation": "sum",
+      "description": "计算每个用户的订单总金额",
+      "timestamp": "2026-06-15T10:12:18.050448",
+      "metadata": {},
+      "mappings": [
+        {
+          "from_ids": [
+            "root[0].orders[0].amount",
+            "root[0].orders[1].amount"
+          ],
+          "to_id": "root[0].total_amount",
+          "operation": "sum(orders[*].amount)",
+          "timestamp": "2026-06-15T10:12:18.051714",
+          "value_info": {
+            "root[0].orders[0].amount": 100,
+            "root[0].orders[1].amount": 200,
+            "root[0].total_amount": 300
+          }
+        }
+      ]
+    }
+  ]
+}

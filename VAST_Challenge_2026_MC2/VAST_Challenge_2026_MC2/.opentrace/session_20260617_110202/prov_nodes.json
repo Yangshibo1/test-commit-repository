@@ -1,0 +1,350 @@
+{
+  "nodes": {
+    "entity_a6b20a6c": {
+      "id": "entity_a6b20a6c",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:\\Users\\83734\\Desktop\\opentrace\\VAST_Challenge_2026_MC2\\VAST_Challenge_2026_MC2\\MC2 data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:02:06.672902"
+    },
+    "entity_ddf36651": {
+      "id": "entity_ddf36651",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:\\Users\\83734\\Desktop\\opentrace\\VAST_Challenge_2026_MC2\\VAST_Challenge_2026_MC2\\org_chart.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:02:06.672920"
+    },
+    "entity_fd5611e9": {
+      "id": "entity_fd5611e9",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\loaded_data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:02:06.672930"
+    },
+    "activity_78ba359d": {
+      "id": "activity_78ba359d",
+      "type": "activity",
+      "activity_type": "load",
+      "description": "加载MC2原始数据和组织架构",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:02:06.672939"
+    },
+    "agent_fe0d3a69": {
+      "id": "agent_fe0d3a69",
+      "type": "agent",
+      "agent_type": "script",
+      "name": "step1_load_data",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:02:06.672948"
+    },
+    "entity_64b8c576": {
+      "id": "entity_64b8c576",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\loaded_data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:02:43.634460"
+    },
+    "entity_5c7a45ec": {
+      "id": "entity_5c7a45ec",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step2_key_events.json",
+      "attributes": {
+        "events": 0,
+        "john_saidit": 0
+      },
+      "timestamp": "2026-06-17T11:02:43.634478"
+    },
+    "activity_05902cd5": {
+      "id": "activity_05902cd5",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "查找关键时刻的John Windward SaidIT事件",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:02:43.634488"
+    },
+    "agent_22f05d9e": {
+      "id": "agent_22f05d9e",
+      "type": "agent",
+      "agent_type": "script",
+      "name": "step2_find_key_event",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:02:43.634495"
+    },
+    "entity_06794bc7": {
+      "id": "entity_06794bc7",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:\\Users\\83734\\Desktop\\opentrace\\VAST_Challenge_2026_MC2\\VAST_Challenge_2026_MC2\\MC2 data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:03:59.724398"
+    },
+    "entity_f84eea50": {
+      "id": "entity_f84eea50",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step2_suspect_event.json",
+      "attributes": {
+        "target_event": 373902
+      },
+      "timestamp": "2026-06-17T11:03:59.724417"
+    },
+    "activity_930c8bfd": {
+      "id": "activity_930c8bfd",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "深入分析可疑SaidIT事件及其前因后果",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:03:59.724429"
+    },
+    "agent_65a932d8": {
+      "id": "agent_65a932d8",
+      "type": "agent",
+      "agent_type": "script",
+      "name": "step2_focus_event",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:03:59.724437"
+    },
+    "entity_40ec0ace": {
+      "id": "entity_40ec0ace",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:\\Users\\83734\\Desktop\\opentrace\\VAST_Challenge_2026_MC2\\VAST_Challenge_2026_MC2\\MC2 data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:05:02.450226"
+    },
+    "entity_2e0f766c": {
+      "id": "entity_2e0f766c",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step2_suspect_event.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:05:02.450248"
+    },
+    "entity_fac02cfb": {
+      "id": "entity_fac02cfb",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step3_swiftwren_origin.json",
+      "attributes": {
+        "events": 191,
+        "agents": 18
+      },
+      "timestamp": "2026-06-17T11:05:02.450256"
+    },
+    "activity_30c00f82": {
+      "id": "activity_30c00f82",
+      "type": "activity",
+      "activity_type": "trace",
+      "description": "追踪SwiftWren.txt起源和Agent级联传播链",
+      "attributes": {
+        "duration_hours": 188.32055555555556
+      },
+      "timestamp": "2026-06-17T11:05:02.450264"
+    },
+    "agent_352d9cff": {
+      "id": "agent_352d9cff",
+      "type": "agent",
+      "agent_type": "script",
+      "name": "step3_trace_swiftwren",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:05:02.450272"
+    },
+    "entity_da42d35c": {
+      "id": "entity_da42d35c",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:\\Users\\83734\\Desktop\\opentrace\\VAST_Challenge_2026_MC2\\VAST_Challenge_2026_MC2\\MC2 data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:06:26.811939"
+    },
+    "entity_65d75bef": {
+      "id": "entity_65d75bef",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step3_swiftwren_origin.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:06:26.811958"
+    },
+    "entity_025f79dd": {
+      "id": "entity_025f79dd",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step4_content_analysis.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:06:26.811966"
+    },
+    "activity_57c3d523": {
+      "id": "activity_57c3d523",
+      "type": "activity",
+      "activity_type": "analyze",
+      "description": "分析内容质量和历史异常模式",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:06:26.811973"
+    },
+    "agent_ac8b349c": {
+      "id": "agent_ac8b349c",
+      "type": "agent",
+      "agent_type": "script",
+      "name": "step4_analyze_content",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:06:26.811982"
+    },
+    "entity_c3c34a0b": {
+      "id": "entity_c3c34a0b",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:\\Users\\83734\\Desktop\\opentrace\\VAST_Challenge_2026_MC2\\VAST_Challenge_2026_MC2\\MC2 data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:07:25.513308"
+    },
+    "entity_89dd9311": {
+      "id": "entity_89dd9311",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step4_content_analysis.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:07:25.513329"
+    },
+    "entity_e01b26c0": {
+      "id": "entity_e01b26c0",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step4b_anomaly_comparison.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:07:25.513337"
+    },
+    "activity_4bc1ed4f": {
+      "id": "activity_4bc1ed4f",
+      "type": "activity",
+      "activity_type": "compare",
+      "description": "比较三个异常案例的模式",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:07:25.513345"
+    },
+    "agent_096aebac": {
+      "id": "agent_096aebac",
+      "type": "agent",
+      "agent_type": "script",
+      "name": "step4b_compare_anomalies",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:07:25.513353"
+    },
+    "entity_60c4a15d": {
+      "id": "entity_60c4a15d",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:\\Users\\83734\\Desktop\\opentrace\\VAST_Challenge_2026_MC2\\VAST_Challenge_2026_MC2\\MC2 data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:08:20.063499"
+    },
+    "entity_cda89592": {
+      "id": "entity_cda89592",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step4b_anomaly_comparison.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:08:20.063517"
+    },
+    "entity_ac36972e": {
+      "id": "entity_ac36972e",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step4c_full_trace.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:08:20.063525"
+    },
+    "activity_1d2cff5c": {
+      "id": "activity_1d2cff5c",
+      "type": "activity",
+      "activity_type": "trace",
+      "description": "完整追踪三个文件的级联传播",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:08:20.063532"
+    },
+    "agent_3145f5a6": {
+      "id": "agent_3145f5a6",
+      "type": "agent",
+      "agent_type": "script",
+      "name": "step4c_full_trace",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:08:20.063540"
+    },
+    "entity_0e525def": {
+      "id": "entity_0e525def",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\loaded_data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:09:18.803933"
+    },
+    "entity_ec08e134": {
+      "id": "entity_ec08e134",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step2_suspect_event.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:09:18.803952"
+    },
+    "entity_c44b98df": {
+      "id": "entity_c44b98df",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step3_swiftwren_origin.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:09:18.803960"
+    },
+    "entity_05a338e9": {
+      "id": "entity_05a338e9",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step4_content_analysis.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:09:18.803965"
+    },
+    "entity_35d41524": {
+      "id": "entity_35d41524",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step4b_anomaly_comparison.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:09:18.803970"
+    },
+    "entity_9404ff87": {
+      "id": "entity_9404ff87",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace\\session_20260617_110202\\step4c_full_trace.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:09:18.803975"
+    },
+    "entity_39c14f2c": {
+      "id": "entity_39c14f2c",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": ".opentrace\\session_20260617_110202\\final_report.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:09:18.803980"
+    },
+    "activity_5fbb5350": {
+      "id": "activity_5fbb5350",
+      "type": "activity",
+      "activity_type": "aggregate",
+      "description": "汇总所有分析结果生成最终报告",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:09:18.803987"
+    },
+    "agent_9c126ee6": {
+      "id": "agent_9c126ee6",
+      "type": "agent",
+      "agent_type": "script",
+      "name": "step5_final_report",
+      "attributes": {},
+      "timestamp": "2026-06-17T11:09:18.803994"
+    }
+  }
+}

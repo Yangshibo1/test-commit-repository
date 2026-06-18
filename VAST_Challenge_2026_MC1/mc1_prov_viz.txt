@@ -1,0 +1,190 @@
+======================================================================
+PROV DAG 可视化
+======================================================================
+
+节点统计:
+  实体: 16
+  活动: 10
+  代理: 4
+  边: 37
+
+======================================================================
+数据流图 (实体→处理→产物)
+======================================================================
+
+【输入】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json
+      属性: type=MC1_final_00.json
+      ↓ [transform] 加载MC1数据
+      by: init_session
+      【输出】working_data.json
+            属性: status=loaded
+
+【输入】working_data.json
+      ↓ [filter] 提取关键事件
+      by: analyze_q1
+      【输出】key_events.json
+            属性: count=23
+      ↓ [transform] 分析通信模式
+      by: analyze_q1
+      【输出】communications.json
+            属性: count=912
+
+【输入】key_events.json
+      属性: count=23
+      ↓ [aggregate] 汇总问题1结果
+      by: analyze_q1
+      【输出】question1_results.json
+
+【输入】communications.json
+      属性: count=912
+      ↓ [aggregate] 汇总问题1结果
+      by: analyze_q1
+      【输出】question1_results.json
+
+【输入】working_data.json
+      ↓ [filter] 提取正常期数据
+      by: analyze_q2
+      【输出】typical_behavior.json
+            属性: comms=363
+      ↓ [filter] 提取危机期数据
+      by: analyze_q2
+      【输出】crisis_behavior.json
+            属性: comms=549
+
+【输入】typical_behavior.json
+      属性: comms=363
+      ↓ [transform] 对比行为差异
+      by: analyze_q2
+      【输出】question2_results.json
+
+【输入】crisis_behavior.json
+      属性: comms=549
+      ↓ [transform] 对比行为差异
+      by: analyze_q2
+      【输出】question2_results.json
+
+【输入】working_data.json
+      ↓ [filter] 检测警告信号
+      by: analyze_q3
+      【输出】warning_signs.json
+            属性: count=21
+      ↓ [filter] 识别行为偏差
+      by: analyze_q3
+      【输出】behavior_deviations.json
+            属性: count=360
+
+【输入】warning_signs.json
+      属性: count=21
+      ↓ [aggregate] 汇总升级失败分析
+      by: analyze_q3
+      【输出】question3_results.json
+
+【输入】behavior_deviations.json
+      属性: count=360
+      ↓ [aggregate] 汇总升级失败分析
+      by: analyze_q3
+      【输出】question3_results.json
+
+======================================================================
+节点详情
+======================================================================
+
+ENTITY 节点:
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json (属性: {'type': 'MC1_final_00.json'})
+  - working_data.json (属性: {'status': 'loaded'})
+  - working_data.json (属性: {})
+  - key_events.json (属性: {'count': 23})
+  - communications.json (属性: {'count': 912})
+  - question1_results.json (属性: {})
+  - working_data.json (属性: {})
+  - typical_behavior.json (属性: {'comms': 363})
+  - crisis_behavior.json (属性: {'comms': 549})
+  - behavior_comparison.json (属性: {})
+  - question2_results.json (属性: {})
+  - working_data.json (属性: {})
+  - warning_signs.json (属性: {'count': 21})
+  - behavior_deviations.json (属性: {'count': 360})
+  - suppression_indicators.json (属性: {'count': 10})
+  - question3_results.json (属性: {})
+
+ACTIVITY 节点:
+  - 加载MC1数据 (属性: {'operation': 'json_load'})
+  - 提取关键事件 (属性: {'events_found': 23})
+  - 分析通信模式 (属性: {'communications': 912})
+  - 汇总问题1结果 (属性: {})
+  - 提取正常期数据 (属性: {})
+  - 提取危机期数据 (属性: {})
+  - 对比行为差异 (属性: {'new_actions': 1})
+  - 检测警告信号 (属性: {'warnings': 21})
+  - 识别行为偏差 (属性: {'deviations': 360})
+  - 汇总升级失败分析 (属性: {})
+
+AGENT 节点:
+  - init_session (属性: {'step': 'data_loading'})
+  - analyze_q1 (属性: {'step': 'q1_analysis'})
+  - analyze_q2 (属性: {'step': 'q2_analysis'})
+  - analyze_q3 (属性: {'step': 'q3_analysis'})
+
+======================================================================
+关系详情
+======================================================================
+  activity_d21ad2c4 --[used]--> entity_7e7730c1
+  entity_9c8b3cca --[wasGeneratedBy]--> activity_d21ad2c4
+  activity_d21ad2c4 --[wasAssociatedWith]--> agent_dd586b3d
+  entity_9c8b3cca --[wasDerivedFrom]--> entity_7e7730c1
+  activity_2ae60441 --[used]--> entity_f58a2ece
+  entity_597c8f17 --[wasGeneratedBy]--> activity_2ae60441
+  activity_e603e391 --[used]--> entity_f58a2ece
+  entity_b1cb60f7 --[wasGeneratedBy]--> activity_e603e391
+  activity_1ac56ca6 --[used]--> entity_597c8f17
+  activity_1ac56ca6 --[used]--> entity_b1cb60f7
+  ... 还有 27 个关系
+
+======================================================================
+Mermaid 格式 (可在支持 Mermaid 的平台渲染)
+======================================================================
+graph TD
+    classDef entity fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef artifact fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef agent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,stroke-dasharray: 5 5
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC1_MC1_final_00_json["MC1_final_00.json"]:::entity
+    working_data_json["working_data.json"]:::entity
+    key_events_json["key_events.json"]:::artifact
+    communications_json["communications.json"]:::artifact
+    question1_results_json["question1_results.json"]:::artifact
+    typical_behavior_json["typical_behavior.json"]:::artifact
+    crisis_behavior_json["crisis_behavior.json"]:::artifact
+    question2_results_json["question2_results.json"]:::artifact
+    warning_signs_json["warning_signs.json"]:::artifact
+    behavior_deviations_json["behavior_deviations.json"]:::artifact
+    question3_results_json["question3_results.json"]:::artifact
+    agent_dd586b3d["init_session"]:::agent
+    agent_d19511af["analyze_q1"]:::agent
+    agent_7cf0bddd["analyze_q2"]:::agent
+    agent_5ef4280a["analyze_q3"]:::agent
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC1_MC1_final_00_json ==>|"transform"| agent_dd586b3d
+    agent_dd586b3d -.->|output| working_data_json
+    working_data_json ==>|"filter"| agent_d19511af
+    agent_d19511af -.->|output| key_events_json
+    working_data_json ==>|"transform"| agent_d19511af
+    agent_d19511af -.->|output| communications_json
+    key_events_json ==>|"aggregate"| agent_d19511af
+    agent_d19511af -.->|output| question1_results_json
+    communications_json ==>|"aggregate"| agent_d19511af
+    agent_d19511af -.->|output| question1_results_json
+    working_data_json ==>|"filter"| agent_7cf0bddd
+    agent_7cf0bddd -.->|output| typical_behavior_json
+    working_data_json ==>|"filter"| agent_7cf0bddd
+    agent_7cf0bddd -.->|output| crisis_behavior_json
+    typical_behavior_json ==>|"transform"| agent_7cf0bddd
+    agent_7cf0bddd -.->|output| question2_results_json
+    crisis_behavior_json ==>|"transform"| agent_7cf0bddd
+    agent_7cf0bddd -.->|output| question2_results_json
+    working_data_json ==>|"filter"| agent_5ef4280a
+    agent_5ef4280a -.->|output| warning_signs_json
+    working_data_json ==>|"filter"| agent_5ef4280a
+    agent_5ef4280a -.->|output| behavior_deviations_json
+    warning_signs_json ==>|"aggregate"| agent_5ef4280a
+    agent_5ef4280a -.->|output| question3_results_json
+    behavior_deviations_json ==>|"aggregate"| agent_5ef4280a
+    agent_5ef4280a -.->|output| question3_results_json

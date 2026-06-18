@@ -1,0 +1,150 @@
+======================================================================
+PROV DAG 可视化
+======================================================================
+
+节点统计:
+  实体: 13
+  活动: 5
+  代理: 5
+  边: 24
+
+======================================================================
+数据流图 (实体→处理→产物)
+======================================================================
+
+【输入】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json
+      属性: format=json, events=185147
+      ↓ [data_extraction] 从 MC2 data.json 提取 SaidIT 帖子事件
+      by: SaidIT Posts Extractor
+      【输出】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_saidit_posts.json
+            属性: format=json, rows=133, forums=2
+      ↓ [data_extraction] 从 MC2 data.json 提取 SaidIT 帖子事件
+      by: SaidIT Posts Extractor
+      【输出】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_stats.json
+            属性: type=summary_statistics
+
+【输入】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_saidit_posts.json
+      属性: format=json
+      ↓ [pattern_analysis] 分析 John Windward SaidIT 帖子模式
+      by: John Windward Analyzer
+      【输出】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step2_john_analysis.json
+            属性: author=John Windward, posts_analyzed=19
+
+【输入】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_saidit_posts.json
+      属性: format=json
+      ↓ [comparative_analysis] 对比分析所有 SaidIT 作者的发帖模式
+      by: Author Comparison Analyzer
+      【输出】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step3_author_comparison.json
+            属性: authors_compared=6, type=comparative_analysis
+
+【输入】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step3_author_comparison.json
+      属性: format=json
+      ↓ [anomaly_detection] 检测 John Windward SaidIT 帖子异常模式
+      by: Anomaly Detector
+      【输出】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step4_anomaly_detection.json
+            属性: anomalies_detected=2, target=John Windward
+
+【输入】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step4_anomaly_detection.json
+      属性: format=json
+      ↓ [report_generation] 汇总分析结果生成最终报告
+      by: Report Generator
+      【输出】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/final_report.json
+            属性: type=final_summary, findings_count=4
+
+【输入】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step2_john_analysis.json
+      属性: format=json
+      ↓ [report_generation] 汇总分析结果生成最终报告
+      by: Report Generator
+      【输出】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/final_report.json
+            属性: type=final_summary, findings_count=4
+
+【输入】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_stats.json
+      属性: format=json
+      ↓ [report_generation] 汇总分析结果生成最终报告
+      by: Report Generator
+      【输出】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/final_report.json
+            属性: type=final_summary, findings_count=4
+
+======================================================================
+节点详情
+======================================================================
+
+ENTITY 节点:
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json (属性: {'format': 'json', 'events': 185147})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_saidit_posts.json (属性: {'format': 'json', 'rows': 133, 'forums': 2})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_stats.json (属性: {'type': 'summary_statistics'})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_saidit_posts.json (属性: {'format': 'json'})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step2_john_analysis.json (属性: {'author': 'John Windward', 'posts_analyzed': 19})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_saidit_posts.json (属性: {'format': 'json'})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step3_author_comparison.json (属性: {'authors_compared': 6, 'type': 'comparative_analysis'})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step3_author_comparison.json (属性: {'format': 'json'})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step4_anomaly_detection.json (属性: {'anomalies_detected': 2, 'target': 'John Windward'})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step4_anomaly_detection.json (属性: {'format': 'json'})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step2_john_analysis.json (属性: {'format': 'json'})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_stats.json (属性: {'format': 'json'})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/final_report.json (属性: {'type': 'final_summary', 'findings_count': 4})
+
+ACTIVITY 节点:
+  - 从 MC2 data.json 提取 SaidIT 帖子事件 (属性: {'filter': 'short_name=post_saidit'})
+  - 分析 John Windward SaidIT 帖子模式 (属性: {'focus': 'content_patterns, timing, topics'})
+  - 对比分析所有 SaidIT 作者的发帖模式 (属性: {'metrics': 'post_count, content_length, patterns'})
+  - 检测 John Windward SaidIT 帖子异常模式 (属性: {'method': 'comparative_baseline_analysis'})
+  - 汇总分析结果生成最终报告 (属性: {'step': 5, 'type': 'final_summary'})
+
+AGENT 节点:
+  - SaidIT Posts Extractor (属性: {'version': '1.0'})
+  - John Windward Analyzer (属性: {'version': '1.0'})
+  - Author Comparison Analyzer (属性: {'version': '1.0'})
+  - Anomaly Detector (属性: {'version': '1.0'})
+  - Report Generator (属性: {'version': '1.0'})
+
+======================================================================
+关系详情
+======================================================================
+  activity_c716e60c --[used]--> entity_f9e65021
+  entity_6330b8c1 --[wasGeneratedBy]--> activity_c716e60c
+  entity_033a5df8 --[wasGeneratedBy]--> activity_c716e60c
+  activity_c716e60c --[wasAssociatedWith]--> agent_40d0218f
+  entity_6330b8c1 --[wasDerivedFrom]--> entity_f9e65021
+  entity_033a5df8 --[wasDerivedFrom]--> entity_f9e65021
+  activity_8263b6fd --[used]--> entity_23da0b61
+  entity_5134efe8 --[wasGeneratedBy]--> activity_8263b6fd
+  activity_8263b6fd --[wasAssociatedWith]--> agent_0d383729
+  entity_5134efe8 --[wasDerivedFrom]--> entity_23da0b61
+  ... 还有 14 个关系
+
+======================================================================
+Mermaid 格式 (可在支持 Mermaid 的平台渲染)
+======================================================================
+graph TD
+    classDef entity fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef artifact fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef agent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,stroke-dasharray: 5 5
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json["MC2 data.json"]:::entity
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step1_saidit_posts_json["step1_saidit_posts.json"]:::entity
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step1_stats_json["step1_stats.json"]:::entity
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step2_john_analysis_json["step2_john_analysis.json"]:::entity
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step3_author_comparison_json["step3_author_comparison.json"]:::entity
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step4_anomaly_detection_json["step4_anomaly_detection.json"]:::entity
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_final_report_json["final_report.json"]:::entity
+    agent_40d0218f["SaidIT Posts Extractor"]:::agent
+    agent_0d383729["John Windward Analyzer"]:::agent
+    agent_a3891128["Author Comparison Analyzer"]:::agent
+    agent_0a82f6ea["Anomaly Detector"]:::agent
+    agent_ef354996["Report Generator"]:::agent
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json ==>|"data_extraction"| agent_40d0218f
+    agent_40d0218f -.->|output| _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step1_saidit_posts_json
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json ==>|"data_extraction"| agent_40d0218f
+    agent_40d0218f -.->|output| _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step1_stats_json
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step1_saidit_posts_json ==>|"pattern_analysis"| agent_0d383729
+    agent_0d383729 -.->|output| _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step2_john_analysis_json
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step1_saidit_posts_json ==>|"comparative_analysis"| agent_a3891128
+    agent_a3891128 -.->|output| _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step3_author_comparison_json
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step3_author_comparison_json ==>|"anomaly_detection"| agent_0a82f6ea
+    agent_0a82f6ea -.->|output| _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step4_anomaly_detection_json
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step4_anomaly_detection_json ==>|"report_generation"| agent_ef354996
+    agent_ef354996 -.->|output| _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_final_report_json
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step2_john_analysis_json ==>|"report_generation"| agent_ef354996
+    agent_ef354996 -.->|output| _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_final_report_json
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_step1_stats_json ==>|"report_generation"| agent_ef354996
+    agent_ef354996 -.->|output| _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_151553_final_report_json

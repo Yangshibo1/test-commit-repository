@@ -1,0 +1,24 @@
+{
+  "step_id": "step_002",
+  "step_name": "计算总金额",
+  "operation": "sum",
+  "description": "计算每个用户的订单总金额",
+  "timestamp": "2026-06-15T10:12:18.050448",
+  "metadata": {},
+  "mappings": [
+    {
+      "from_ids": [
+        "root[0].orders[0].amount",
+        "root[0].orders[1].amount"
+      ],
+      "to_id": "root[0].total_amount",
+      "operation": "sum(orders[*].amount)",
+      "timestamp": "2026-06-15T10:12:18.051714",
+      "value_info": {
+        "root[0].orders[0].amount": 100,
+        "root[0].orders[1].amount": 200,
+        "root[0].total_amount": 300
+      }
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "edges": [
+    {
+      "id": "edge_66cc0c23",
+      "from": "activity_d9d8ed6a",
+      "to": "entity_40b3dcfa",
+      "relation": "used",
+      "timestamp": "2026-06-17T10:46:16.115475",
+      "attributes": {}
+    },
+    {
+      "id": "edge_6bfa31b1",
+      "from": "entity_448d4b26",
+      "to": "activity_d9d8ed6a",
+      "relation": "wasGeneratedBy",
+      "timestamp": "2026-06-17T10:46:16.115484",
+      "attributes": {}
+    },
+    {
+      "id": "edge_552abb15",
+      "from": "activity_d9d8ed6a",
+      "to": "agent_b89df6ae",
+      "relation": "wasAssociatedWith",
+      "timestamp": "2026-06-17T10:46:16.115490",
+      "attributes": {}
+    },
+    {
+      "id": "edge_7496d622",
+      "from": "entity_448d4b26",
+      "to": "entity_40b3dcfa",
+      "relation": "wasDerivedFrom",
+      "timestamp": "2026-06-17T10:46:16.115497",
+      "attributes": {}
+    }
+  ]
+}

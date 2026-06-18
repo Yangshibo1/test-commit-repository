@@ -1,0 +1,68 @@
+{
+  "edges": [
+    {
+      "id": "edge_bfe94943",
+      "from": "activity_9d7305cf",
+      "to": "entity_823236c0",
+      "relation": "used",
+      "timestamp": "2026-06-16T17:34:19.099771",
+      "attributes": {}
+    },
+    {
+      "id": "edge_1b3fa6f7",
+      "from": "entity_1fe96494",
+      "to": "activity_9d7305cf",
+      "relation": "wasGeneratedBy",
+      "timestamp": "2026-06-16T17:34:19.120657",
+      "attributes": {}
+    },
+    {
+      "id": "edge_568615d9",
+      "from": "activity_9d7305cf",
+      "to": "agent_1c6bf471",
+      "relation": "wasAssociatedWith",
+      "timestamp": "2026-06-16T17:34:19.141399",
+      "attributes": {}
+    },
+    {
+      "id": "edge_0a47e86e",
+      "from": "entity_1fe96494",
+      "to": "entity_823236c0",
+      "relation": "wasDerivedFrom",
+      "timestamp": "2026-06-16T17:34:19.162176",
+      "attributes": {}
+    },
+    {
+      "id": "edge_46df247b",
+      "from": "activity_3d137b42",
+      "to": "entity_7bc6ae44",
+      "relation": "used",
+      "timestamp": "2026-06-16T17:34:25.179087",
+      "attributes": {}
+    },
+    {
+      "id": "edge_9ffeb6e2",
+      "from": "entity_ee7bd7f4",
+      "to": "activity_3d137b42",
+      "relation": "wasGeneratedBy",
+      "timestamp": "2026-06-16T17:34:25.199891",
+      "attributes": {}
+    },
+    {
+      "id": "edge_90fb5e06",
+      "from": "activity_3d137b42",
+      "to": "agent_e29549e9",
+      "relation": "wasAssociatedWith",
+      "timestamp": "2026-06-16T17:34:25.222190",
+      "attributes": {}
+    },
+    {
+      "id": "edge_706ee19c",
+      "from": "entity_ee7bd7f4",
+      "to": "entity_7bc6ae44",
+      "relation": "wasDerivedFrom",
+      "timestamp": "2026-06-16T17:34:25.245484",
+      "attributes": {}
+    }
+  ]
+}

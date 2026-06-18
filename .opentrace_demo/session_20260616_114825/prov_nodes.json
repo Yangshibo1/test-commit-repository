@@ -1,0 +1,167 @@
+{
+  "nodes": {
+    "entity_8a050199": {
+      "id": "entity_8a050199",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "sales_data.csv",
+      "attributes": {
+        "rows": 100,
+        "operation": "原始数据"
+      },
+      "timestamp": "2026-06-16T11:48:25.125907"
+    },
+    "entity_fbb0fae1": {
+      "id": "entity_fbb0fae1",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "high_sales_data.csv",
+      "attributes": {
+        "rows": 85,
+        "filter": "sales > 300"
+      },
+      "timestamp": "2026-06-16T11:48:25.125923"
+    },
+    "activity_153d6911": {
+      "id": "activity_153d6911",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "筛选销量大于300的记录",
+      "attributes": {
+        "condition": "sales > 300",
+        "language": "python_pandas"
+      },
+      "timestamp": "2026-06-16T11:48:25.125935"
+    },
+    "agent_49511b3e": {
+      "id": "agent_49511b3e",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "claude_analysis_step1",
+      "attributes": {
+        "step": 1,
+        "description": "高销量筛选"
+      },
+      "timestamp": "2026-06-16T11:48:25.125943"
+    },
+    "entity_18ec4356": {
+      "id": "entity_18ec4356",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "high_sales_data.csv",
+      "attributes": {
+        "rows": 85
+      },
+      "timestamp": "2026-06-16T11:48:25.152776"
+    },
+    "entity_1258d93e": {
+      "id": "entity_1258d93e",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "product_stats.csv",
+      "attributes": {
+        "shape": [
+          3,
+          4
+        ],
+        "operation": "聚合统计"
+      },
+      "timestamp": "2026-06-16T11:48:25.152791"
+    },
+    "activity_ac6dde5d": {
+      "id": "activity_ac6dde5d",
+      "type": "activity",
+      "activity_type": "aggregate",
+      "description": "按产品计算销售统计",
+      "attributes": {
+        "group_by": "product",
+        "aggregations": [
+          "sum",
+          "mean",
+          "count"
+        ]
+      },
+      "timestamp": "2026-06-16T11:48:25.152801"
+    },
+    "agent_286b6372": {
+      "id": "agent_286b6372",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "claude_analysis_step2",
+      "attributes": {
+        "step": 2,
+        "description": "产品聚合"
+      },
+      "timestamp": "2026-06-16T11:48:25.152812"
+    },
+    "entity_8d7ce980": {
+      "id": "entity_8d7ce980",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "high_sales_data.csv",
+      "attributes": {
+        "rows": 85
+      },
+      "timestamp": "2026-06-16T11:48:25.180841"
+    },
+    "entity_f8960012": {
+      "id": "entity_f8960012",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "region_North_stats.csv",
+      "attributes": {
+        "region": "North",
+        "records": 25
+      },
+      "timestamp": "2026-06-16T11:48:25.180854"
+    },
+    "entity_5b6e8635": {
+      "id": "entity_5b6e8635",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "region_South_stats.csv",
+      "attributes": {
+        "region": "South",
+        "records": 35
+      },
+      "timestamp": "2026-06-16T11:48:25.180861"
+    },
+    "entity_6092318a": {
+      "id": "entity_6092318a",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "region_East_stats.csv",
+      "attributes": {
+        "region": "East",
+        "records": 25
+      },
+      "timestamp": "2026-06-16T11:48:25.180866"
+    },
+    "activity_3c9ea13c": {
+      "id": "activity_3c9ea13c",
+      "type": "activity",
+      "activity_type": "split",
+      "description": "按地区分叉统计",
+      "attributes": {
+        "split_by": "region",
+        "regions": [
+          "North",
+          "South",
+          "East"
+        ]
+      },
+      "timestamp": "2026-06-16T11:48:25.180872"
+    },
+    "agent_29a35f15": {
+      "id": "agent_29a35f15",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "claude_analysis_step3",
+      "attributes": {
+        "step": 3,
+        "description": "地区分叉"
+      },
+      "timestamp": "2026-06-16T11:48:25.180878"
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "step_id": "step_000",
+  "step_name": "数据加载",
+  "operation": "load_json",
+  "description": "从 VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json 加载JSON数据",
+  "timestamp": "2026-06-15T11:00:55.744763",
+  "metadata": {
+    "source": "VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json",
+    "total_rows": 1,
+    "total_size_mb": 66.99,
+    "structure": {
+      "type": "dict",
+      "keys": [
+        "description",
+        "events"
+      ],
+      "fields": {
+        "description": {
+          "type": "str",
+          "path": "description"
+        },
+        "events": {
+          "type": "list",
+          "path": "events",
+          "structure": {
+            "type": "list",
+            "length": 185147,
+            "item_type": "dict",
+            "fields": {
+              "short_name": {
+                "type": "str",
+                "value": "sent"
+              },
+              "parties": {
+                "type": "list",
+                "length": 2,
+                "item_type": "str"
+              },
+              "when": {
+                "type": "float",
+                "value": 2409423492.0
+              },
+              "details": {
+                "type": "dict",
+                "keys": [
+                  "from",
+                  "to",
+                  "subject",
+                  "status"
+                ],
+                "fields": {
+                  "from": {
+                    "type": "str",
+                    "path": "events[0].details.from"
+                  },
+                  "to": {
+                    "type": "str",
+                    "path": "events[0].details.to"
+                  },
+                  "subject": {
+                    "type": "str",
+                    "path": "events[0].details.subject"
+                  },
+                  "status": {
+                    "type": "str",
+                    "path": "events[0].details.status"
+                  }
+                }
+              },
+              "id": {
+                "type": "int",
+                "value": 15246
+              }
+            }
+          }
+        }
+      }
+    },
+    "sample_size": 1000,
+    "lazy_id_generation": true
+  },
+  "mappings": []
+}

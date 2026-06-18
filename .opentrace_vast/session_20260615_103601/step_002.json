@@ -1,0 +1,15 @@
+{
+  "step_id": "step_002",
+  "step_name": "任务传递链",
+  "operation": "queue_subordinate_task",
+  "description": "SwiftWren_further_instructions.md 在多个agent间传递",
+  "timestamp": "2026-06-15T10:36:06.521618",
+  "metadata": {
+    "chain_length": 191,
+    "duration_days": 8,
+    "unique_agents": 121,
+    "first_event_id": 21202,
+    "last_event_id": 373913
+  },
+  "mappings": []
+}

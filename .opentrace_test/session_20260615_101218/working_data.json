@@ -1,0 +1,34 @@
+[
+  {
+    "id": "user_001",
+    "name": "Alice",
+    "age": 25,
+    "orders": [
+      {
+        "id": "order_A",
+        "amount": 100
+      },
+      {
+        "id": "order_B",
+        "amount": 200
+      }
+    ]
+  },
+  {
+    "id": "user_002",
+    "name": "Bob",
+    "age": null,
+    "orders": [
+      {
+        "id": "order_C",
+        "amount": 150
+      }
+    ]
+  },
+  {
+    "id": "user_003",
+    "name": "Charlie",
+    "age": 35,
+    "orders": []
+  }
+]

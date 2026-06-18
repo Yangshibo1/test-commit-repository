@@ -1,0 +1,151 @@
+======================================================================
+PROV DAG 可视化
+======================================================================
+
+节点统计:
+  实体: 13
+  活动: 4
+  代理: 4
+  边: 25
+
+======================================================================
+数据流图 (实体→处理→产物)
+======================================================================
+
+【输入】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json
+      属性: file_size_mb=unknown, record_count=unknown, format=json, description=VAST MC1 完整数据集 - TenantThread 并购泄露事件
+      ↓ [data_loading] 初始化 OpenTrace 会话并加载原始数据
+      by: VAST_MC1_Analyzer
+      【输出】session_20260617_115027
+            属性: purpose=VAST MC1 数据血缘追踪, task=TenantThread 并购泄露分析
+
+【输入】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json
+      属性: format=json
+      ↓ [data_analysis] 生成数据集摘要统计 - 轮次、通信、Agents 概览
+      by: VAST_MC1_Analyzer
+      【输出】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/.opentrace/data_summary.json
+            属性: record_type=summary_statistics, rounds=23, communications=912, agents=7, date_range=2046-05-17 to 2046-06-05
+
+【输入】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json
+      ↓ [pattern_analysis] 分析社交媒体通信和泄露路径，识别关键时间节点
+      by: VAST_MC1_Analyzer
+      【输出】social_media_analysis.json
+            属性: description=社交媒体和泄露路径分析, social_media_comms=220, leak_related_comms=45, key_findings=CivicLoom 员工在 5-29 点赞帖子，SaltWind 报道逐步揭示并购信息
+      ↓ [pattern_analysis] 分析社交媒体通信和泄露路径，识别关键时间节点
+      by: VAST_MC1_Analyzer
+      【输出】key_events.json
+            属性: description=关键事件时间线, first_civicloom_mention=2046-05-25T09:00:00, first_embargo_mention=2046-05-30T09:00:00, first_saltwind_article=2046-05-31T09:00:00
+
+【输入】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json
+      ↓ [comprehensive_analysis] 完成 VAST MC1 数据分析，回答所有核心问题
+      by: VAST_MC1_Analyzer
+      【输出】final_report.json
+            属性: title=VAST MC1 分析报告, conclusion=意外暴露导致的非故意泄露, key_finding=CivicLoom 员工点赞事件是关键转折点
+
+【输入】data_summary.json
+      ↓ [comprehensive_analysis] 完成 VAST MC1 数据分析，回答所有核心问题
+      by: VAST_MC1_Analyzer
+      【输出】final_report.json
+            属性: title=VAST MC1 分析报告, conclusion=意外暴露导致的非故意泄露, key_finding=CivicLoom 员工点赞事件是关键转折点
+
+【输入】social_media_analysis.json
+      ↓ [comprehensive_analysis] 完成 VAST MC1 数据分析，回答所有核心问题
+      by: VAST_MC1_Analyzer
+      【输出】final_report.json
+            属性: title=VAST MC1 分析报告, conclusion=意外暴露导致的非故意泄露, key_finding=CivicLoom 员工点赞事件是关键转折点
+
+【输入】key_events.json
+      ↓ [comprehensive_analysis] 完成 VAST MC1 数据分析，回答所有核心问题
+      by: VAST_MC1_Analyzer
+      【输出】final_report.json
+            属性: title=VAST MC1 分析报告, conclusion=意外暴露导致的非故意泄露, key_finding=CivicLoom 员工点赞事件是关键转折点
+
+【输入】civicloom_incident.json
+      ↓ [comprehensive_analysis] 完成 VAST MC1 数据分析，回答所有核心问题
+      by: VAST_MC1_Analyzer
+      【输出】final_report.json
+            属性: title=VAST MC1 分析报告, conclusion=意外暴露导致的非故意泄露, key_finding=CivicLoom 员工点赞事件是关键转折点
+
+======================================================================
+节点详情
+======================================================================
+
+ENTITY 节点:
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json (属性: {'file_size_mb': 'unknown', 'record_count': 'unknown', 'format': 'json', 'description': 'VAST MC1 完整数据集 - TenantThread 并购泄露事件'})
+  - session_20260617_115027 (属性: {'purpose': 'VAST MC1 数据血缘追踪', 'task': 'TenantThread 并购泄露分析'})
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json (属性: {'format': 'json'})
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/.opentrace/data_summary.json (属性: {'record_type': 'summary_statistics', 'rounds': 23, 'communications': 912, 'agents': 7, 'date_range': '2046-05-17 to 2046-06-05'})
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json (属性: {})
+  - social_media_analysis.json (属性: {'description': '社交媒体和泄露路径分析', 'social_media_comms': 220, 'leak_related_comms': 45, 'key_findings': 'CivicLoom 员工在 5-29 点赞帖子，SaltWind 报道逐步揭示并购信息'})
+  - key_events.json (属性: {'description': '关键事件时间线', 'first_civicloom_mention': '2046-05-25T09:00:00', 'first_embargo_mention': '2046-05-30T09:00:00', 'first_saltwind_article': '2046-05-31T09:00:00'})
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json (属性: {})
+  - final_report.json (属性: {'title': 'VAST MC1 分析报告', 'conclusion': '意外暴露导致的非故意泄露', 'key_finding': 'CivicLoom 员工点赞事件是关键转折点'})
+  - data_summary.json (属性: {})
+  - social_media_analysis.json (属性: {})
+  - key_events.json (属性: {})
+  - civicloom_incident.json (属性: {})
+
+ACTIVITY 节点:
+  - 初始化 OpenTrace 会话并加载原始数据 (属性: {'timestamp': '2026-06-17T11:50:27', 'method': 'init_session'})
+  - 生成数据集摘要统计 - 轮次、通信、Agents 概览 (属性: {'processed_records': 912, 'output_fields': ['rounds', 'communications', 'agents', 'date_range']})
+  - 分析社交媒体通信和泄露路径，识别关键时间节点 (属性: {'focus': 'social_media_agent, media_events, civicloom_interactions', 'key_insight': 'CivicLoom 员工互动是最早的外部信号'})
+  - 完成 VAST MC1 数据分析，回答所有核心问题 (属性: {'questions_answered': 4, 'timeline_events': 9, 'agents_analyzed': 7})
+
+AGENT 节点:
+  - VAST_MC1_Analyzer (属性: {'role': '主数据分析代理', 'framework': 'OpenTrace'})
+  - VAST_MC1_Analyzer (属性: {})
+  - VAST_MC1_Analyzer (属性: {})
+  - VAST_MC1_Analyzer (属性: {'role': '主数据分析代理', 'task': 'VAST MC1 完整分析'})
+
+======================================================================
+关系详情
+======================================================================
+  activity_a39a6a35 --[used]--> entity_259cfc44
+  entity_060696f4 --[wasGeneratedBy]--> activity_a39a6a35
+  activity_a39a6a35 --[wasAssociatedWith]--> agent_7d835289
+  activity_6a3a7007 --[used]--> entity_c70286bf
+  entity_01e555b4 --[wasGeneratedBy]--> activity_6a3a7007
+  activity_6a3a7007 --[wasAssociatedWith]--> agent_05ae9588
+  entity_01e555b4 --[wasDerivedFrom]--> entity_c70286bf
+  activity_13fb3b47 --[used]--> entity_2e63a167
+  entity_23e3571b --[wasGeneratedBy]--> activity_13fb3b47
+  entity_fe4e0ae4 --[wasGeneratedBy]--> activity_13fb3b47
+  ... 还有 15 个关系
+
+======================================================================
+Mermaid 格式 (可在支持 Mermaid 的平台渲染)
+======================================================================
+graph TD
+    classDef entity fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef artifact fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef agent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,stroke-dasharray: 5 5
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC1_MC1_final_00_json["MC1_final_00.json"]:::entity
+    session_20260617_115027["session_20260617_115027"]:::entity
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC1__opentrace_data_summary_json["data_summary.json"]:::entity
+    social_media_analysis_json["social_media_analysis.json"]:::entity
+    key_events_json["key_events.json"]:::entity
+    final_report_json["final_report.json"]:::entity
+    data_summary_json["data_summary.json"]:::entity
+    civicloom_incident_json["civicloom_incident.json"]:::entity
+    agent_7d835289["VAST_MC1_Analyzer"]:::agent
+    agent_05ae9588["VAST_MC1_Analyzer"]:::agent
+    agent_fae4459f["VAST_MC1_Analyzer"]:::agent
+    agent_9416af34["VAST_MC1_Analyzer"]:::agent
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC1_MC1_final_00_json ==>|"data_loading"| agent_7d835289
+    agent_7d835289 -.->|output| session_20260617_115027
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC1_MC1_final_00_json ==>|"data_analysis"| agent_05ae9588
+    agent_05ae9588 -.->|output| C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC1__opentrace_data_summary_json
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC1_MC1_final_00_json ==>|"pattern_analysis"| agent_fae4459f
+    agent_fae4459f -.->|output| social_media_analysis_json
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC1_MC1_final_00_json ==>|"pattern_analysis"| agent_fae4459f
+    agent_fae4459f -.->|output| key_events_json
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC1_MC1_final_00_json ==>|"comprehensive_analysis"| agent_9416af34
+    agent_9416af34 -.->|output| final_report_json
+    data_summary_json ==>|"comprehensive_analysis"| agent_9416af34
+    agent_9416af34 -.->|output| final_report_json
+    social_media_analysis_json ==>|"comprehensive_analysis"| agent_9416af34
+    agent_9416af34 -.->|output| final_report_json
+    key_events_json ==>|"comprehensive_analysis"| agent_9416af34
+    agent_9416af34 -.->|output| final_report_json
+    civicloom_incident_json ==>|"comprehensive_analysis"| agent_9416af34
+    agent_9416af34 -.->|output| final_report_json

@@ -1,0 +1,67 @@
+{
+  "processing_id": "processing_step_001",
+  "step_id": "step_001",
+  "timestamp": "2026-06-15T11:17:04.676729",
+  "input": {
+    "source": "swiftwren_events",
+    "source_type": "filtered_events",
+    "filter_condition": "extract agents from parties",
+    "total_count_before": 191
+  },
+  "algorithm": {
+    "type": "aggregate_count",
+    "language": "python",
+    "code": "\nall_agents = []\nfor event in swiftwren_events:\n    parties = event.get('parties', [])\n    for party in parties:\n        if isinstance(party, str) and 'Agent/person:' in party:\n            all_agents.append(party)\nagent_counts = Counter(all_agents)\ntop_agents = agent_counts.most_common(10)\n            ",
+    "logic_description": "从事件 parties 中提取 agent，使用 Counter 统计次数"
+  },
+  "result": {
+    "format": "inline",
+    "data": {
+      "total_participations": 377,
+      "unique_agents_count": 18,
+      "top_10_agents": [
+        {
+          "agent": "Agent/person:evelyn_dock",
+          "count": 34
+        },
+        {
+          "agent": "Agent/person:gabriel_sonar",
+          "count": 32
+        },
+        {
+          "agent": "Agent/person:levi_signal",
+          "count": 30
+        },
+        {
+          "agent": "Agent/person:zoey_drydock",
+          "count": 28
+        },
+        {
+          "agent": "Agent/person:chloe_ballast",
+          "count": 26
+        },
+        {
+          "agent": "Agent/person:owen_hatch",
+          "count": 26
+        },
+        {
+          "agent": "Agent/person:victoria_rigging",
+          "count": 26
+        },
+        {
+          "agent": "Agent/person:mia_fender",
+          "count": 24
+        },
+        {
+          "agent": "Agent/person:daniel_gangway",
+          "count": 22
+        },
+        {
+          "agent": "Agent/person:liam_anchor",
+          "count": 22
+        }
+      ]
+    },
+    "item_count": 10
+  }
+}

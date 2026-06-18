@@ -1,0 +1,137 @@
+{
+  "file_analyses": {
+    "SwiftWren.txt": {
+      "events_count": 3,
+      "first_event": {
+        "when": 2409490921.0,
+        "datetime": "2046-05-09 23:02:01",
+        "short_name": "create_file",
+        "creator": "Agent/person:emma_harbor"
+      },
+      "cascade_events_count": 0,
+      "agents_involved": 2,
+      "saidit_post": {
+        "when": 2410168875.0,
+        "datetime": "2046-05-17 19:21:15",
+        "poster": "Agent/person:john_windward"
+      },
+      "duration_days": 7.846689814814815,
+      "event_sample": [
+        {
+          "when": 2409490921.0,
+          "datetime": "2046-05-09 23:02:01",
+          "short_name": "create_file",
+          "parties": [
+            "Agent/person:emma_harbor",
+            "system:file_system"
+          ]
+        },
+        {
+          "when": 2410168875.0,
+          "datetime": "2046-05-17 19:21:15",
+          "short_name": "saidit_post",
+          "parties": [
+            "Agent/person:john_windward",
+            "system:saidit"
+          ]
+        },
+        {
+          "when": 2410168877.0,
+          "datetime": "2046-05-17 19:21:17",
+          "short_name": "delete_file",
+          "parties": [
+            "Agent/person:john_windward",
+            "system:file_system"
+          ]
+        }
+      ]
+    },
+    "HiddenOrca.txt": {
+      "events_count": 2,
+      "first_event": {
+        "when": 2409569142.0,
+        "datetime": "2046-05-10 20:45:42",
+        "short_name": "saidit_post",
+        "creator": "Agent/person:john_windward"
+      },
+      "cascade_events_count": 0,
+      "agents_involved": 1,
+      "saidit_post": {
+        "when": 2409569142.0,
+        "datetime": "2046-05-10 20:45:42",
+        "poster": "Agent/person:john_windward"
+      },
+      "duration_days": 0.0,
+      "event_sample": [
+        {
+          "when": 2409569142.0,
+          "datetime": "2046-05-10 20:45:42",
+          "short_name": "saidit_post",
+          "parties": [
+            "Agent/person:john_windward",
+            "system:saidit"
+          ]
+        },
+        {
+          "when": 2409569144.0,
+          "datetime": "2046-05-10 20:45:44",
+          "short_name": "delete_file",
+          "parties": [
+            "Agent/person:john_windward",
+            "system:file_system"
+          ]
+        }
+      ]
+    },
+    "MellowOtter.txt": {
+      "events_count": 3,
+      "first_event": {
+        "when": 2409577321.0,
+        "datetime": "2046-05-10 23:02:01",
+        "short_name": "create_file",
+        "creator": "Agent/person:noah_mariner"
+      },
+      "cascade_events_count": 0,
+      "agents_involved": 2,
+      "saidit_post": {
+        "when": 2409612964.0,
+        "datetime": "2046-05-11 08:56:04",
+        "poster": "Agent/person:john_windward"
+      },
+      "duration_days": 0.4125347222222222,
+      "event_sample": [
+        {
+          "when": 2409577321.0,
+          "datetime": "2046-05-10 23:02:01",
+          "short_name": "create_file",
+          "parties": [
+            "Agent/person:noah_mariner",
+            "system:file_system"
+          ]
+        },
+        {
+          "when": 2409612964.0,
+          "datetime": "2046-05-11 08:56:04",
+          "short_name": "saidit_post",
+          "parties": [
+            "Agent/person:john_windward",
+            "system:saidit"
+          ]
+        },
+        {
+          "when": 2409612966.0,
+          "datetime": "2046-05-11 08:56:06",
+          "short_name": "delete_file",
+          "parties": [
+            "Agent/person:john_windward",
+            "system:file_system"
+          ]
+        }
+      ]
+    }
+  },
+  "summary": {
+    "total_anomalies": 3,
+    "pattern": "文件创建 -> Agent级联传播 -> SaidIT发布 -> 删除文件"
+  }
+}

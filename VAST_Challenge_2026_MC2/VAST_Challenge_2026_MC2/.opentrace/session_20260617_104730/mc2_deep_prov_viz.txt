@@ -1,0 +1,194 @@
+======================================================================
+PROV DAG 可视化
+======================================================================
+
+节点统计:
+  实体: 16
+  活动: 11
+  代理: 5
+  边: 40
+
+======================================================================
+数据流图 (实体→处理→产物)
+======================================================================
+
+【输入】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json
+      ↓ [transform] 加载MC2数据
+      by: data_loader
+      【输出】working_data.json
+
+【输入】working_data.json
+      ↓ [filter] 提取SwiftWren相关事件
+      by: swiftwren_tracer
+      【输出】swiftwren_trace.json
+            属性: events=191
+
+【输入】swiftwren_trace.json
+      属性: events=191
+      ↓ [transform] 分析来源链
+      by: swiftwren_tracer
+      【输出】swiftwren_origin_chain.json
+
+【输入】working_data.json
+      ↓ [transform] 构建Agent传播网络
+      by: cascade_analyzer
+      【输出】agent_cascade_network.json
+            属性: agents=49
+
+【输入】agent_cascade_network.json
+      属性: agents=49
+      ↓ [analyze] 分析级联传播路径
+      by: cascade_analyzer
+      【输出】cascade_analysis.json
+
+【输入】working_data.json
+      ↓ [filter] 提取关键SaidIT帖子
+      by: content_analyzer
+      【输出】saidit_posts_analysis.json
+            属性: posts=0
+      ↓ [filter] 分析John Windward帖子
+      by: content_analyzer
+      【输出】john_windward_posts.json
+            属性: posts=48
+
+【输入】saidit_posts_analysis.json
+      属性: posts=0
+      ↓ [analyze] 内容来源分析
+      by: content_analyzer
+      【输出】content_analysis_results.json
+
+【输入】john_windward_posts.json
+      属性: posts=48
+      ↓ [analyze] 内容来源分析
+      by: content_analyzer
+      【输出】content_analysis_results.json
+
+【输入】working_data.json
+      ↓ [filter] 分析内容来源模式
+      by: pattern_analyzer
+      【输出】content_sources.json
+            属性: sources=3
+      ↓ [filter] 分析删除事件模式
+      by: pattern_analyzer
+      【输出】delete_events.json
+            属性: deletes=0
+
+【输入】content_sources.json
+      属性: sources=3
+      ↓ [compare] 对比历史模式
+      by: pattern_analyzer
+      【输出】historical_pattern_analysis.json
+
+【输入】delete_events.json
+      属性: deletes=0
+      ↓ [compare] 对比历史模式
+      by: pattern_analyzer
+      【输出】historical_pattern_analysis.json
+
+======================================================================
+节点详情
+======================================================================
+
+ENTITY 节点:
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json (属性: {})
+  - working_data.json (属性: {})
+  - working_data.json (属性: {})
+  - swiftwren_trace.json (属性: {'events': 191})
+  - swiftwren_origin_chain.json (属性: {})
+  - working_data.json (属性: {})
+  - agent_cascade_network.json (属性: {'agents': 49})
+  - cascade_analysis.json (属性: {})
+  - working_data.json (属性: {})
+  - saidit_posts_analysis.json (属性: {'posts': 0})
+  - john_windward_posts.json (属性: {'posts': 48})
+  - content_analysis_results.json (属性: {})
+  - working_data.json (属性: {})
+  - content_sources.json (属性: {'sources': 3})
+  - delete_events.json (属性: {'deletes': 0})
+  - historical_pattern_analysis.json (属性: {})
+
+ACTIVITY 节点:
+  - 加载MC2数据 (属性: {})
+  - 提取SwiftWren相关事件 (属性: {})
+  - 分析来源链 (属性: {})
+  - 构建Agent传播网络 (属性: {})
+  - 分析级联传播路径 (属性: {})
+  - 提取关键SaidIT帖子 (属性: {})
+  - 分析John Windward帖子 (属性: {})
+  - 内容来源分析 (属性: {})
+  - 分析内容来源模式 (属性: {})
+  - 分析删除事件模式 (属性: {})
+  - 对比历史模式 (属性: {})
+
+AGENT 节点:
+  - data_loader (属性: {})
+  - swiftwren_tracer (属性: {})
+  - cascade_analyzer (属性: {})
+  - content_analyzer (属性: {})
+  - pattern_analyzer (属性: {})
+
+======================================================================
+关系详情
+======================================================================
+  activity_97e3e1d4 --[used]--> entity_764f3ec2
+  entity_cbca46cf --[wasGeneratedBy]--> activity_97e3e1d4
+  activity_97e3e1d4 --[wasAssociatedWith]--> agent_52029d78
+  entity_cbca46cf --[wasDerivedFrom]--> entity_764f3ec2
+  activity_cc075501 --[used]--> entity_abbc1864
+  entity_7cf5eaf3 --[wasGeneratedBy]--> activity_cc075501
+  activity_1b14f008 --[used]--> entity_7cf5eaf3
+  entity_326d8e40 --[wasGeneratedBy]--> activity_1b14f008
+  activity_cc075501 --[wasAssociatedWith]--> agent_4d1cfea9
+  activity_1b14f008 --[wasAssociatedWith]--> agent_4d1cfea9
+  ... 还有 30 个关系
+
+======================================================================
+Mermaid 格式 (可在支持 Mermaid 的平台渲染)
+======================================================================
+graph TD
+    classDef entity fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef artifact fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef agent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,stroke-dasharray: 5 5
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json["MC2 data.json"]:::entity
+    working_data_json["working_data.json"]:::entity
+    swiftwren_trace_json["swiftwren_trace.json"]:::artifact
+    swiftwren_origin_chain_json["swiftwren_origin_chain.json"]:::artifact
+    agent_cascade_network_json["agent_cascade_network.json"]:::artifact
+    cascade_analysis_json["cascade_analysis.json"]:::artifact
+    saidit_posts_analysis_json["saidit_posts_analysis.json"]:::artifact
+    john_windward_posts_json["john_windward_posts.json"]:::artifact
+    content_analysis_results_json["content_analysis_results.json"]:::artifact
+    content_sources_json["content_sources.json"]:::artifact
+    delete_events_json["delete_events.json"]:::artifact
+    historical_pattern_analysis_json["historical_pattern_analysis.json"]:::artifact
+    agent_52029d78["data_loader"]:::agent
+    agent_4d1cfea9["swiftwren_tracer"]:::agent
+    agent_6ed418b5["cascade_analyzer"]:::agent
+    agent_46a73fd1["content_analyzer"]:::agent
+    agent_a806231c["pattern_analyzer"]:::agent
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json ==>|"transform"| agent_52029d78
+    agent_52029d78 -.->|output| working_data_json
+    working_data_json ==>|"filter"| agent_4d1cfea9
+    agent_4d1cfea9 -.->|output| swiftwren_trace_json
+    swiftwren_trace_json ==>|"transform"| agent_4d1cfea9
+    agent_4d1cfea9 -.->|output| swiftwren_origin_chain_json
+    working_data_json ==>|"transform"| agent_6ed418b5
+    agent_6ed418b5 -.->|output| agent_cascade_network_json
+    agent_cascade_network_json ==>|"analyze"| agent_6ed418b5
+    agent_6ed418b5 -.->|output| cascade_analysis_json
+    working_data_json ==>|"filter"| agent_46a73fd1
+    agent_46a73fd1 -.->|output| saidit_posts_analysis_json
+    working_data_json ==>|"filter"| agent_46a73fd1
+    agent_46a73fd1 -.->|output| john_windward_posts_json
+    saidit_posts_analysis_json ==>|"analyze"| agent_46a73fd1
+    agent_46a73fd1 -.->|output| content_analysis_results_json
+    john_windward_posts_json ==>|"analyze"| agent_46a73fd1
+    agent_46a73fd1 -.->|output| content_analysis_results_json
+    working_data_json ==>|"filter"| agent_a806231c
+    agent_a806231c -.->|output| content_sources_json
+    working_data_json ==>|"filter"| agent_a806231c
+    agent_a806231c -.->|output| delete_events_json
+    content_sources_json ==>|"compare"| agent_a806231c
+    agent_a806231c -.->|output| historical_pattern_analysis_json
+    delete_events_json ==>|"compare"| agent_a806231c
+    agent_a806231c -.->|output| historical_pattern_analysis_json

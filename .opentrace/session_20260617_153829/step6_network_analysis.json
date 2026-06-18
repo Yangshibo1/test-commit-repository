@@ -1,0 +1,87 @@
+{
+  "txt_files": [
+    "SwiftWren.txt",
+    "HiddenOrca.txt",
+    "MellowOtter.txt"
+  ],
+  "file_analysis": {
+    "SwiftWren.txt": {
+      "file_name": "SwiftWren.txt",
+      "saidit_posts": [
+        {
+          "event_id": 373902,
+          "event_type": "saidit_post",
+          "when": 2410168875.0,
+          "parties": [
+            "Agent/person:john_windward",
+            "system:saidit"
+          ]
+        }
+      ],
+      "file_operations": [],
+      "related_participants": []
+    },
+    "HiddenOrca.txt": {
+      "file_name": "HiddenOrca.txt",
+      "saidit_posts": [
+        {
+          "event_id": 27290,
+          "event_type": "saidit_post",
+          "when": 2409569142.0,
+          "parties": [
+            "Agent/person:john_windward",
+            "system:saidit"
+          ]
+        }
+      ],
+      "file_operations": [],
+      "related_participants": []
+    },
+    "MellowOtter.txt": {
+      "file_name": "MellowOtter.txt",
+      "saidit_posts": [
+        {
+          "event_id": 98591,
+          "event_type": "saidit_post",
+          "when": 2409612964.0,
+          "parties": [
+            "Agent/person:john_windward",
+            "system:saidit"
+          ]
+        }
+      ],
+      "file_operations": [],
+      "related_participants": []
+    }
+  },
+  "common_patterns": [],
+  "timeline": [
+    {
+      "event_id": 27290,
+      "event_type": "saidit_post",
+      "when": 2409569142.0,
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ]
+    },
+    {
+      "event_id": 98591,
+      "event_type": "saidit_post",
+      "when": 2409612964.0,
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ]
+    },
+    {
+      "event_id": 373902,
+      "event_type": "saidit_post",
+      "when": 2410168875.0,
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ]
+    }
+  ]
+}

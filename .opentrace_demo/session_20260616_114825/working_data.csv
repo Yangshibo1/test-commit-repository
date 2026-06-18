@@ -1,0 +1,6 @@
+date,product,region,sales,quantity
+2026-01-01,A,North,150,10
+2026-01-02,B,South,200,15
+2026-01-03,C,East,180,12
+2026-01-04,A,North,220,18
+2026-01-05,B,South,250,20

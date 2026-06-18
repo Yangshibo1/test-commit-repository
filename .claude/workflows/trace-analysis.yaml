@@ -1,0 +1,147 @@
+name: trace-guided-data-analysis
+description: "带数据血缘追踪的数据分析工作流 - 每步操作都记录到 OpenTrace 系统"
+version: "1.0"
+
+metadata:
+  author: "Claude Opus"
+  created: "2026-06-17"
+  use_cases:
+    - 需要追踪数据来源的分析任务
+    - 需要复现和验证的分析流程
+    - 需要生成数据血缘报告的项目
+
+phases:
+  - title: "初始化会话"
+    description: "加载数据并初始化 OpenTrace 会话"
+    steps:
+      - name: "加载原始数据"
+        action: |
+          1. 获取 OpenTrace 服务器实例: `server = get_server(".opentrace")`
+          2. 初始化会话: `server.init_session(task_description, data_path, data_type)`
+          3. 保存原始数据为中间文件: `working_dir/loaded_data.json`
+          4. 记录 PROV 关系（包含临时 id）
+        trace:
+          entities:
+            - id: "raw_data"
+              type: "dataset"
+              location: "<原始数据路径>"
+            - id: "loaded_data"
+              type: "dataset"
+              location: "<工作目录>/loaded_data.json"
+          activities:
+            - id: "load_act"
+              type: "load"
+              description: "加载原始数据"
+          agents:
+            - id: "data_loader"
+              type: "script"
+              name: "<步骤名称>"
+          relations:
+            # 注意：方向非常重要！
+            - ("load_act", "raw_data", "used")              # 活动使用输入
+            - ("loaded_data", "load_act", "wasGeneratedBy")   # 输出由活动生成
+            - ("load_act", "data_loader", "wasAssociatedWith") # 活动关联代理
+            - ("loaded_data", "raw_data", "wasDerivedFrom")    # 输出来源自输入
+
+  - title: "迭代分析"
+    description: "逐步分析数据，每次操作都生成中间文件并记录 trace"
+    steps:
+      - name: "执行分析步骤"
+        action: |
+          对每个分析步骤：
+          1. 读取需要的文件（可以是原始数据、中间结果、或多个文件）
+          2. 执行数据操作（过滤、聚合、分析等）
+          3. 保存结果为新的中间文件: `step<N>_output.json`
+          4. 调用 server.record_prov_relation() 记录所有输入输出关系
+          5. 调用 server.record_step_details() 记录步骤详情（包含生成的代码文件、命令、描述）
+          6. 根据结果决定下一步分析方向
+        trace:
+          entities:
+            - id: "step_input"
+              type: "dataset"
+              location: "<上一步输出文件>"
+            - id: "step_output"
+              type: "dataset"
+              location: "<当前步骤输出文件>"
+              attributes: {"<key>": "<value>"}
+          activities:
+            - id: "step_act"
+              type: "<filter|transform|analyze|trace>"
+              description: "<步骤描述>"
+          agents:
+            - id: "step_agent"
+              type: "script"
+              name: "<步骤名称>"
+          relations:
+            # ⚠️ 顺序和方向很重要！
+            - ("step_act", "step_input", "used")              # 活动→输入
+            - ("step_output", "step_act", "wasGeneratedBy")   # 输出→活动
+            - ("step_act", "step_agent", "wasAssociatedWith") # 活动→代理
+            - ("step_output", "step_input", "wasDerivedFrom")  # 输出→输入
+
+  - title: "生成报告和可视化"
+    description: "汇总所有分析结果，生成最终报告和数据血缘可视化"
+    steps:
+      - name: "汇总结果"
+        action: |
+          1. 收集所有中间文件的结果
+          2. 生成最终分析报告: `final_report.json`
+          3. 调用 visualize_prov_dag() 生成可视化
+          4. 记录最终汇总的 PROV 关系
+        trace:
+          entities:
+            - id: "step1_out"
+              type: "dataset"
+              location: "<step1输出文件>"
+            # ... 其他步骤的输出
+            - id: "final_report"
+              type: "artifact"
+              location: "<最终报告文件>"
+          activities:
+            - id: "aggregate_act"
+              type: "aggregate"
+              description: "汇总所有分析结果"
+          agents:
+            - id: "report_agent"
+              type: "script"
+              name: "<报告生成步骤>"
+          relations:
+            - ("aggregate_act", "step1_out", "used")
+            # ... 其他步骤的 used 关系
+            - ("final_report", "aggregate_act", "wasGeneratedBy")
+            - ("aggregate_act", "report_agent", "wasAssociatedWith")
+
+rules:
+  - "每步数据操作必须生成中间文件"
+  - "每步必须调用 server.record_prov_relation() 记录 DAG"
+  - "每步必须调用 server.record_step_details() 记录步骤详情"
+  - "所有 entities/activities/agents 必须提供临时 id 字段"
+  - "明确每步的输入输出文件（数据流转清晰）"
+  - "支持读取原始数据、中间结果、或多个文件"
+  - "根据上一步结果决定下一步方向（迭代式分析）"
+
+output:
+  files:
+    - "loaded_data.json - 原始数据加载"
+    - "step*.json - 各步骤中间结果"
+    - "final_report.json - 最终分析报告"
+    - "pipeline_visualization.txt - 数据血缘可视化"
+  trace_files:
+    - "prov_dag.json - DAG 元数据"
+    - "prov_nodes.json - 节点信息"
+    - "prov_edges.json - 边关系"
+
+example:
+  name: "VAST Challenge MC2 分析"
+  description: "异常 SaidIT 帖子追踪"
+  steps:
+    - "加载 MC2 data.json (185,147 事件)"
+    - "查找关键 SaidIT 事件 (event 373902)"
+    - "追踪 SwiftWren.txt 起源 (191 事件, 18 Agent)"
+    - "比较三个异常案例模式"
+    - "生成最终报告"
+  results:
+    - "SwiftWren.txt 由 emma_harbor 创建"
+    - "级联传播 7.8 天"
+    - "发现 2 个类似历史案例"
+    - "建议干预点: SaidIT 发布接口前内容验证"

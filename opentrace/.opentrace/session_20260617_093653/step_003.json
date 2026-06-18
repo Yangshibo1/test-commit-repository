@@ -1,0 +1,11 @@
+{
+  "step_id": "step_003",
+  "step_name": "问题2分析",
+  "operation": "analyze_typical_behavior",
+  "description": "分析典型行为与新行为对比",
+  "timestamp": "2026-06-17T09:36:53.361038",
+  "metadata": {
+    "question": "typical_vs_new_behavior"
+  },
+  "mappings": []
+}

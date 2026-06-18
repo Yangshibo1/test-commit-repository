@@ -1,0 +1,9 @@
+{
+  "step_id": "step_002",
+  "step_name": "分析所有事件",
+  "operation": "aggregate",
+  "description": "分析所有事件的模式",
+  "timestamp": "2026-06-15T10:58:21.563960",
+  "metadata": {},
+  "mappings": []
+}

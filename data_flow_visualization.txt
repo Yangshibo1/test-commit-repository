@@ -1,0 +1,154 @@
+======================================================================
+PROV DAG 可视化
+======================================================================
+
+节点统计:
+  实体: 13
+  活动: 7
+  代理: 6
+  边: 27
+
+======================================================================
+数据流图 (实体→处理→产物)
+======================================================================
+
+【输入】VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json
+      属性: total_events=185147, event_types=23
+      ↓ [data_load] 加载原始MC2数据并统计基本信息
+      by: initial_analysis
+      【输出】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_144434/step1_stats.json
+            属性: john_windward_events=2928, saidit_events=695, swiftwren_events=191
+
+【输入】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_144434/step2_john_events.json
+      属性: total_john_events=2928, saidit_posts=22
+      ↓ [filter] 筛选 John Windward 的 SaidIT 帖子事件
+      by: john_post_analysis
+      【输出】Event_ID_373902
+            属性: timestamp=2046-05-17T19:21:15, forum=general, content_source=SwiftWren.txt
+
+【输入】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_144434/step2_swiftwren_chain.json
+      属性: chain_events=191, first_event=Event_ID_21202, creator=emma_harbor
+      ↓ [trace] 追踪 SwiftWren.txt 传播链
+      by: john_post_analysis
+      【输出】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_144434/step2_swiftwren_chain.json
+            属性: chain_events=191, first_event=Event_ID_21202, creator=emma_harbor
+
+【输入】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_144434/step3_propagation.json
+      属性: chain_length=191, duration_days=7.8, participants=18
+      ↓ [trace] 分析 SwiftWren.txt 从 Emma Harbor 到 John Windward 的完整传播链
+      by: propagation_analysis
+      【输出】Event_ID_373893_to_373913
+            属性: final_transfer=chloe_ballast->john_windward, post_time=2046-05-17T19:21:15
+
+【输入】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_144434/step4_similar_cases.json
+      属性: total_saidit_posts=108, file_based_posts=3
+      ↓ [pattern_match] 查找类似的异常 SaidIT 帖子案例
+      by: similar_cases_finder
+      【输出】HiddenOrca_MellowOtter_SwiftWren
+            属性: hiddenorca_events=42, mellowotter_events=15, swiftwren_events=191
+
+【输入】.opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_144434/step5_network.json
+      属性: key_players=10, top_spreaders=['evelyn_dock', 'gabriel_sonar', 'levi_signal']
+      ↓ [network_analysis] 分析传播网络中的关键人物
+      by: network_analysis
+      【输出】transfers_to_john
+            属性: hiddenorca_from=chloe_ballast, mellowotter_from=lily_anchorline, swiftwren_from=olivia_keel
+
+【输入】.opentrace\VAST_Challenge_2026_MC2\.opentrace\session_20260617_144434\final_analysis_report.json
+      属性: case=VAST_MC2_John_Windward, steps=6, findings=coordinated_campaign
+      ↓ [analysis] 生成最终分析报告和可视化
+      by: final_report_generator
+      【输出】.opentrace\VAST_Challenge_2026_MC2\.opentrace\session_20260617_144434\data_flow_visualization.txt
+            属性: format=mermaid, nodes=entities_activities_agents
+
+======================================================================
+节点详情
+======================================================================
+
+ENTITY 节点:
+  - VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json (属性: {'total_events': 185147, 'event_types': 23})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_144434/step1_stats.json (属性: {'john_windward_events': 2928, 'saidit_events': 695, 'swiftwren_events': 191})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_144434/step2_john_events.json (属性: {'total_john_events': 2928, 'saidit_posts': 22})
+  - Event_ID_373902 (属性: {'timestamp': '2046-05-17T19:21:15', 'forum': 'general', 'content_source': 'SwiftWren.txt'})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_144434/step2_swiftwren_chain.json (属性: {'chain_events': 191, 'first_event': 'Event_ID_21202', 'creator': 'emma_harbor'})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_144434/step3_propagation.json (属性: {'chain_length': 191, 'duration_days': 7.8, 'participants': 18})
+  - Event_ID_373893_to_373913 (属性: {'final_transfer': 'chloe_ballast->john_windward', 'post_time': '2046-05-17T19:21:15'})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_144434/step4_similar_cases.json (属性: {'total_saidit_posts': 108, 'file_based_posts': 3})
+  - HiddenOrca_MellowOtter_SwiftWren (属性: {'hiddenorca_events': 42, 'mellowotter_events': 15, 'swiftwren_events': 191})
+  - .opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_144434/step5_network.json (属性: {'key_players': 10, 'top_spreaders': ['evelyn_dock', 'gabriel_sonar', 'levi_signal']})
+  - transfers_to_john (属性: {'hiddenorca_from': 'chloe_ballast', 'mellowotter_from': 'lily_anchorline', 'swiftwren_from': 'olivia_keel'})
+  - .opentrace\VAST_Challenge_2026_MC2\.opentrace\session_20260617_144434\final_analysis_report.json (属性: {'case': 'VAST_MC2_John_Windward', 'steps': 6, 'findings': 'coordinated_campaign'})
+  - .opentrace\VAST_Challenge_2026_MC2\.opentrace\session_20260617_144434\data_flow_visualization.txt (属性: {'format': 'mermaid', 'nodes': 'entities_activities_agents'})
+
+ACTIVITY 节点:
+  - 加载原始MC2数据并统计基本信息 (属性: {'timestamp': '2046-05-17T04:21:00'})
+  - 筛选 John Windward 的 SaidIT 帖子事件 (属性: {'timestamp': '2046-05-17T19:21:15'})
+  - 追踪 SwiftWren.txt 传播链 (属性: {'chain_length': 191})
+  - 分析 SwiftWren.txt 从 Emma Harbor 到 John Windward 的完整传播链 (属性: {'start_date': '2046-05-09', 'end_date': '2046-05-17', 'creator': 'emma_harbor'})
+  - 查找类似的异常 SaidIT 帖子案例 (属性: {'pattern': 'content_source with .txt files'})
+  - 分析传播网络中的关键人物 (属性: {'common_participants': 10})
+  - 生成最终分析报告和可视化 (属性: {'timestamp': '2024-06-17T14:44:34'})
+
+AGENT 节点:
+  - initial_analysis (属性: {'version': '1.0'})
+  - john_post_analysis (属性: {})
+  - propagation_analysis (属性: {})
+  - similar_cases_finder (属性: {})
+  - network_analysis (属性: {})
+  - final_report_generator (属性: {})
+
+======================================================================
+关系详情
+======================================================================
+  activity_704c4f5a --[used]--> entity_04e499eb
+  entity_d910534e --[wasGeneratedBy]--> activity_704c4f5a
+  activity_704c4f5a --[wasAssociatedWith]--> agent_38fe5cba
+  entity_d910534e --[wasDerivedFrom]--> entity_04e499eb
+  activity_397658ba --[used]--> entity_6bc178e0
+  entity_d912b8f5 --[wasGeneratedBy]--> activity_397658ba
+  activity_a49a4c13 --[used]--> entity_c62cbccd
+  entity_c62cbccd --[wasGeneratedBy]--> activity_a49a4c13
+  activity_397658ba --[wasAssociatedWith]--> agent_893c4e94
+  activity_a49a4c13 --[wasAssociatedWith]--> agent_893c4e94
+  ... 还有 17 个关系
+
+======================================================================
+Mermaid 格式 (可在支持 Mermaid 的平台渲染)
+======================================================================
+graph TD
+    classDef entity fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef artifact fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef agent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,stroke-dasharray: 5 5
+    VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json["MC2 data.json"]:::entity
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_144434_step1_stats_json["step1_stats.json"]:::entity
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_144434_step2_john_events_json["step2_john_events.json"]:::entity
+    Event_ID_373902["Event_ID_373902"]:::entity
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_144434_step2_swiftwren_chain_json["step2_swiftwren_chain.json"]:::entity
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_144434_step3_propagation_json["step3_propagation.json"]:::entity
+    Event_ID_373893_to_373913["Event_ID_373893_to_373913"]:::entity
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_144434_step4_similar_cases_json["step4_similar_cases.json"]:::entity
+    HiddenOrca_MellowOtter_SwiftWren["HiddenOrca_MellowOtter_SwiftWren"]:::entity
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_144434_step5_network_json["step5_network.json"]:::entity
+    transfers_to_john["transfers_to_john"]:::entity
+    _opentrace\VAST_Challenge_2026_MC2\_opentrace\session_20260617_144434\final_analysis_report_json[".opentrace\VAST_Challenge_2026_MC2\.opentrace\session_20260617_144434\final_analysis_report.json"]:::entity
+    _opentrace\VAST_Challenge_2026_MC2\_opentrace\session_20260617_144434\data_flow_visualization_txt[".opentrace\VAST_Challenge_2026_MC2\.opentrace\session_20260617_144434\data_flow_visualization.txt"]:::entity
+    agent_38fe5cba["initial_analysis"]:::agent
+    agent_893c4e94["john_post_analysis"]:::agent
+    agent_fbc83c52["propagation_analysis"]:::agent
+    agent_990c4c50["similar_cases_finder"]:::agent
+    agent_6b3e1942["network_analysis"]:::agent
+    agent_fe09a352["final_report_generator"]:::agent
+    VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json ==>|"data_load"| agent_38fe5cba
+    agent_38fe5cba -.->|output| _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_144434_step1_stats_json
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_144434_step2_john_events_json ==>|"filter"| agent_893c4e94
+    agent_893c4e94 -.->|output| Event_ID_373902
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_144434_step2_swiftwren_chain_json ==>|"trace"| agent_893c4e94
+    agent_893c4e94 -.->|output| _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_144434_step2_swiftwren_chain_json
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_144434_step3_propagation_json ==>|"trace"| agent_fbc83c52
+    agent_fbc83c52 -.->|output| Event_ID_373893_to_373913
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_144434_step4_similar_cases_json ==>|"pattern_match"| agent_990c4c50
+    agent_990c4c50 -.->|output| HiddenOrca_MellowOtter_SwiftWren
+    _opentrace_VAST_Challenge_2026_MC2__opentrace_session_20260617_144434_step5_network_json ==>|"network_analysis"| agent_6b3e1942
+    agent_6b3e1942 -.->|output| transfers_to_john
+    _opentrace\VAST_Challenge_2026_MC2\_opentrace\session_20260617_144434\final_analysis_report_json ==>|"analysis"| agent_fe09a352
+    agent_fe09a352 -.->|output| _opentrace\VAST_Challenge_2026_MC2\_opentrace\session_20260617_144434\data_flow_visualization_txt

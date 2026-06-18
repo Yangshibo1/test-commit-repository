@@ -1,0 +1,58 @@
+{
+  "total_posts": 19,
+  "post_ids": [
+    349624,
+    456886,
+    459094,
+    459356,
+    460638,
+    461126,
+    489599,
+    489819,
+    491074,
+    542986,
+    543012,
+    568873,
+    569483,
+    572569,
+    574631,
+    593270,
+    651104,
+    697047,
+    698111
+  ],
+  "time_range": "2409847676.0 to 2414585158.0",
+  "patterns": {
+    "SLA": 6,
+    "Work-Order": 8,
+    "Resident": 11,
+    "Package": 5,
+    "Amenity": 2
+  },
+  "top_words": {
+    "for": 12,
+    "work-order": 8,
+    "updates": 7,
+    "maintenance": 6,
+    "sla": 5,
+    "triage": 5,
+    "tracking": 5,
+    "package": 5,
+    "requests": 4,
+    "residents": 4,
+    "resident": 4,
+    "harborcrest": 4,
+    "residentedge": 4,
+    "status": 3,
+    "messaging:": 3,
+    "building": 3,
+    "and": 3,
+    "triage:": 3,
+    "&": 3,
+    "alerts": 3
+  },
+  "avg_post_length": 59.0,
+  "forums": [
+    "general"
+  ]
+}

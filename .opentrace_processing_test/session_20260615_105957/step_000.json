@@ -1,0 +1,30 @@
+{
+  "step_id": "step_000",
+  "step_name": "数据加载",
+  "operation": "load_json",
+  "description": "从 test_data.json 加载JSON数据",
+  "timestamp": "2026-06-15T10:59:57.587985",
+  "metadata": {
+    "source": "test_data.json",
+    "total_rows": 3,
+    "total_size_mb": 0.0,
+    "structure": {
+      "type": "list",
+      "length": 3,
+      "item_type": "dict",
+      "fields": {
+        "id": {
+          "type": "int",
+          "value": 1
+        },
+        "name": {
+          "type": "str",
+          "value": "Alice"
+        }
+      }
+    },
+    "sample_size": 1000,
+    "lazy_id_generation": true
+  },
+  "mappings": []
+}

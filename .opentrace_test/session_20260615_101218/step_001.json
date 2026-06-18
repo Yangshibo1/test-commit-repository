@@ -1,0 +1,9 @@
+{
+  "step_id": "step_001",
+  "step_name": "测试步骤",
+  "operation": "test_operation",
+  "description": "这是一个测试步骤",
+  "timestamp": "2026-06-15T10:12:18.058542",
+  "metadata": {},
+  "mappings": []
+}

@@ -1,0 +1,11 @@
+{
+  "step_id": "step_004",
+  "step_name": "问题3分析",
+  "operation": "analyze_historic_behavior",
+  "description": "查找类似的历史案例并建议干预措施",
+  "timestamp": "2026-06-17T10:37:06.397440",
+  "metadata": {
+    "question": "behavior_recurrence"
+  },
+  "mappings": []
+}

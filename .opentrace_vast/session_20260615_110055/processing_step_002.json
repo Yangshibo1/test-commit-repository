@@ -1,0 +1,32 @@
+{
+  "processing_id": "processing_step_002",
+  "step_id": "step_002",
+  "timestamp": "2026-06-15T11:00:59.908439",
+  "input": {
+    "source": "swiftwren_events",
+    "source_type": "filtered_list",
+    "filter_condition": "previously filtered SwiftWren events",
+    "total_count_before": 191
+  },
+  "algorithm": {
+    "type": "aggregate_analysis",
+    "language": "python",
+    "code": "unique_agents = len(set(str(e['parties']) for e in swiftwren_events))",
+    "logic_description": "统计传递链中的唯一agent数量和持续时间"
+  },
+  "result": {
+    "format": "external_file",
+    "file": "processing_step_002_result.json",
+    "item_count": 506,
+    "statistics": {
+      "event_ids_count": 191,
+      "all_agents_count": 191,
+      "unique_agents_count": 121,
+      "statistics_keys": [
+        "total_events",
+        "unique_agents_count",
+        "duration_days"
+      ]
+    }
+  }
+}

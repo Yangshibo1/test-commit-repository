@@ -1,0 +1,242 @@
+{
+  "nodes": {
+    "entity_f9e65021": {
+      "id": "entity_f9e65021",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json",
+      "attributes": {
+        "format": "json",
+        "events": 185147
+      },
+      "timestamp": "2026-06-17T15:21:37.249649"
+    },
+    "entity_6330b8c1": {
+      "id": "entity_6330b8c1",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_saidit_posts.json",
+      "attributes": {
+        "format": "json",
+        "rows": 133,
+        "forums": 2
+      },
+      "timestamp": "2026-06-17T15:21:37.249675"
+    },
+    "entity_033a5df8": {
+      "id": "entity_033a5df8",
+      "type": "entity",
+      "entity_type": "report",
+      "location": ".opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_stats.json",
+      "attributes": {
+        "type": "summary_statistics"
+      },
+      "timestamp": "2026-06-17T15:21:37.249689"
+    },
+    "activity_c716e60c": {
+      "id": "activity_c716e60c",
+      "type": "activity",
+      "activity_type": "data_extraction",
+      "description": "从 MC2 data.json 提取 SaidIT 帖子事件",
+      "attributes": {
+        "filter": "short_name=post_saidit"
+      },
+      "timestamp": "2026-06-17T15:21:37.249724"
+    },
+    "agent_40d0218f": {
+      "id": "agent_40d0218f",
+      "type": "agent",
+      "agent_type": "python_script",
+      "name": "SaidIT Posts Extractor",
+      "attributes": {
+        "version": "1.0"
+      },
+      "timestamp": "2026-06-17T15:21:37.249771"
+    },
+    "entity_23da0b61": {
+      "id": "entity_23da0b61",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_saidit_posts.json",
+      "attributes": {
+        "format": "json"
+      },
+      "timestamp": "2026-06-17T15:22:27.725068"
+    },
+    "entity_5134efe8": {
+      "id": "entity_5134efe8",
+      "type": "entity",
+      "entity_type": "analysis",
+      "location": ".opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step2_john_analysis.json",
+      "attributes": {
+        "author": "John Windward",
+        "posts_analyzed": 19
+      },
+      "timestamp": "2026-06-17T15:22:27.725099"
+    },
+    "activity_8263b6fd": {
+      "id": "activity_8263b6fd",
+      "type": "activity",
+      "activity_type": "pattern_analysis",
+      "description": "分析 John Windward SaidIT 帖子模式",
+      "attributes": {
+        "focus": "content_patterns, timing, topics"
+      },
+      "timestamp": "2026-06-17T15:22:27.725116"
+    },
+    "agent_0d383729": {
+      "id": "agent_0d383729",
+      "type": "agent",
+      "agent_type": "python_script",
+      "name": "John Windward Analyzer",
+      "attributes": {
+        "version": "1.0"
+      },
+      "timestamp": "2026-06-17T15:22:27.725128"
+    },
+    "entity_b4e81257": {
+      "id": "entity_b4e81257",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_saidit_posts.json",
+      "attributes": {
+        "format": "json"
+      },
+      "timestamp": "2026-06-17T15:24:56.687570"
+    },
+    "entity_0da9aed0": {
+      "id": "entity_0da9aed0",
+      "type": "entity",
+      "entity_type": "analysis",
+      "location": ".opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step3_author_comparison.json",
+      "attributes": {
+        "authors_compared": 6,
+        "type": "comparative_analysis"
+      },
+      "timestamp": "2026-06-17T15:24:56.687602"
+    },
+    "activity_fc8bda82": {
+      "id": "activity_fc8bda82",
+      "type": "activity",
+      "activity_type": "comparative_analysis",
+      "description": "对比分析所有 SaidIT 作者的发帖模式",
+      "attributes": {
+        "metrics": "post_count, content_length, patterns"
+      },
+      "timestamp": "2026-06-17T15:24:56.687618"
+    },
+    "agent_a3891128": {
+      "id": "agent_a3891128",
+      "type": "agent",
+      "agent_type": "python_script",
+      "name": "Author Comparison Analyzer",
+      "attributes": {
+        "version": "1.0"
+      },
+      "timestamp": "2026-06-17T15:24:56.687631"
+    },
+    "entity_9e1a3867": {
+      "id": "entity_9e1a3867",
+      "type": "entity",
+      "entity_type": "analysis",
+      "location": ".opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step3_author_comparison.json",
+      "attributes": {
+        "format": "json"
+      },
+      "timestamp": "2026-06-17T15:26:20.421563"
+    },
+    "entity_40fdc958": {
+      "id": "entity_40fdc958",
+      "type": "entity",
+      "entity_type": "report",
+      "location": ".opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step4_anomaly_detection.json",
+      "attributes": {
+        "anomalies_detected": 2,
+        "target": "John Windward"
+      },
+      "timestamp": "2026-06-17T15:26:20.421598"
+    },
+    "activity_d80f45ac": {
+      "id": "activity_d80f45ac",
+      "type": "activity",
+      "activity_type": "anomaly_detection",
+      "description": "检测 John Windward SaidIT 帖子异常模式",
+      "attributes": {
+        "method": "comparative_baseline_analysis"
+      },
+      "timestamp": "2026-06-17T15:26:20.421610"
+    },
+    "agent_0a82f6ea": {
+      "id": "agent_0a82f6ea",
+      "type": "agent",
+      "agent_type": "python_script",
+      "name": "Anomaly Detector",
+      "attributes": {
+        "version": "1.0"
+      },
+      "timestamp": "2026-06-17T15:26:20.421618"
+    },
+    "entity_b4487755": {
+      "id": "entity_b4487755",
+      "type": "entity",
+      "entity_type": "analysis",
+      "location": ".opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step4_anomaly_detection.json",
+      "attributes": {
+        "format": "json"
+      },
+      "timestamp": "2026-06-17T15:28:21.507739"
+    },
+    "entity_af4501d9": {
+      "id": "entity_af4501d9",
+      "type": "entity",
+      "entity_type": "analysis",
+      "location": ".opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step2_john_analysis.json",
+      "attributes": {
+        "format": "json"
+      },
+      "timestamp": "2026-06-17T15:28:21.507761"
+    },
+    "entity_d2f5bd65": {
+      "id": "entity_d2f5bd65",
+      "type": "entity",
+      "entity_type": "report",
+      "location": ".opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/step1_stats.json",
+      "attributes": {
+        "format": "json"
+      },
+      "timestamp": "2026-06-17T15:28:21.507770"
+    },
+    "entity_dae208a2": {
+      "id": "entity_dae208a2",
+      "type": "entity",
+      "entity_type": "report",
+      "location": ".opentrace/VAST_Challenge_2026_MC2/.opentrace/session_20260617_151553/final_report.json",
+      "attributes": {
+        "type": "final_summary",
+        "findings_count": 4
+      },
+      "timestamp": "2026-06-17T15:28:21.507789"
+    },
+    "activity_d63527b2": {
+      "id": "activity_d63527b2",
+      "type": "activity",
+      "activity_type": "report_generation",
+      "description": "汇总分析结果生成最终报告",
+      "attributes": {
+        "step": 5,
+        "type": "final_summary"
+      },
+      "timestamp": "2026-06-17T15:28:21.507826"
+    },
+    "agent_ef354996": {
+      "id": "agent_ef354996",
+      "type": "agent",
+      "agent_type": "python_script",
+      "name": "Report Generator",
+      "attributes": {
+        "version": "1.0"
+      },
+      "timestamp": "2026-06-17T15:28:21.507859"
+    }
+  }
+}

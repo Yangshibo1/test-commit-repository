@@ -1,0 +1,60 @@
+=== VAST MC1 数据血缘可视化 ===
+
+数据流向图:
+  MC1_final_00.json (原始数据)
+      |
+      v
+  [数据加载] load_activity
+      |
+      v
+  [摘要分析] summary_activity -> data_summary.json
+      |
+      v
+  [社交媒体分析] social_leak_analysis -> social_media_analysis.json
+      |
+      v
+  [泄露事件分析] leak_analysis_activity -> civicloom_incident.json
+      |
+      v
+  [关键事件分析] key_events.json
+      |
+      v
+  [最终分析] final_analysis_activity -> final_report.json
+
+数据处理节点:
+1. 原始数据 (MC1_final_00.json)
+   - 23轮次, 912通信, 7 Agents
+   - 日期范围: 2046-05-17 至 2046-06-05
+
+2. 数据摘要 (data_summary.json)
+   - 总轮次: 23
+   - 总通信: 912
+   - Agents: 7个
+
+3. 社交媒体分析 (social_media_analysis.json)
+   - Social Media Agent通信: 220条
+   - 泄露相关通信: 45条
+
+4. CivicLoom事件 (civicloom_incident.json)
+   - 关键日期: 2046-05-29
+   - 事件类型: 意外暴露
+   - 影响: CivicLoom员工点赞确认交易
+
+5. 关键事件 (key_events.json)
+   - CivicLoom首次提及: 2046-05-25
+   - Embargo首次提及: 2046-05-30
+   - 首篇SaltWind报道: 2046-05-31
+
+6. 最终报告 (final_report.json)
+   - 结论: 意外暴露导致的非故意泄露
+   - 主要责任: Social-Manager-Agent
+   - 触发事件: CivicLoom员工点赞
+
+关键发现时间线:
+- 2046-05-17: CEO开始发送战略暗示
+- 2046-05-22: Agents注意到CEO行为异常
+- 2046-05-25: CivicLoom首次出现
+- 2046-05-29: CivicLoom员工点赞事件(关键)
+- 2046-05-31: SaltWind第一篇报道
+- 2046-06-05: SaltWind确认并购报道(17:00)
+- 2046-06-05: 禁令正式解除(18:00)

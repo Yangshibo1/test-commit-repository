@@ -1,0 +1,13 @@
+{
+  "dag_id": "dag_session_20260617_115027",
+  "created_at": "2026-06-17T14:11:55.685847",
+  "updated_at": "2026-06-17T14:11:55.686538",
+  "description": "",
+  "tags": [],
+  "statistics": {
+    "total_entities": 13,
+    "total_activities": 4,
+    "total_agents": 4,
+    "total_edges": 25
+  }
+}

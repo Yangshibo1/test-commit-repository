@@ -1,0 +1,30 @@
+{
+  "step_id": "step_003",
+  "step_name": "异常帖子发布",
+  "operation": "saidit_post",
+  "description": "John Windward 发布异常 SaidIT 帖子",
+  "timestamp": "2026-06-15T11:00:59.924629",
+  "metadata": {
+    "publisher": "Agent/person:john_windward",
+    "platform": "system:saidit",
+    "forum": "general",
+    "content_source": "SwiftWren.txt",
+    "timestamp": "2046-07-07 21:59:26",
+    "event_id": 698079
+  },
+  "mappings": [
+    {
+      "from_ids": [
+        "SwiftWren.txt"
+      ],
+      "to_id": "saidit_post_john_windward",
+      "operation": "post_saidit_from_file",
+      "timestamp": "2026-06-15T11:00:59.925969",
+      "value_info": {
+        "content_source": "SwiftWren.txt",
+        "publisher": "person:john_windward",
+        "forum": "general"
+      }
+    }
+  ]
+}

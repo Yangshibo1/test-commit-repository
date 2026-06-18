@@ -1,0 +1,200 @@
+======================================================================
+PROV DAG 可视化
+======================================================================
+
+节点统计:
+  实体: 16
+  活动: 10
+  代理: 4
+  边: 38
+
+======================================================================
+数据流图 (实体→处理→产物)
+======================================================================
+
+【输入】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json
+      属性: type=MC2 data.json
+      ↓ [transform] 加载MC2数据和组织架构
+      by: init_session
+      【输出】working_data.json
+            属性: status=loaded
+
+【输入】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/org_chart.json
+      属性: type=organization chart
+      ↓ [transform] 加载MC2数据和组织架构
+      by: init_session
+      【输出】working_data.json
+            属性: status=loaded
+
+【输入】working_data.json
+      ↓ [filter] 提取关键事件链
+      by: analyze_q1
+      【输出】key_event_chain.json
+            属性: count=2379
+      ↓ [filter] 识别John Windward事件
+      by: analyze_q1
+      【输出】john_windward_events.json
+            属性: count=2357
+
+【输入】key_event_chain.json
+      属性: count=2379
+      ↓ [aggregate] 汇总问题1结果
+      by: analyze_q1
+      【输出】question1_results.json
+
+【输入】john_windward_events.json
+      属性: count=2357
+      ↓ [aggregate] 汇总问题1结果
+      by: analyze_q1
+      【输出】question1_results.json
+
+【输入】working_data.json
+      ↓ [filter] 提取内容相关事件
+      by: analyze_q2
+      【输出】content_analysis.json
+            属性: count=2886
+      ↓ [filter] 识别乱码指标
+      by: analyze_q2
+      【输出】gibberish_indicators.json
+            属性: count=0
+
+【输入】content_analysis.json
+      属性: count=2886
+      ↓ [aggregate] 汇总问题2结果
+      by: analyze_q2
+      【输出】question2_results.json
+
+【输入】gibberish_indicators.json
+      属性: count=0
+      ↓ [aggregate] 汇总问题2结果
+      by: analyze_q2
+      【输出】question2_results.json
+
+【输入】working_data.json
+      ↓ [filter] 查找历史异常事件
+      by: analyze_q3
+      【输出】prior_incidents.json
+            属性: count=0
+      ↓ [transform] 分析行为模式
+      by: analyze_q3
+      【输出】anomaly_indicators.json
+            属性: count=2957
+
+【输入】prior_incidents.json
+      属性: count=0
+      ↓ [aggregate] 汇总问题3结果和建议
+      by: analyze_q3
+      【输出】question3_results.json
+
+【输入】anomaly_indicators.json
+      属性: count=2957
+      ↓ [aggregate] 汇总问题3结果和建议
+      by: analyze_q3
+      【输出】question3_results.json
+
+======================================================================
+节点详情
+======================================================================
+
+ENTITY 节点:
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json (属性: {'type': 'MC2 data.json'})
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/org_chart.json (属性: {'type': 'organization chart'})
+  - working_data.json (属性: {'status': 'loaded'})
+  - working_data.json (属性: {})
+  - key_event_chain.json (属性: {'count': 2379})
+  - john_windward_events.json (属性: {'count': 2357})
+  - saidit_events.json (属性: {'count': 588})
+  - question1_results.json (属性: {})
+  - working_data.json (属性: {})
+  - content_analysis.json (属性: {'count': 2886})
+  - gibberish_indicators.json (属性: {'count': 0})
+  - question2_results.json (属性: {})
+  - working_data.json (属性: {})
+  - prior_incidents.json (属性: {'count': 0})
+  - anomaly_indicators.json (属性: {'count': 2957})
+  - question3_results.json (属性: {})
+
+ACTIVITY 节点:
+  - 加载MC2数据和组织架构 (属性: {'operation': 'json_load'})
+  - 提取关键事件链 (属性: {'events': 2379})
+  - 识别John Windward事件 (属性: {'events': 2357})
+  - 汇总问题1结果 (属性: {})
+  - 提取内容相关事件 (属性: {'events': 2886})
+  - 识别乱码指标 (属性: {'indicators': 0})
+  - 汇总问题2结果 (属性: {})
+  - 查找历史异常事件 (属性: {'incidents': 0})
+  - 分析行为模式 (属性: {})
+  - 汇总问题3结果和建议 (属性: {'suggestions': 2})
+
+AGENT 节点:
+  - init_session (属性: {'step': 'data_loading'})
+  - analyze_q1 (属性: {'step': 'q1_analysis'})
+  - analyze_q2 (属性: {'step': 'q2_analysis'})
+  - analyze_q3 (属性: {'step': 'q3_analysis'})
+
+======================================================================
+关系详情
+======================================================================
+  activity_18bb270e --[used]--> entity_2c7593c6
+  activity_18bb270e --[used]--> entity_306bf121
+  entity_2a2b958c --[wasGeneratedBy]--> activity_18bb270e
+  activity_18bb270e --[wasAssociatedWith]--> agent_4d56589d
+  entity_2a2b958c --[wasDerivedFrom]--> entity_2c7593c6
+  activity_f57d537e --[used]--> entity_79dfa87c
+  entity_70beeb91 --[wasGeneratedBy]--> activity_f57d537e
+  activity_1043487b --[used]--> entity_79dfa87c
+  entity_09181a09 --[wasGeneratedBy]--> activity_1043487b
+  activity_170ced20 --[used]--> entity_70beeb91
+  ... 还有 28 个关系
+
+======================================================================
+Mermaid 格式 (可在支持 Mermaid 的平台渲染)
+======================================================================
+graph TD
+    classDef entity fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef artifact fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef agent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,stroke-dasharray: 5 5
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json["MC2 data.json"]:::entity
+    working_data_json["working_data.json"]:::entity
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_org_chart_json["org_chart.json"]:::entity
+    key_event_chain_json["key_event_chain.json"]:::artifact
+    john_windward_events_json["john_windward_events.json"]:::artifact
+    question1_results_json["question1_results.json"]:::artifact
+    content_analysis_json["content_analysis.json"]:::artifact
+    gibberish_indicators_json["gibberish_indicators.json"]:::artifact
+    question2_results_json["question2_results.json"]:::artifact
+    prior_incidents_json["prior_incidents.json"]:::artifact
+    anomaly_indicators_json["anomaly_indicators.json"]:::artifact
+    question3_results_json["question3_results.json"]:::artifact
+    agent_4d56589d["init_session"]:::agent
+    agent_e9836928["analyze_q1"]:::agent
+    agent_304cda41["analyze_q2"]:::agent
+    agent_4de7a9c8["analyze_q3"]:::agent
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json ==>|"transform"| agent_4d56589d
+    agent_4d56589d -.->|output| working_data_json
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_org_chart_json ==>|"transform"| agent_4d56589d
+    agent_4d56589d -.->|output| working_data_json
+    working_data_json ==>|"filter"| agent_e9836928
+    agent_e9836928 -.->|output| key_event_chain_json
+    working_data_json ==>|"filter"| agent_e9836928
+    agent_e9836928 -.->|output| john_windward_events_json
+    key_event_chain_json ==>|"aggregate"| agent_e9836928
+    agent_e9836928 -.->|output| question1_results_json
+    john_windward_events_json ==>|"aggregate"| agent_e9836928
+    agent_e9836928 -.->|output| question1_results_json
+    working_data_json ==>|"filter"| agent_304cda41
+    agent_304cda41 -.->|output| content_analysis_json
+    working_data_json ==>|"filter"| agent_304cda41
+    agent_304cda41 -.->|output| gibberish_indicators_json
+    content_analysis_json ==>|"aggregate"| agent_304cda41
+    agent_304cda41 -.->|output| question2_results_json
+    gibberish_indicators_json ==>|"aggregate"| agent_304cda41
+    agent_304cda41 -.->|output| question2_results_json
+    working_data_json ==>|"filter"| agent_4de7a9c8
+    agent_4de7a9c8 -.->|output| prior_incidents_json
+    working_data_json ==>|"transform"| agent_4de7a9c8
+    agent_4de7a9c8 -.->|output| anomaly_indicators_json
+    prior_incidents_json ==>|"aggregate"| agent_4de7a9c8
+    agent_4de7a9c8 -.->|output| question3_results_json
+    anomaly_indicators_json ==>|"aggregate"| agent_4de7a9c8
+    agent_4de7a9c8 -.->|output| question3_results_json

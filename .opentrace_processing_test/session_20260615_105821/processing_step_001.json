@@ -1,0 +1,33 @@
+{
+  "processing_id": "processing_step_001",
+  "step_id": "step_001",
+  "timestamp": "2026-06-15T10:58:21.563324",
+  "input": {
+    "source": "events",
+    "source_type": "json_array",
+    "filter_condition": "details contains 'SwiftWren'",
+    "total_count_before": 185147
+  },
+  "algorithm": {
+    "type": "filter_and_aggregate",
+    "language": "python",
+    "code": "swiftwren_events = [e for e in events if 'SwiftWren' in json.dumps(e.get('details', {}))]",
+    "logic_description": "筛选包含SwiftWren的事件并统计"
+  },
+  "result": {
+    "format": "inline",
+    "data": {
+      "event_ids": [
+        21202,
+        34501,
+        45678
+      ],
+      "agents": [
+        "Agent/person:emma_harbor",
+        "Agent/person:john_windward"
+      ],
+      "count": 3
+    },
+    "item_count": 5
+  }
+}

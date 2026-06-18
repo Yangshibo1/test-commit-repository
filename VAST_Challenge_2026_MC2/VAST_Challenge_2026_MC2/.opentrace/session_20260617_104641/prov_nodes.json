@@ -1,0 +1,204 @@
+{
+  "nodes": {
+    "entity_88d980cf": {
+      "id": "entity_88d980cf",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:46:44.990641"
+    },
+    "entity_48995968": {
+      "id": "entity_48995968",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "working_data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:46:44.990661"
+    },
+    "activity_03ecaf2c": {
+      "id": "activity_03ecaf2c",
+      "type": "activity",
+      "activity_type": "transform",
+      "description": "加载MC2数据",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:46:44.990673"
+    },
+    "agent_0f2864ec": {
+      "id": "agent_0f2864ec",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "data_loader",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:46:44.990682"
+    },
+    "entity_505a876d": {
+      "id": "entity_505a876d",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "working_data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:46:53.917508"
+    },
+    "entity_82ecb98f": {
+      "id": "entity_82ecb98f",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "swiftwren_trace.json",
+      "attributes": {
+        "events": 191
+      },
+      "timestamp": "2026-06-17T10:46:53.917520"
+    },
+    "entity_1fc5a193": {
+      "id": "entity_1fc5a193",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "swiftwren_origin_chain.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:46:53.917527"
+    },
+    "activity_0cd98c5e": {
+      "id": "activity_0cd98c5e",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "提取SwiftWren相关事件",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:46:53.917537"
+    },
+    "activity_425f91aa": {
+      "id": "activity_425f91aa",
+      "type": "activity",
+      "activity_type": "transform",
+      "description": "分析来源链",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:46:53.917545"
+    },
+    "agent_8f80d0f2": {
+      "id": "agent_8f80d0f2",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "swiftwren_tracer",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:46:53.917552"
+    },
+    "entity_c219c51d": {
+      "id": "entity_c219c51d",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "working_data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:47:01.440473"
+    },
+    "entity_c63c6588": {
+      "id": "entity_c63c6588",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "agent_cascade_network.json",
+      "attributes": {
+        "agents": 49
+      },
+      "timestamp": "2026-06-17T10:47:01.440488"
+    },
+    "entity_a1f0393a": {
+      "id": "entity_a1f0393a",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "cascade_analysis.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:47:01.440494"
+    },
+    "activity_ea23a7d6": {
+      "id": "activity_ea23a7d6",
+      "type": "activity",
+      "activity_type": "transform",
+      "description": "构建Agent传播网络",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:47:01.440501"
+    },
+    "activity_6fd5e8d1": {
+      "id": "activity_6fd5e8d1",
+      "type": "activity",
+      "activity_type": "analyze",
+      "description": "分析级联传播路径",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:47:01.440508"
+    },
+    "agent_55f2d1ee": {
+      "id": "agent_55f2d1ee",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "cascade_analyzer",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:47:01.440516"
+    },
+    "entity_bf54b0f0": {
+      "id": "entity_bf54b0f0",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "working_data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:47:01.695451"
+    },
+    "entity_26616273": {
+      "id": "entity_26616273",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "saidit_posts_analysis.json",
+      "attributes": {
+        "posts": 0
+      },
+      "timestamp": "2026-06-17T10:47:01.695464"
+    },
+    "entity_6906edb0": {
+      "id": "entity_6906edb0",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "john_windward_posts.json",
+      "attributes": {
+        "posts": 48
+      },
+      "timestamp": "2026-06-17T10:47:01.695470"
+    },
+    "entity_2e92e0d6": {
+      "id": "entity_2e92e0d6",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "content_analysis_results.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:47:01.695474"
+    },
+    "activity_331ed7d0": {
+      "id": "activity_331ed7d0",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "提取关键SaidIT帖子",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:47:01.695480"
+    },
+    "activity_e754e063": {
+      "id": "activity_e754e063",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "分析John Windward帖子",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:47:01.695486"
+    },
+    "activity_5507a9dc": {
+      "id": "activity_5507a9dc",
+      "type": "activity",
+      "activity_type": "analyze",
+      "description": "内容来源分析",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:47:01.695491"
+    },
+    "agent_53d06b6e": {
+      "id": "agent_53d06b6e",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "content_analyzer",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:47:01.695496"
+    }
+  }
+}

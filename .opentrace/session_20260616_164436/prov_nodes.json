@@ -1,0 +1,66 @@
+{
+  "nodes": {
+    "entity_1b289a43": {
+      "id": "entity_1b289a43",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "test.csv",
+      "attributes": {
+        "rows": 3
+      },
+      "timestamp": "2026-06-16T16:44:36.722554"
+    },
+    "entity_25df0585": {
+      "id": "entity_25df0585",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "filtered.csv",
+      "attributes": {
+        "rows": 2
+      },
+      "timestamp": "2026-06-16T16:44:36.722571"
+    },
+    "activity_950ba7e4": {
+      "id": "activity_950ba7e4",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "筛选value>100",
+      "attributes": {},
+      "timestamp": "2026-06-16T16:44:36.722584"
+    },
+    "agent_f343a463": {
+      "id": "agent_f343a463",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "step1",
+      "attributes": {},
+      "timestamp": "2026-06-16T16:44:36.722593"
+    },
+    "entity_a897526f": {
+      "id": "entity_a897526f",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "test2.csv",
+      "attributes": {
+        "rows": 5
+      },
+      "timestamp": "2026-06-16T18:19:10.033749"
+    },
+    "activity_adf878e1": {
+      "id": "activity_adf878e1",
+      "type": "activity",
+      "activity_type": "transform",
+      "description": "测试转换",
+      "attributes": {},
+      "timestamp": "2026-06-16T18:19:10.033768"
+    },
+    "agent_40594f34": {
+      "id": "agent_40594f34",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "test_step",
+      "attributes": {},
+      "timestamp": "2026-06-16T18:19:10.033778"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "step_id": "step_001",
+  "step_name": "数据清洗",
+  "operation": "fillna",
+  "description": "填充缺失的age字段",
+  "timestamp": "2026-06-15T10:12:18.048767",
+  "metadata": {},
+  "mappings": [
+    {
+      "from_ids": [
+        "root[1].age"
+      ],
+      "to_id": "root[1].age_cleaned",
+      "operation": "fillna(0)",
+      "timestamp": "2026-06-15T10:12:18.049806",
+      "value_info": {
+        "root[1].age": {
+          "old": null,
+          "new": 0
+        }
+      }
+    }
+  ]
+}

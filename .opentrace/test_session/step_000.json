@@ -1,0 +1,49 @@
+{
+  "step_id": "step_000",
+  "step_name": "数据加载",
+  "operation": "load_json",
+  "description": "从 test_data.json 加载JSON数据",
+  "timestamp": "2026-06-15T10:12:18.046245",
+  "metadata": {
+    "source": "test_data.json",
+    "total_rows": 3,
+    "total_size_mb": 0.0,
+    "structure": {
+      "type": "list",
+      "length": 3,
+      "item_type": "dict",
+      "fields": {
+        "id": {
+          "type": "str",
+          "value": "user_001"
+        },
+        "name": {
+          "type": "str",
+          "value": "Alice"
+        },
+        "age": {
+          "type": "int",
+          "value": 25
+        },
+        "orders": {
+          "type": "list",
+          "length": 2,
+          "item_type": "dict",
+          "fields": {
+            "id": {
+              "type": "str",
+              "value": "order_A"
+            },
+            "amount": {
+              "type": "int",
+              "value": 100
+            }
+          }
+        }
+      }
+    },
+    "sample_size": 1000,
+    "lazy_id_generation": true
+  },
+  "mappings": []
+}

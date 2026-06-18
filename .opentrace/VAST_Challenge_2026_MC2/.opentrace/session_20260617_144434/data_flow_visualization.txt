@@ -1,0 +1,130 @@
+# VAST MC2 - John Windward 异常 SaidIT 帖子数据血缘可视化
+# 生成时间: 2024-06-17
+
+## Mermaid 流程图
+
+```mermaid
+graph TB
+    subgraph "原始数据"
+        A[MC2 data.json<br/>185,147 事件]
+    end
+
+    subgraph "Step 1: 数据加载"
+        B1[load_data<br/>数据加载活动]
+        B2[stats_summary<br/>统计摘要]
+        B3[analyzer<br/>Python分析器]
+    end
+
+    subgraph "Step 2: 识别目标帖子"
+        C1[filter_john<br/>筛选John事件]
+        C2[target_post<br/>Event ID: 373902<br/>2046-05-17 19:21:15]
+        C3[john_analyzer<br/>帖子分析器]
+    end
+
+    subgraph "Step 3: 传播链追踪"
+        D1[trace_chain<br/>传播链追踪]
+        D2[swiftwren_chain<br/>191事件, 18人<br/>7.8天传播]
+        D3[propagation_analyzer<br/>传播分析器]
+    end
+
+    subgraph "Step 4: 相似案例"
+        E1[find_similar<br/>模式匹配]
+        E2[three_files<br/>HiddenOrca.txt<br/>MellowOtter.txt<br/>SwiftWren.txt]
+        E3[pattern_finder<br/>模式查找器]
+    end
+
+    subgraph "Step 5: 网络分析"
+        F1[network_analysis<br/>网络分析]
+        F2[network_data<br/>10人共同参与<br/>Evelyn Dock: 34次<br/>Gabriel Sonar: 32次]
+        F3[network_analyzer<br/>网络分析器]
+    end
+
+    subgraph "Step 6: 最终报告"
+        G1[generate_report<br/>报告生成]
+        G2[final_report<br/>协调活动确认]
+        G3[report_generator<br/>报告生成器]
+    end
+
+    ## 连接关系
+    A --> B1
+    B1 --> B2
+    B1 --> B3
+    B2 -.-> C1
+
+    C1 --> C2
+    C1 --> C3
+    C2 -.-> D1
+
+    D1 --> D2
+    D1 --> D3
+    D2 -.-> E1
+
+    E1 --> E2
+    E1 --> E3
+    E2 -.-> F1
+
+    F1 --> F2
+    F1 --> F3
+    F2 -.-> G1
+
+    G1 --> G2
+    G1 --> G3
+
+    style A fill:#e1f5ff
+    style B2 fill:#c8e6c9
+    style C2 fill:#ffcdd2
+    style D2 fill:#fff9c4
+    style E2 fill:#e1bee7
+    style F2 fill:#b2dfdb
+    style G2 fill:#ffccbc
+```
+
+## SwiftWren.txt 传播链 Mermaid 图
+
+```mermaid
+graph LR
+    A[emma_harbor<br/>创建文件<br/>2046-05-09] --> B[evelyn_dock<br/>34次传播]
+    B --> C[gabriel_sonar<br/>32次传播]
+    C --> D[levi_signal<br/>30次传播]
+    D --> E[zoey_drydock<br/>28次传播]
+    E --> F[chloe_ballast<br/>26次传播]
+    F --> G[olivia_keel<br/>传递给John]
+    G --> H[john_windward<br/>发布SaidIT帖子<br/>2046-05-17 19:21:15]
+    H --> I[删除文件<br/>2046-05-17 19:21:17]
+
+    style A fill:#c8e6c9
+    style H fill:#ffcdd2
+    style I fill:#ffeb3b
+```
+
+## 三个文件传播对比
+
+```mermaid
+graph TB
+    subgraph HiddenOrca
+        H1[已有文件<br/>42事件] --> H2[chloe_ballast<br/>传递给John]
+        H2 --> H3[john发布<br/>2046-05-10]
+    end
+
+    subgraph MellowOtter
+        M1[noah_mariner<br/>创建<br/>15事件] --> M2[lily_anchorline<br/>传递给John]
+        M2 --> M3[john发布<br/>2046-05-11]
+    end
+
+    subgraph SwiftWren
+        S1[emma_harbor<br/>创建<br/>191事件] --> S2[olivia_keel<br/>传递给John]
+        S2 --> S3[john发布<br/>2046-05-17]
+    end
+
+    style H3 fill:#ffcdd2
+    style M3 fill:#ffcdd2
+    style S3 fill:#ffcdd2
+```
+
+## 关键发现总结
+
+1. **异常模式识别**: John Windward 使用 .txt 文件作为 SaidIT 帖子内容来源（108个帖子中仅3个）
+2. **传播网络**: 10人共同参与三个文件的传播，形成有组织的传播网络
+3. **关键传播者**: Evelyn Dock (34次), Gabriel Sonar (32次), Levi Signal (30次)
+4. **时间模式**: 接收文件 → 立即发布帖子 → 立即删除源文件
+5. **持续时间**: SwiftWren.txt 传播链持续 7.8 天，涉及 191 个事件

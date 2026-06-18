@@ -1,0 +1,83 @@
+{
+  "step_id": "step_004",
+  "step_name": "文件删除",
+  "operation": "delete_file",
+  "description": "立即删除源文件以掩盖痕迹",
+  "timestamp": "2026-06-15T11:00:59.955983",
+  "metadata": {
+    "deleted_files": [
+      "SwiftWren.txt",
+      "SwiftWren_further_instructions.md"
+    ],
+    "timing_seconds": 2,
+    "event_count": 6
+  },
+  "mappings": [
+    {
+      "from_ids": [
+        "HiddenOrca_further_instructions.md"
+      ],
+      "to_id": null,
+      "operation": "delete_file",
+      "timestamp": "2026-06-15T11:00:59.957219",
+      "value_info": {
+        "event_id": 27296
+      }
+    },
+    {
+      "from_ids": [
+        "HiddenOrca.txt"
+      ],
+      "to_id": null,
+      "operation": "delete_file",
+      "timestamp": "2026-06-15T11:00:59.957811",
+      "value_info": {
+        "event_id": 27302
+      }
+    },
+    {
+      "from_ids": [
+        "MellowOtter_further_instructions.md"
+      ],
+      "to_id": null,
+      "operation": "delete_file",
+      "timestamp": "2026-06-15T11:00:59.958400",
+      "value_info": {
+        "event_id": 98602
+      }
+    },
+    {
+      "from_ids": [
+        "MellowOtter.txt"
+      ],
+      "to_id": null,
+      "operation": "delete_file",
+      "timestamp": "2026-06-15T11:00:59.958995",
+      "value_info": {
+        "event_id": 98613
+      }
+    },
+    {
+      "from_ids": [
+        "SwiftWren_further_instructions.md"
+      ],
+      "to_id": null,
+      "operation": "delete_file",
+      "timestamp": "2026-06-15T11:00:59.959605",
+      "value_info": {
+        "event_id": 373909
+      }
+    },
+    {
+      "from_ids": [
+        "SwiftWren.txt"
+      ],
+      "to_id": null,
+      "operation": "delete_file",
+      "timestamp": "2026-06-15T11:00:59.960224",
+      "value_info": {
+        "event_id": 373913
+      }
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "large_files": [],
+  "emma_harbor_files": [],
+  "saidit_posts": [
+    {
+      "id": 27290,
+      "when": 2409569142.0,
+      "datetime": "2046-05-10 20:45:42",
+      "poster": "Agent/person:john_windward",
+      "content_source": "HiddenOrca.txt",
+      "forum": "general"
+    },
+    {
+      "id": 98591,
+      "when": 2409612964.0,
+      "datetime": "2046-05-11 08:56:04",
+      "poster": "Agent/person:john_windward",
+      "content_source": "MellowOtter.txt",
+      "forum": "general"
+    },
+    {
+      "id": 373902,
+      "when": 2410168875.0,
+      "datetime": "2046-05-17 19:21:15",
+      "poster": "Agent/person:john_windward",
+      "content_source": "SwiftWren.txt",
+      "forum": "general"
+    }
+  ],
+  "content_sources": {
+    "HiddenOrca.txt": 1,
+    "MellowOtter.txt": 1,
+    "SwiftWren.txt": 1
+  },
+  "suspicious_deletes": [
+    {
+      "id": 373909,
+      "when": 2410168876.0,
+      "datetime": "2046-05-17 19:21:16",
+      "deleter": "Agent/person:john_windward",
+      "filename": ""
+    },
+    {
+      "id": 373913,
+      "when": 2410168877.0,
+      "datetime": "2046-05-17 19:21:17",
+      "deleter": "Agent/person:john_windward",
+      "filename": ""
+    }
+  ],
+  "potential_anomalies": [],
+  "key_findings": {
+    "swiftwren_creator": "emma_harbor",
+    "swiftwren_size": 30615,
+    "swiftwren_created": "2046-05-09 23:02:01",
+    "cascade_duration_days": 7.8,
+    "final_post_date": "2046-05-17 19:21:15"
+  }
+}

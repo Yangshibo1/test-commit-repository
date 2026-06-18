@@ -1,0 +1,320 @@
+{
+  "nodes": {
+    "entity_71c26e4b": {
+      "id": "entity_71c26e4b",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json",
+      "attributes": {
+        "format": "json",
+        "events": 185147
+      },
+      "timestamp": "2026-06-17T15:40:16.890168"
+    },
+    "entity_8540a257": {
+      "id": "entity_8540a257",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/session_20260617_153829/step1_stats.json",
+      "attributes": {
+        "format": "json",
+        "participants": 49,
+        "unique_files": 3
+      },
+      "timestamp": "2026-06-17T15:40:16.890184"
+    },
+    "activity_3c3455d2": {
+      "id": "activity_3c3455d2",
+      "type": "activity",
+      "activity_type": "data_analysis",
+      "description": "加载MC2数据并生成基本统计信息",
+      "attributes": {
+        "step": "step1"
+      },
+      "timestamp": "2026-06-17T15:40:16.890195"
+    },
+    "agent_203c87d2": {
+      "id": "agent_203c87d2",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "step1_statistics",
+      "attributes": {},
+      "timestamp": "2026-06-17T15:40:16.890202"
+    },
+    "entity_e1855508": {
+      "id": "entity_e1855508",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json",
+      "attributes": {
+        "format": "json"
+      },
+      "timestamp": "2026-06-17T15:40:40.896328"
+    },
+    "entity_f1019fac": {
+      "id": "entity_f1019fac",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/session_20260617_153829/step2_saidit_posts.json",
+      "attributes": {
+        "format": "json",
+        "saidit_posts": 108
+      },
+      "timestamp": "2026-06-17T15:40:40.896356"
+    },
+    "activity_d938ea6f": {
+      "id": "activity_d938ea6f",
+      "type": "activity",
+      "activity_type": "data_extraction",
+      "description": "提取SaidIT帖子事件",
+      "attributes": {
+        "step": "step2",
+        "filter": "short_name=saidit_post"
+      },
+      "timestamp": "2026-06-17T15:40:40.896373"
+    },
+    "agent_5b9a4f27": {
+      "id": "agent_5b9a4f27",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "step2_extract_saidit",
+      "attributes": {},
+      "timestamp": "2026-06-17T15:40:40.896385"
+    },
+    "entity_3a4764b4": {
+      "id": "entity_3a4764b4",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/session_20260617_153829/step2_saidit_posts.json",
+      "attributes": {
+        "format": "json",
+        "saidit_posts": 108
+      },
+      "timestamp": "2026-06-17T15:41:48.081379"
+    },
+    "entity_0b33066d": {
+      "id": "entity_0b33066d",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/session_20260617_153829/step3_john_analysis.json",
+      "attributes": {
+        "format": "json",
+        "john_posts": 19,
+        "target_event": 373902,
+        "content_source": "SwiftWren.txt"
+      },
+      "timestamp": "2026-06-17T15:41:48.081400"
+    },
+    "activity_a9b0d360": {
+      "id": "activity_a9b0d360",
+      "type": "activity",
+      "activity_type": "data_analysis",
+      "description": "分析John Windward的SaidIT帖子，发现异常帖子Event ID 373902使用SwiftWren.txt作为内容来源",
+      "attributes": {
+        "step": "step3",
+        "key_finding": "Event ID 373902 content_source=SwiftWren.txt"
+      },
+      "timestamp": "2026-06-17T15:41:48.081411"
+    },
+    "agent_4e6c473f": {
+      "id": "agent_4e6c473f",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "step3_john_analysis",
+      "attributes": {},
+      "timestamp": "2026-06-17T15:41:48.081419"
+    },
+    "entity_5d90cd8a": {
+      "id": "entity_5d90cd8a",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json",
+      "attributes": {
+        "format": "json"
+      },
+      "timestamp": "2026-06-17T15:43:22.543751"
+    },
+    "entity_4db3a9c0": {
+      "id": "entity_4db3a9c0",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/session_20260617_153829/step4_swiftwren_chain.json",
+      "attributes": {
+        "format": "json",
+        "events_found": 1
+      },
+      "timestamp": "2026-06-17T15:43:22.543777"
+    },
+    "activity_223636fc": {
+      "id": "activity_223636fc",
+      "type": "activity",
+      "activity_type": "data_analysis",
+      "description": "追踪SwiftWren.txt的传播链",
+      "attributes": {
+        "step": "step4",
+        "target_file": "SwiftWren.txt"
+      },
+      "timestamp": "2026-06-17T15:43:22.543791"
+    },
+    "agent_477e0e42": {
+      "id": "agent_477e0e42",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "step4_swiftwren_chain",
+      "attributes": {},
+      "timestamp": "2026-06-17T15:43:22.543801"
+    },
+    "entity_ec4bb027": {
+      "id": "entity_ec4bb027",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json",
+      "attributes": {
+        "format": "json"
+      },
+      "timestamp": "2026-06-17T15:43:22.569559"
+    },
+    "entity_618c556d": {
+      "id": "entity_618c556d",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/session_20260617_153829/step5_similar_cases.json",
+      "attributes": {
+        "format": "json",
+        "anomaly_posts": 3,
+        "pattern": ".txt content_source"
+      },
+      "timestamp": "2026-06-17T15:43:22.569572"
+    },
+    "activity_b2020c80": {
+      "id": "activity_b2020c80",
+      "type": "activity",
+      "activity_type": "pattern_detection",
+      "description": "查找类似的异常模式：.txt文件作为content_source的SaidIT帖子",
+      "attributes": {
+        "step": "step5",
+        "pattern": "saidit_post with .txt content_source",
+        "files_found": [
+          "SwiftWren.txt",
+          "HiddenOrca.txt",
+          "MellowOtter.txt"
+        ]
+      },
+      "timestamp": "2026-06-17T15:43:22.569594"
+    },
+    "agent_282673e4": {
+      "id": "agent_282673e4",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "step5_pattern_detection",
+      "attributes": {},
+      "timestamp": "2026-06-17T15:43:22.569603"
+    },
+    "entity_e5d70dac": {
+      "id": "entity_e5d70dac",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/session_20260617_153829/step5_similar_cases.json",
+      "attributes": {
+        "format": "json",
+        "anomaly_posts": 3
+      },
+      "timestamp": "2026-06-17T15:44:18.509286"
+    },
+    "entity_49451a39": {
+      "id": "entity_49451a39",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/session_20260617_153829/step6_network_analysis.json",
+      "attributes": {
+        "format": "json",
+        "txt_files": 3
+      },
+      "timestamp": "2026-06-17T15:44:18.509312"
+    },
+    "activity_fb527868": {
+      "id": "activity_fb527868",
+      "type": "activity",
+      "activity_type": "network_analysis",
+      "description": "分析.txt文件的传播网络",
+      "attributes": {
+        "step": "step6",
+        "key_finding": "所有3个异常帖子都由Agent/person:john_windward发布"
+      },
+      "timestamp": "2026-06-17T15:44:18.509339"
+    },
+    "agent_e2c70797": {
+      "id": "agent_e2c70797",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "step6_network_analysis",
+      "attributes": {},
+      "timestamp": "2026-06-17T15:44:18.509350"
+    },
+    "entity_8db07750": {
+      "id": "entity_8db07750",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/session_20260617_153829/step3_john_analysis.json",
+      "attributes": {
+        "format": "json"
+      },
+      "timestamp": "2026-06-17T15:45:25.892451"
+    },
+    "entity_aa84562f": {
+      "id": "entity_aa84562f",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/session_20260617_153829/step4_swiftwren_chain.json",
+      "attributes": {
+        "format": "json"
+      },
+      "timestamp": "2026-06-17T15:45:25.892533"
+    },
+    "entity_ec762496": {
+      "id": "entity_ec762496",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/session_20260617_153829/step6_network_analysis.json",
+      "attributes": {
+        "format": "json"
+      },
+      "timestamp": "2026-06-17T15:45:25.892564"
+    },
+    "entity_5739e304": {
+      "id": "entity_5739e304",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": ".opentrace/session_20260617_153829/final_report.json",
+      "attributes": {
+        "format": "json",
+        "report_type": "final_analysis"
+      },
+      "timestamp": "2026-06-17T15:45:25.892574"
+    },
+    "activity_fac9713a": {
+      "id": "activity_fac9713a",
+      "type": "activity",
+      "activity_type": "report_generation",
+      "description": "生成最终分析报告，汇总所有关键发现",
+      "attributes": {
+        "step": "step7",
+        "inputs": [
+          "step3",
+          "step4",
+          "step6"
+        ],
+        "key_findings": 5
+      },
+      "timestamp": "2026-06-17T15:45:25.892588"
+    },
+    "agent_db4b126b": {
+      "id": "agent_db4b126b",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "step7_report_generation",
+      "attributes": {},
+      "timestamp": "2026-06-17T15:45:25.892604"
+    }
+  }
+}

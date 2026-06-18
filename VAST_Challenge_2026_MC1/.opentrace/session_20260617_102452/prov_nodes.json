@@ -1,0 +1,282 @@
+{
+  "nodes": {
+    "entity_7e7730c1": {
+      "id": "entity_7e7730c1",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json",
+      "attributes": {
+        "type": "MC1_final_00.json"
+      },
+      "timestamp": "2026-06-17T10:24:52.517022"
+    },
+    "entity_9c8b3cca": {
+      "id": "entity_9c8b3cca",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "working_data.json",
+      "attributes": {
+        "status": "loaded"
+      },
+      "timestamp": "2026-06-17T10:24:52.517038"
+    },
+    "activity_d21ad2c4": {
+      "id": "activity_d21ad2c4",
+      "type": "activity",
+      "activity_type": "transform",
+      "description": "加载MC1数据",
+      "attributes": {
+        "operation": "json_load"
+      },
+      "timestamp": "2026-06-17T10:24:52.517048"
+    },
+    "agent_dd586b3d": {
+      "id": "agent_dd586b3d",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "init_session",
+      "attributes": {
+        "step": "data_loading"
+      },
+      "timestamp": "2026-06-17T10:24:52.517056"
+    },
+    "entity_f58a2ece": {
+      "id": "entity_f58a2ece",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "working_data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:24:52.552765"
+    },
+    "entity_597c8f17": {
+      "id": "entity_597c8f17",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "key_events.json",
+      "attributes": {
+        "count": 23
+      },
+      "timestamp": "2026-06-17T10:24:52.552775"
+    },
+    "entity_b1cb60f7": {
+      "id": "entity_b1cb60f7",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "communications.json",
+      "attributes": {
+        "count": 912
+      },
+      "timestamp": "2026-06-17T10:24:52.552781"
+    },
+    "entity_b031c3a8": {
+      "id": "entity_b031c3a8",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "question1_results.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:24:52.552787"
+    },
+    "activity_2ae60441": {
+      "id": "activity_2ae60441",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "提取关键事件",
+      "attributes": {
+        "events_found": 23
+      },
+      "timestamp": "2026-06-17T10:24:52.552795"
+    },
+    "activity_e603e391": {
+      "id": "activity_e603e391",
+      "type": "activity",
+      "activity_type": "transform",
+      "description": "分析通信模式",
+      "attributes": {
+        "communications": 912
+      },
+      "timestamp": "2026-06-17T10:24:52.552801"
+    },
+    "activity_1ac56ca6": {
+      "id": "activity_1ac56ca6",
+      "type": "activity",
+      "activity_type": "aggregate",
+      "description": "汇总问题1结果",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:24:52.552805"
+    },
+    "agent_d19511af": {
+      "id": "agent_d19511af",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "analyze_q1",
+      "attributes": {
+        "step": "q1_analysis"
+      },
+      "timestamp": "2026-06-17T10:24:52.552812"
+    },
+    "entity_c5ad302e": {
+      "id": "entity_c5ad302e",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "working_data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:24:52.573499"
+    },
+    "entity_26119080": {
+      "id": "entity_26119080",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "typical_behavior.json",
+      "attributes": {
+        "comms": 363
+      },
+      "timestamp": "2026-06-17T10:24:52.573509"
+    },
+    "entity_7e9ea165": {
+      "id": "entity_7e9ea165",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "crisis_behavior.json",
+      "attributes": {
+        "comms": 549
+      },
+      "timestamp": "2026-06-17T10:24:52.573515"
+    },
+    "entity_acd7f894": {
+      "id": "entity_acd7f894",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "behavior_comparison.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:24:52.573520"
+    },
+    "entity_8fb64960": {
+      "id": "entity_8fb64960",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "question2_results.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:24:52.573525"
+    },
+    "activity_8e047c21": {
+      "id": "activity_8e047c21",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "提取正常期数据",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:24:52.573533"
+    },
+    "activity_1fac59c8": {
+      "id": "activity_1fac59c8",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "提取危机期数据",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:24:52.573539"
+    },
+    "activity_fef69014": {
+      "id": "activity_fef69014",
+      "type": "activity",
+      "activity_type": "transform",
+      "description": "对比行为差异",
+      "attributes": {
+        "new_actions": 1
+      },
+      "timestamp": "2026-06-17T10:24:52.573544"
+    },
+    "agent_7cf0bddd": {
+      "id": "agent_7cf0bddd",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "analyze_q2",
+      "attributes": {
+        "step": "q2_analysis"
+      },
+      "timestamp": "2026-06-17T10:24:52.573549"
+    },
+    "entity_33c5037d": {
+      "id": "entity_33c5037d",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "working_data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:24:52.644161"
+    },
+    "entity_10412cc0": {
+      "id": "entity_10412cc0",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "warning_signs.json",
+      "attributes": {
+        "count": 21
+      },
+      "timestamp": "2026-06-17T10:24:52.644174"
+    },
+    "entity_f8df507d": {
+      "id": "entity_f8df507d",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "behavior_deviations.json",
+      "attributes": {
+        "count": 360
+      },
+      "timestamp": "2026-06-17T10:24:52.644180"
+    },
+    "entity_68758072": {
+      "id": "entity_68758072",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "suppression_indicators.json",
+      "attributes": {
+        "count": 10
+      },
+      "timestamp": "2026-06-17T10:24:52.644185"
+    },
+    "entity_0be2e029": {
+      "id": "entity_0be2e029",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "question3_results.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:24:52.644189"
+    },
+    "activity_eb079bf6": {
+      "id": "activity_eb079bf6",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "检测警告信号",
+      "attributes": {
+        "warnings": 21
+      },
+      "timestamp": "2026-06-17T10:24:52.644196"
+    },
+    "activity_03fe0546": {
+      "id": "activity_03fe0546",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "识别行为偏差",
+      "attributes": {
+        "deviations": 360
+      },
+      "timestamp": "2026-06-17T10:24:52.644201"
+    },
+    "activity_506ee200": {
+      "id": "activity_506ee200",
+      "type": "activity",
+      "activity_type": "aggregate",
+      "description": "汇总升级失败分析",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:24:52.644205"
+    },
+    "agent_5ef4280a": {
+      "id": "agent_5ef4280a",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "analyze_q3",
+      "attributes": {
+        "step": "q3_analysis"
+      },
+      "timestamp": "2026-06-17T10:24:52.644211"
+    }
+  }
+}

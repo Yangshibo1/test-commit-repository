@@ -1,0 +1,36 @@
+{
+  "nodes": {
+    "entity_40b3dcfa": {
+      "id": "entity_40b3dcfa",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:46:16.115424"
+    },
+    "entity_448d4b26": {
+      "id": "entity_448d4b26",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "working_data.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:46:16.115443"
+    },
+    "activity_d9d8ed6a": {
+      "id": "activity_d9d8ed6a",
+      "type": "activity",
+      "activity_type": "transform",
+      "description": "加载MC2数据",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:46:16.115455"
+    },
+    "agent_b89df6ae": {
+      "id": "agent_b89df6ae",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "data_loader",
+      "attributes": {},
+      "timestamp": "2026-06-17T10:46:16.115465"
+    }
+  }
+}

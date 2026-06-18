@@ -1,0 +1,226 @@
+{
+  "nodes": {
+    "entity_259cfc44": {
+      "id": "entity_259cfc44",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json",
+      "attributes": {
+        "file_size_mb": "unknown",
+        "record_count": "unknown",
+        "format": "json",
+        "description": "VAST MC1 完整数据集 - TenantThread 并购泄露事件"
+      },
+      "timestamp": "2026-06-17T11:50:38.591715"
+    },
+    "entity_060696f4": {
+      "id": "entity_060696f4",
+      "type": "entity",
+      "entity_type": "session",
+      "location": "session_20260617_115027",
+      "attributes": {
+        "purpose": "VAST MC1 数据血缘追踪",
+        "task": "TenantThread 并购泄露分析"
+      },
+      "timestamp": "2026-06-17T11:50:38.591730"
+    },
+    "activity_a39a6a35": {
+      "id": "activity_a39a6a35",
+      "type": "activity",
+      "activity_type": "data_loading",
+      "description": "初始化 OpenTrace 会话并加载原始数据",
+      "attributes": {
+        "timestamp": "2026-06-17T11:50:27",
+        "method": "init_session"
+      },
+      "timestamp": "2026-06-17T11:50:38.591740"
+    },
+    "agent_7d835289": {
+      "id": "agent_7d835289",
+      "type": "agent",
+      "agent_type": "data_analyzer",
+      "name": "VAST_MC1_Analyzer",
+      "attributes": {
+        "role": "主数据分析代理",
+        "framework": "OpenTrace"
+      },
+      "timestamp": "2026-06-17T11:50:38.591747"
+    },
+    "entity_c70286bf": {
+      "id": "entity_c70286bf",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json",
+      "attributes": {
+        "format": "json"
+      },
+      "timestamp": "2026-06-17T14:08:29.028435"
+    },
+    "entity_01e555b4": {
+      "id": "entity_01e555b4",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/.opentrace/data_summary.json",
+      "attributes": {
+        "record_type": "summary_statistics",
+        "rounds": 23,
+        "communications": 912,
+        "agents": 7,
+        "date_range": "2046-05-17 to 2046-06-05"
+      },
+      "timestamp": "2026-06-17T14:08:29.028473"
+    },
+    "activity_6a3a7007": {
+      "id": "activity_6a3a7007",
+      "type": "activity",
+      "activity_type": "data_analysis",
+      "description": "生成数据集摘要统计 - 轮次、通信、Agents 概览",
+      "attributes": {
+        "processed_records": 912,
+        "output_fields": [
+          "rounds",
+          "communications",
+          "agents",
+          "date_range"
+        ]
+      },
+      "timestamp": "2026-06-17T14:08:29.028493"
+    },
+    "agent_05ae9588": {
+      "id": "agent_05ae9588",
+      "type": "agent",
+      "agent_type": "data_analyzer",
+      "name": "VAST_MC1_Analyzer",
+      "attributes": {},
+      "timestamp": "2026-06-17T14:08:29.028508"
+    },
+    "entity_2e63a167": {
+      "id": "entity_2e63a167",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T14:09:58.542276"
+    },
+    "entity_23e3571b": {
+      "id": "entity_23e3571b",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "social_media_analysis.json",
+      "attributes": {
+        "description": "社交媒体和泄露路径分析",
+        "social_media_comms": 220,
+        "leak_related_comms": 45,
+        "key_findings": "CivicLoom 员工在 5-29 点赞帖子，SaltWind 报道逐步揭示并购信息"
+      },
+      "timestamp": "2026-06-17T14:09:58.542312"
+    },
+    "entity_fe4e0ae4": {
+      "id": "entity_fe4e0ae4",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "key_events.json",
+      "attributes": {
+        "description": "关键事件时间线",
+        "first_civicloom_mention": "2046-05-25T09:00:00",
+        "first_embargo_mention": "2046-05-30T09:00:00",
+        "first_saltwind_article": "2046-05-31T09:00:00"
+      },
+      "timestamp": "2026-06-17T14:09:58.542328"
+    },
+    "activity_13fb3b47": {
+      "id": "activity_13fb3b47",
+      "type": "activity",
+      "activity_type": "pattern_analysis",
+      "description": "分析社交媒体通信和泄露路径，识别关键时间节点",
+      "attributes": {
+        "focus": "social_media_agent, media_events, civicloom_interactions",
+        "key_insight": "CivicLoom 员工互动是最早的外部信号"
+      },
+      "timestamp": "2026-06-17T14:09:58.542343"
+    },
+    "agent_fae4459f": {
+      "id": "agent_fae4459f",
+      "type": "agent",
+      "agent_type": "data_analyzer",
+      "name": "VAST_MC1_Analyzer",
+      "attributes": {},
+      "timestamp": "2026-06-17T14:09:58.542359"
+    },
+    "entity_58bc00a9": {
+      "id": "entity_58bc00a9",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T14:11:55.686418"
+    },
+    "entity_5ab1f8ae": {
+      "id": "entity_5ab1f8ae",
+      "type": "entity",
+      "entity_type": "report",
+      "location": "final_report.json",
+      "attributes": {
+        "title": "VAST MC1 分析报告",
+        "conclusion": "意外暴露导致的非故意泄露",
+        "key_finding": "CivicLoom 员工点赞事件是关键转折点"
+      },
+      "timestamp": "2026-06-17T14:11:55.686435"
+    },
+    "entity_45e3b1f0": {
+      "id": "entity_45e3b1f0",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "data_summary.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T14:11:55.686444"
+    },
+    "entity_55c6b22d": {
+      "id": "entity_55c6b22d",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "social_media_analysis.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T14:11:55.686450"
+    },
+    "entity_8f9686fe": {
+      "id": "entity_8f9686fe",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "key_events.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T14:11:55.686455"
+    },
+    "entity_493dd953": {
+      "id": "entity_493dd953",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "civicloom_incident.json",
+      "attributes": {},
+      "timestamp": "2026-06-17T14:11:55.686460"
+    },
+    "activity_bf444651": {
+      "id": "activity_bf444651",
+      "type": "activity",
+      "activity_type": "comprehensive_analysis",
+      "description": "完成 VAST MC1 数据分析，回答所有核心问题",
+      "attributes": {
+        "questions_answered": 4,
+        "timeline_events": 9,
+        "agents_analyzed": 7
+      },
+      "timestamp": "2026-06-17T14:11:55.686468"
+    },
+    "agent_9416af34": {
+      "id": "agent_9416af34",
+      "type": "agent",
+      "agent_type": "data_analyzer",
+      "name": "VAST_MC1_Analyzer",
+      "attributes": {
+        "role": "主数据分析代理",
+        "task": "VAST MC1 完整分析"
+      },
+      "timestamp": "2026-06-17T14:11:55.686474"
+    }
+  }
+}

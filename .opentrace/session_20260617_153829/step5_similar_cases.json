@@ -1,0 +1,44 @@
+{
+  "pattern": "saidit_post with .txt content_source",
+  "posts": [
+    {
+      "event_id": 27290,
+      "when": 2409569142.0,
+      "poster_id": null,
+      "content_source": "HiddenOrca.txt",
+      "forum": "general",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ]
+    },
+    {
+      "event_id": 98591,
+      "when": 2409612964.0,
+      "poster_id": null,
+      "content_source": "MellowOtter.txt",
+      "forum": "general",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ]
+    },
+    {
+      "event_id": 373902,
+      "when": 2410168875.0,
+      "poster_id": null,
+      "content_source": "SwiftWren.txt",
+      "forum": "general",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ]
+    }
+  ],
+  "files_found": [
+    "HiddenOrca.txt",
+    "MellowOtter.txt",
+    "SwiftWren.txt"
+  ],
+  "participants": []
+}

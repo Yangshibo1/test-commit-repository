@@ -1,0 +1,285 @@
+{
+  "total_posts": 19,
+  "posts": [
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2409847766.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "SLA Tracking: Work-Order Triage Status Updates for Maintenance Requests",
+        "forum": "general",
+        "timestamp": "2046-05-13T11:08:14"
+      },
+      "id": 349631
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2411303366.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "SLA Tracking for Maintenance Requests—On-Time Updates for Residents",
+        "forum": "general",
+        "timestamp": "2046-05-30T07:25:35"
+      },
+      "id": 456921
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2411326766.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Resident Messaging: Building Announcement Updates",
+        "forum": "general",
+        "timestamp": "2046-05-30T14:00:03"
+      },
+      "id": 459090
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2411329766.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Resident messaging: package notifications and pickup updates",
+        "forum": "general",
+        "timestamp": "2046-05-30T14:44:47"
+      },
+      "id": 459365
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2411343566.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Work-Order Triage Updates for Maintenance Requests",
+        "forum": "general",
+        "timestamp": "2046-05-30T18:38:37"
+      },
+      "id": 460648
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2411349566.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Work-order triage for maintenance requests—SLA tracking in TenantThread Technologies",
+        "forum": "general",
+        "timestamp": "2046-05-30T20:16:13"
+      },
+      "id": 461140
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2411747366.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Work-order triage: SLA tracking for maintenance requests",
+        "forum": "general",
+        "timestamp": "2046-06-04T10:45:59"
+      },
+      "id": 489613
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2411749166.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Resident Messaging: Building Announcements & Work-Order Triage",
+        "forum": "general",
+        "timestamp": "2046-06-04T11:20:33"
+      },
+      "id": 489813
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2411761766.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Work-Order Triage Updates for Residents",
+        "forum": "general",
+        "timestamp": "2046-06-04T14:52:01"
+      },
+      "id": 491058
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2412493510.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Package Notification Alerts from HarborCrest ResidentEdge",
+        "forum": "general",
+        "timestamp": "2046-06-13T02:09:52"
+      },
+      "id": 542951
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2412493630.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Work-order triage: vendor dispatch and status changes",
+        "forum": "general",
+        "timestamp": "2046-06-13T02:13:56"
+      },
+      "id": 542965
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2412865166.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Amenity Reservations: Unit-Turn Coordination & Vendor Dispatch",
+        "forum": "general",
+        "timestamp": "2046-06-17T09:17:22"
+      },
+      "id": 568875
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2412873566.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Package Notifications: Fast Alerts for Residents",
+        "forum": "general",
+        "timestamp": "2046-06-17T11:36:33"
+      },
+      "id": 569493
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2412912566.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Work-Order Triage: Faster Resolution Updates for Residents",
+        "forum": "general",
+        "timestamp": "2046-06-17T22:31:46"
+      },
+      "id": 572544
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2412934166.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Package Notifications and Building Announcement Alerts",
+        "forum": "general",
+        "timestamp": "2046-06-18T04:33:42"
+      },
+      "id": 574617
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2413183166.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Package Notifications: Resident Messaging from HarborCrest ResidentEdge",
+        "forum": "general",
+        "timestamp": "2046-06-21T01:41:25"
+      },
+      "id": 593240
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2413952366.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "SLA Tracking & Vendor Dispatch Status for Property Staff",
+        "forum": "general",
+        "timestamp": "2046-06-29T23:21:34"
+      },
+      "id": 651088
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2414574566.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "SLA Tracking for Maintenance Requests at HarborCrest ResidentEdge",
+        "forum": "general",
+        "timestamp": "2046-07-07T04:08:41"
+      },
+      "id": 697090
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2414584766.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "Amenity reservations reminders for HarborCrest ResidentEdge",
+        "forum": "general",
+        "timestamp": "2046-07-07T07:01:31"
+      },
+      "id": 698079
+    }
+  ],
+  "target_event_373902": {
+    "short_name": "saidit_post",
+    "parties": [
+      "Agent/person:john_windward",
+      "system:saidit"
+    ],
+    "when": 2410168875.0,
+    "details": {
+      "forum": "general",
+      "content_source": "SwiftWren.txt"
+    },
+    "id": 373902
+  },
+  "john_windward_id": "person:john_windward"
+}

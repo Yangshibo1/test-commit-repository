@@ -1,0 +1,65 @@
+{
+  "step_id": "step_000",
+  "step_name": "数据加载",
+  "operation": "load_csv",
+  "description": "从 test_data.csv 加载CSV数据",
+  "timestamp": "2026-06-16T11:43:26.250151",
+  "metadata": {
+    "source": "test_data.csv",
+    "total_rows": 5,
+    "total_cols": 4,
+    "structure": {
+      "type": "dataframe",
+      "columns": [
+        "id",
+        "name",
+        "value",
+        "category"
+      ],
+      "dtypes": {
+        "id": "int64",
+        "name": "str",
+        "value": "int64",
+        "category": "str"
+      },
+      "shape": [
+        5,
+        4
+      ],
+      "sample": [
+        {
+          "id": 1,
+          "name": "Alice",
+          "value": 150,
+          "category": "X"
+        },
+        {
+          "id": 2,
+          "name": "Bob",
+          "value": 80,
+          "category": "Y"
+        },
+        {
+          "id": 3,
+          "name": "Charlie",
+          "value": 120,
+          "category": "X"
+        },
+        {
+          "id": 4,
+          "name": "David",
+          "value": 200,
+          "category": "Y"
+        },
+        {
+          "id": 5,
+          "name": "Eve",
+          "value": 90,
+          "category": "Z"
+        }
+      ]
+    },
+    "sample_size": 1000
+  },
+  "mappings": []
+}

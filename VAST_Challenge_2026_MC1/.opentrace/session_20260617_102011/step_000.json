@@ -1,0 +1,255 @@
+{
+  "step_id": "step_000",
+  "step_name": "数据加载",
+  "operation": "load_json",
+  "description": "从 C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json 加载JSON数据",
+  "timestamp": "2026-06-17T10:20:11.142695",
+  "metadata": {
+    "source": "C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC1/MC1_final_00.json",
+    "total_rows": 1,
+    "total_size_mb": 0.94,
+    "structure": {
+      "type": "dict",
+      "keys": [
+        "rounds"
+      ],
+      "fields": {
+        "rounds": {
+          "type": "list",
+          "path": "rounds",
+          "structure": {
+            "type": "list",
+            "length": 23,
+            "item_type": "dict",
+            "fields": {
+              "hour": {
+                "type": "str",
+                "value": "2046-05-17T09:00:00"
+              },
+              "environment_context": {
+                "type": "dict",
+                "keys": [
+                  "event_narrative",
+                  "event_headline",
+                  "market_snapshot",
+                  "media_events",
+                  "social_state",
+                  "external_actor_actions",
+                  "social_manager_alerts",
+                  "agents_unavailable",
+                  "critical_deadlines",
+                  "news"
+                ],
+                "fields": {
+                  "event_narrative": {
+                    "type": "str",
+                    "path": "rounds[0].environment_context.event_narrative"
+                  },
+                  "event_headline": {
+                    "type": "str",
+                    "path": "rounds[0].environment_context.event_headline"
+                  },
+                  "market_snapshot": {
+                    "type": "dict",
+                    "path": "rounds[0].environment_context.market_snapshot",
+                    "structure": {
+                      "type": "dict",
+                      "keys": [
+                        "stock_price",
+                        "percent_change",
+                        "sentiment",
+                        "trending_hashtags"
+                      ],
+                      "fields": {
+                        "stock_price": {
+                          "type": "str",
+                          "path": "rounds[0].environment_context.market_snapshot.stock_price"
+                        },
+                        "percent_change": {
+                          "type": "str",
+                          "path": "rounds[0].environment_context.market_snapshot.percent_change"
+                        },
+                        "sentiment": {
+                          "type": "str",
+                          "path": "rounds[0].environment_context.market_snapshot.sentiment"
+                        },
+                        "trending_hashtags": {
+                          "type": "list",
+                          "path": "rounds[0].environment_context.market_snapshot.trending_hashtags",
+                          "structure": {
+                            "type": "empty_list"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "media_events": {
+                    "type": "list",
+                    "path": "rounds[0].environment_context.media_events",
+                    "structure": {
+                      "type": "empty_list"
+                    }
+                  },
+                  "social_state": {
+                    "type": "str",
+                    "path": "rounds[0].environment_context.social_state"
+                  },
+                  "external_actor_actions": {
+                    "type": "list",
+                    "path": "rounds[0].environment_context.external_actor_actions",
+                    "structure": {
+                      "type": "empty_list"
+                    }
+                  },
+                  "social_manager_alerts": {
+                    "type": "list",
+                    "path": "rounds[0].environment_context.social_manager_alerts",
+                    "structure": {
+                      "type": "empty_list"
+                    }
+                  },
+                  "agents_unavailable": {
+                    "type": "list",
+                    "path": "rounds[0].environment_context.agents_unavailable",
+                    "structure": {
+                      "type": "empty_list"
+                    }
+                  },
+                  "critical_deadlines": {
+                    "type": "list",
+                    "path": "rounds[0].environment_context.critical_deadlines",
+                    "structure": {
+                      "type": "list",
+                      "length": 1,
+                      "item_type": "str"
+                    }
+                  },
+                  "news": {
+                    "type": "list",
+                    "path": "rounds[0].environment_context.news",
+                    "structure": {
+                      "type": "empty_list"
+                    }
+                  }
+                }
+              },
+              "communications": {
+                "type": "list",
+                "length": 25,
+                "item_type": "dict",
+                "fields": {
+                  "message_id": {
+                    "type": "str",
+                    "value": "20460517_00_001"
+                  },
+                  "agent_id": {
+                    "type": "str",
+                    "value": "legal_agent"
+                  },
+                  "agent_role": {
+                    "type": "str",
+                    "value": "legal"
+                  },
+                  "agent_label": {
+                    "type": "str",
+                    "value": "Legal-Agent"
+                  },
+                  "internal_state": {
+                    "type": "dict",
+                    "keys": [
+                      "reacting",
+                      "rationalizing",
+                      "deliberating"
+                    ],
+                    "fields": {
+                      "reacting": {
+                        "type": "NoneType",
+                        "path": "rounds[0].communications[0].internal_state.reacting"
+                      },
+                      "rationalizing": {
+                        "type": "NoneType",
+                        "path": "rounds[0].communications[0].internal_state.rationalizing"
+                      },
+                      "deliberating": {
+                        "type": "str",
+                        "path": "rounds[0].communications[0].internal_state.deliberating"
+                      }
+                    }
+                  },
+                  "channel": {
+                    "type": "str",
+                    "value": "comms_huddle"
+                  },
+                  "recipients": {
+                    "type": "list",
+                    "length": 1,
+                    "item_type": "str"
+                  },
+                  "message_type": {
+                    "type": "str",
+                    "value": "broadcast"
+                  },
+                  "responding_to": {
+                    "type": "NoneType",
+                    "value": null
+                  },
+                  "content": {
+                    "type": "str",
+                    "value": "Morning. Let's keep today focused — Q2 planning kickoff. Ajay wants the board risk summary framework locked down by end of week. I have compliance items to walk through first."
+                  },
+                  "timestamp": {
+                    "type": "str",
+                    "value": "2046-05-17T09:00:00"
+                  }
+                }
+              },
+              "participants": {
+                "type": "list",
+                "length": 4,
+                "item_type": "dict",
+                "fields": {
+                  "agent_id": {
+                    "type": "str",
+                    "value": "legal_agent"
+                  },
+                  "agent_role": {
+                    "type": "str",
+                    "value": "legal"
+                  },
+                  "agent_label": {
+                    "type": "str",
+                    "value": "Legal-Agent"
+                  },
+                  "declared_action": {
+                    "type": "NoneType",
+                    "value": null
+                  },
+                  "agent_round_metadata": {
+                    "type": "dict",
+                    "keys": [
+                      "sentiment_at_turn",
+                      "action_classification"
+                    ],
+                    "fields": {
+                      "sentiment_at_turn": {
+                        "type": "NoneType",
+                        "path": "rounds[0].participants[0].agent_round_metadata.sentiment_at_turn"
+                      },
+                      "action_classification": {
+                        "type": "NoneType",
+                        "path": "rounds[0].participants[0].agent_round_metadata.action_classification"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "sample_size": 1000,
+    "lazy_id_generation": true
+  },
+  "mappings": []
+}

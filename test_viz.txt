@@ -1,0 +1,55 @@
+======================================================================
+PROV DAG 可视化
+======================================================================
+
+节点统计:
+  实体: 2
+  活动: 1
+  代理: 1
+  边: 4
+
+======================================================================
+数据流图 (实体→处理→产物)
+======================================================================
+
+【输入】test.csv
+      属性: rows=3
+      ↓ [filter] 筛选value>100
+      by: step1
+      【输出】filtered.csv
+            属性: rows=2
+
+======================================================================
+节点详情
+======================================================================
+
+ENTITY 节点:
+  - test.csv (属性: {'rows': 3})
+  - filtered.csv (属性: {'rows': 2})
+
+ACTIVITY 节点:
+  - 筛选value>100 (属性: {})
+
+AGENT 节点:
+  - step1 (属性: {})
+
+======================================================================
+关系详情
+======================================================================
+  activity_950ba7e4 --[used]--> entity_1b289a43
+  entity_25df0585 --[wasGeneratedBy]--> activity_950ba7e4
+  activity_950ba7e4 --[wasAssociatedWith]--> agent_f343a463
+  entity_25df0585 --[wasDerivedFrom]--> entity_1b289a43
+
+======================================================================
+Mermaid 格式 (可在支持 Mermaid 的平台渲染)
+======================================================================
+graph TD
+    classDef entity fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef artifact fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef agent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,stroke-dasharray: 5 5
+    test_csv["test.csv"]:::entity
+    filtered_csv["filtered.csv"]:::entity
+    agent_f343a463["step1"]:::agent
+    test_csv ==>|"filter"| agent_f343a463
+    agent_f343a463 -.->|output| filtered_csv

@@ -1,0 +1,26 @@
+{
+  "processing_id": "processing_step_000",
+  "step_id": "step_000",
+  "timestamp": "2026-06-15T11:17:19.331313",
+  "input": {
+    "source": "events",
+    "source_type": "json_array",
+    "filter_condition": "details contains 'SwiftWren'",
+    "total_count_before": 185147
+  },
+  "algorithm": {
+    "type": "filter",
+    "language": "python",
+    "code": "swiftwren_events = [e for e in events if 'SwiftWren' in json.dumps(e.get('details', {}))]",
+    "logic_description": "筛选包含 SwiftWren 的事件"
+  },
+  "result": {
+    "format": "external_file",
+    "file": "processing_step_000_result.json",
+    "item_count": 100,
+    "statistics": {
+      "event_count": 191,
+      "event_ids_count": 100
+    }
+  }
+}

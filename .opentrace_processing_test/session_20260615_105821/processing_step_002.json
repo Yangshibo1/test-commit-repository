@@ -1,0 +1,27 @@
+{
+  "processing_id": "processing_step_002",
+  "step_id": "step_002",
+  "timestamp": "2026-06-15T10:58:21.572061",
+  "input": {
+    "source": "events",
+    "source_type": "json_array",
+    "filter_condition": "all events",
+    "total_count_before": 185147
+  },
+  "algorithm": {
+    "type": "pattern_analysis",
+    "language": "python",
+    "code": "patterns = analyze_event_patterns(events)",
+    "logic_description": "分析事件中的模式"
+  },
+  "result": {
+    "format": "external_file",
+    "file": "processing_step_002_result.json",
+    "item_count": 11500,
+    "statistics": {
+      "event_ids_count": 10000,
+      "agents_count": 500,
+      "patterns_count": 1000
+    }
+  }
+}

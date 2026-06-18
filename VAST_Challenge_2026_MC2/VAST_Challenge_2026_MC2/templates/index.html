@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAST Challenge 2026 MC2 - Anomalous SaidIT Post Analysis</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vis-network@0.9.0/dist/vis-network.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/vis-network@0.9.0/dist/vis-network.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>VAST Challenge 2026 Mini-Challenge 2</h1>
+            <h2>Visual Analytics of Anomalous SaidIT Posts</h2>
+            <p class="subtitle">Analyzing John Windward's post on May 17, 2046 at 4:21 AM</p>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="overview">Overview</button>
+            <button class="tab-btn" data-tab="timeline">Event Chain</button>
+            <button class="tab-btn" data-tab="network">Network View</button>
+            <button class="tab-btn" data-tab="analysis">Post Analysis</button>
+            <button class="tab-btn" data-tab="intervention">Intervention Points</button>
+        </nav>
+
+        <main>
+            <!-- Overview Tab -->
+            <section id="overview" class="tab-content active">
+                <div class="card">
+                    <h3>System Overview</h3>
+                    <div id="summary-stats">
+                        <div class="stat-grid">
+                            <div class="stat-item">
+                                <span class="stat-label">Total Events</span>
+                                <span class="stat-value" id="total-events">-</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Date Range</span>
+                                <span class="stat-value" id="date-range">-</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">John Windward Events</span>
+                                <span class="stat-value" id="john-events">-</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">SaidIT Posts</span>
+                                <span class="stat-value" id="saidit-posts">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Event Type Distribution</h3>
+                    <div id="event-type-chart"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Key Information</h3>
+                    <div class="info-box">
+                        <h4>Anomalous Event</h4>
+                        <p><strong>Who:</strong> John Windward</p>
+                        <p><strong>When:</strong> May 17, 2046 at 4:21 AM</p>
+                        <p><strong>What:</strong> Gibberish post to SaidIT forum</p>
+                        <p><strong>Platform:</strong> SaidIT (appears random/inappropriate)</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Timeline Tab -->
+            <section id="timeline" class="tab-content">
+                <div class="card">
+                    <h3>Event Chain Leading to Anomalous Post</h3>
+                    <p class="hint">Events in the 48 hours before the anomalous post</p>
+                    <div id="timeline-chart"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Event Details</h3>
+                    <div id="event-details">
+                        <p class="hint">Click on an event to see details</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>John Windward's Activity Timeline</h3>
+                    <div id="john-timeline"></div>
+                </div>
+            </section>
+
+            <!-- Network Tab -->
+            <section id="network" class="tab-content">
+                <div class="card">
+                    <h3>Interaction Network</h3>
+                    <p class="hint">Network of entities involved in events leading to the post</p>
+                    <div id="network-graph"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Network Statistics</h3>
+                    <div id="network-stats"></div>
+                </div>
+            </section>
+
+            <!-- Analysis Tab -->
+            <section id="analysis" class="tab-content">
+                <div class="card">
+                    <h3>Post Meaning Analysis</h3>
+                    <div class="analysis-result">
+                        <h4>Interpretation</h4>
+                        <p>The gibberish post appears to be the result of:</p>
+                        <ul>
+                            <li><strong>Data Corruption:</strong> Agent misinterpreting input data</li>
+                            <li><strong>Cascading Failure:</strong> Multiple automated systems compounding errors</li>
+                            <li><strong>Lack of Validation:</strong> No content verification before publication</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Similar Historical Patterns</h3>
+                    <div id="similar-patterns">
+                        <p class="hint">Searching for similar event patterns...</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>All SaidIT Posts</h3>
+                    <div id="all-posts"></div>
+                </div>
+            </section>
+
+            <!-- Intervention Tab -->
+            <section id="intervention" class="tab-content">
+                <div class="card">
+                    <h3>Recommended Intervention Points</h3>
+                    <div id="interventions">
+                        <p class="hint">Analyzing optimal intervention points...</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>System Improvement Recommendations</h3>
+                    <div class="recommendations">
+                        <div class="recommendation-item">
+                            <h4>1. Human-in-the-Loop Validation</h4>
+                            <p>Require human approval for any agent-generated public content</p>
+                        </div>
+                        <div class="recommendation-item">
+                            <h4>2. Semantic Content Analysis</h4>
+                            <p>Implement AI-powered content quality checking before publication</p>
+                        </div>
+                        <div class="recommendation-item">
+                            <h4>3. Rate Limiting</h4>
+                            <p>Add cooldown periods between automated actions to prevent cascades</p>
+                        </div>
+                        <div class="recommendation-item">
+                            <h4>4. Audit Trails</h4>
+                            <p>Maintain detailed logs of all agent decision-making processes</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>VAST Challenge 2026 MC2 - Visual Analytics System</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

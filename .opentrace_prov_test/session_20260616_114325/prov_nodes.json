@@ -1,0 +1,168 @@
+{
+  "nodes": {
+    "entity_748785da": {
+      "id": "entity_748785da",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "raw_data.csv",
+      "attributes": {
+        "rows": 1000,
+        "columns": 5
+      },
+      "timestamp": "2026-06-16T11:43:26.255898"
+    },
+    "entity_2da24fc4": {
+      "id": "entity_2da24fc4",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "filtered_data.csv",
+      "attributes": {
+        "rows": 150,
+        "filter_condition": "value > 100"
+      },
+      "timestamp": "2026-06-16T11:43:26.255925"
+    },
+    "entity_0a04f486": {
+      "id": "entity_0a04f486",
+      "type": "entity",
+      "entity_type": "artifact",
+      "location": "final_result.csv",
+      "attributes": {
+        "description": "聚合结果"
+      },
+      "timestamp": "2026-06-16T11:43:26.255937"
+    },
+    "activity_59edd630": {
+      "id": "activity_59edd630",
+      "type": "activity",
+      "activity_type": "filter",
+      "description": "筛选 value > 100 的记录",
+      "attributes": {
+        "condition": "value > 100",
+        "language": "python"
+      },
+      "timestamp": "2026-06-16T11:43:26.255949"
+    },
+    "activity_b3cd61de": {
+      "id": "activity_b3cd61de",
+      "type": "activity",
+      "activity_type": "aggregate",
+      "description": "按类别计算平均值",
+      "attributes": {
+        "group_by": "category",
+        "func": "mean"
+      },
+      "timestamp": "2026-06-16T11:43:26.255958"
+    },
+    "agent_746d2cfa": {
+      "id": "agent_746d2cfa",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "claude_data_analysis",
+      "attributes": {
+        "version": "1.0",
+        "model": "claude-sonnet"
+      },
+      "timestamp": "2026-06-16T11:43:26.255969"
+    },
+    "entity_c24ddcc1": {
+      "id": "entity_c24ddcc1",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "data_a.csv",
+      "attributes": {
+        "source": "系统A"
+      },
+      "timestamp": "2026-06-16T11:43:26.283313"
+    },
+    "entity_3cb6636f": {
+      "id": "entity_3cb6636f",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "data_b.csv",
+      "attributes": {
+        "source": "系统B"
+      },
+      "timestamp": "2026-06-16T11:43:26.283327"
+    },
+    "entity_6741c2d3": {
+      "id": "entity_6741c2d3",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "merged_data.csv",
+      "attributes": {
+        "operation": "merge"
+      },
+      "timestamp": "2026-06-16T11:43:26.283334"
+    },
+    "activity_80104027": {
+      "id": "activity_80104027",
+      "type": "activity",
+      "activity_type": "join",
+      "description": "合并两个数据集",
+      "attributes": {
+        "join_type": "inner",
+        "on": "id"
+      },
+      "timestamp": "2026-06-16T11:43:26.283342"
+    },
+    "agent_a79194cc": {
+      "id": "agent_a79194cc",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "merge_operation",
+      "attributes": {
+        "library": "pandas"
+      },
+      "timestamp": "2026-06-16T11:43:26.283351"
+    },
+    "entity_78f58e6c": {
+      "id": "entity_78f58e6c",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "input.csv",
+      "attributes": {
+        "rows": 1000
+      },
+      "timestamp": "2026-06-16T11:43:26.307579"
+    },
+    "entity_d23e452d": {
+      "id": "entity_d23e452d",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "output_a.csv",
+      "attributes": {
+        "filter": "type == A"
+      },
+      "timestamp": "2026-06-16T11:43:26.307599"
+    },
+    "entity_ef9ecd7a": {
+      "id": "entity_ef9ecd7a",
+      "type": "entity",
+      "entity_type": "dataset",
+      "location": "output_b.csv",
+      "attributes": {
+        "filter": "type == B"
+      },
+      "timestamp": "2026-06-16T11:43:26.307607"
+    },
+    "activity_51a9c9d8": {
+      "id": "activity_51a9c9d8",
+      "type": "activity",
+      "activity_type": "split",
+      "description": "按类型分叉数据",
+      "attributes": {
+        "split_by": "type"
+      },
+      "timestamp": "2026-06-16T11:43:26.307619"
+    },
+    "agent_da60882e": {
+      "id": "agent_da60882e",
+      "type": "agent",
+      "agent_type": "python_code",
+      "name": "split_operation",
+      "attributes": {},
+      "timestamp": "2026-06-16T11:43:26.307628"
+    }
+  }
+}

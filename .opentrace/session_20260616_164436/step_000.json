@@ -1,0 +1,34 @@
+{
+  "step_id": "step_000",
+  "step_name": "数据加载",
+  "operation": "load_csv",
+  "description": "从 test.csv 加载CSV数据",
+  "timestamp": "2026-06-16T16:44:36.718080",
+  "metadata": {
+    "source": "test.csv",
+    "total_rows": 0,
+    "total_cols": 4,
+    "structure": {
+      "type": "dataframe",
+      "columns": [
+        "name",
+        "value\\nAlice",
+        "100\\nBob",
+        "200"
+      ],
+      "dtypes": {
+        "name": "object",
+        "value\\nAlice": "object",
+        "100\\nBob": "object",
+        "200": "object"
+      },
+      "shape": [
+        0,
+        4
+      ],
+      "sample": []
+    },
+    "sample_size": 1000
+  },
+  "mappings": []
+}

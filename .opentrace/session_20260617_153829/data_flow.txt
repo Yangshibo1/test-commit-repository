@@ -1,0 +1,172 @@
+======================================================================
+PROV DAG 可视化
+======================================================================
+
+节点统计:
+  实体: 16
+  活动: 7
+  代理: 7
+  边: 32
+
+======================================================================
+数据流图 (实体→处理→产物)
+======================================================================
+
+【输入】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json
+      属性: format=json, events=185147
+      ↓ [data_analysis] 加载MC2数据并生成基本统计信息
+      by: step1_statistics
+      【输出】.opentrace/session_20260617_153829/step1_stats.json
+            属性: format=json, participants=49, unique_files=3
+
+【输入】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json
+      属性: format=json
+      ↓ [data_extraction] 提取SaidIT帖子事件
+      by: step2_extract_saidit
+      【输出】.opentrace/session_20260617_153829/step2_saidit_posts.json
+            属性: format=json, saidit_posts=108
+
+【输入】.opentrace/session_20260617_153829/step2_saidit_posts.json
+      属性: format=json, saidit_posts=108
+      ↓ [data_analysis] 分析John Windward的SaidIT帖子，发现异常帖子Event ID 373902使用SwiftWren.txt作为内容来源
+      by: step3_john_analysis
+      【输出】.opentrace/session_20260617_153829/step3_john_analysis.json
+            属性: format=json, john_posts=19, target_event=373902, content_source=SwiftWren.txt
+
+【输入】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json
+      属性: format=json
+      ↓ [data_analysis] 追踪SwiftWren.txt的传播链
+      by: step4_swiftwren_chain
+      【输出】.opentrace/session_20260617_153829/step4_swiftwren_chain.json
+            属性: format=json, events_found=1
+
+【输入】C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json
+      属性: format=json
+      ↓ [pattern_detection] 查找类似的异常模式：.txt文件作为content_source的SaidIT帖子
+      by: step5_pattern_detection
+      【输出】.opentrace/session_20260617_153829/step5_similar_cases.json
+            属性: format=json, anomaly_posts=3, pattern=.txt content_source
+
+【输入】.opentrace/session_20260617_153829/step5_similar_cases.json
+      属性: format=json, anomaly_posts=3
+      ↓ [network_analysis] 分析.txt文件的传播网络
+      by: step6_network_analysis
+      【输出】.opentrace/session_20260617_153829/step6_network_analysis.json
+            属性: format=json, txt_files=3
+
+【输入】.opentrace/session_20260617_153829/step3_john_analysis.json
+      属性: format=json
+      ↓ [report_generation] 生成最终分析报告，汇总所有关键发现
+      by: step7_report_generation
+      【输出】.opentrace/session_20260617_153829/final_report.json
+            属性: format=json, report_type=final_analysis
+
+【输入】.opentrace/session_20260617_153829/step4_swiftwren_chain.json
+      属性: format=json
+      ↓ [report_generation] 生成最终分析报告，汇总所有关键发现
+      by: step7_report_generation
+      【输出】.opentrace/session_20260617_153829/final_report.json
+            属性: format=json, report_type=final_analysis
+
+【输入】.opentrace/session_20260617_153829/step6_network_analysis.json
+      属性: format=json
+      ↓ [report_generation] 生成最终分析报告，汇总所有关键发现
+      by: step7_report_generation
+      【输出】.opentrace/session_20260617_153829/final_report.json
+            属性: format=json, report_type=final_analysis
+
+======================================================================
+节点详情
+======================================================================
+
+ENTITY 节点:
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json (属性: {'format': 'json', 'events': 185147})
+  - .opentrace/session_20260617_153829/step1_stats.json (属性: {'format': 'json', 'participants': 49, 'unique_files': 3})
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json (属性: {'format': 'json'})
+  - .opentrace/session_20260617_153829/step2_saidit_posts.json (属性: {'format': 'json', 'saidit_posts': 108})
+  - .opentrace/session_20260617_153829/step2_saidit_posts.json (属性: {'format': 'json', 'saidit_posts': 108})
+  - .opentrace/session_20260617_153829/step3_john_analysis.json (属性: {'format': 'json', 'john_posts': 19, 'target_event': 373902, 'content_source': 'SwiftWren.txt'})
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json (属性: {'format': 'json'})
+  - .opentrace/session_20260617_153829/step4_swiftwren_chain.json (属性: {'format': 'json', 'events_found': 1})
+  - C:/Users/83734/Desktop/opentrace/VAST_Challenge_2026_MC2/VAST_Challenge_2026_MC2/MC2 data.json (属性: {'format': 'json'})
+  - .opentrace/session_20260617_153829/step5_similar_cases.json (属性: {'format': 'json', 'anomaly_posts': 3, 'pattern': '.txt content_source'})
+  - .opentrace/session_20260617_153829/step5_similar_cases.json (属性: {'format': 'json', 'anomaly_posts': 3})
+  - .opentrace/session_20260617_153829/step6_network_analysis.json (属性: {'format': 'json', 'txt_files': 3})
+  - .opentrace/session_20260617_153829/step3_john_analysis.json (属性: {'format': 'json'})
+  - .opentrace/session_20260617_153829/step4_swiftwren_chain.json (属性: {'format': 'json'})
+  - .opentrace/session_20260617_153829/step6_network_analysis.json (属性: {'format': 'json'})
+  - .opentrace/session_20260617_153829/final_report.json (属性: {'format': 'json', 'report_type': 'final_analysis'})
+
+ACTIVITY 节点:
+  - 加载MC2数据并生成基本统计信息 (属性: {'step': 'step1'})
+  - 提取SaidIT帖子事件 (属性: {'step': 'step2', 'filter': 'short_name=saidit_post'})
+  - 分析John Windward的SaidIT帖子，发现异常帖子Event ID 373902使用SwiftWren.txt作为内容来源 (属性: {'step': 'step3', 'key_finding': 'Event ID 373902 content_source=SwiftWren.txt'})
+  - 追踪SwiftWren.txt的传播链 (属性: {'step': 'step4', 'target_file': 'SwiftWren.txt'})
+  - 查找类似的异常模式：.txt文件作为content_source的SaidIT帖子 (属性: {'step': 'step5', 'pattern': 'saidit_post with .txt content_source', 'files_found': ['SwiftWren.txt', 'HiddenOrca.txt', 'MellowOtter.txt']})
+  - 分析.txt文件的传播网络 (属性: {'step': 'step6', 'key_finding': '所有3个异常帖子都由Agent/person:john_windward发布'})
+  - 生成最终分析报告，汇总所有关键发现 (属性: {'step': 'step7', 'inputs': ['step3', 'step4', 'step6'], 'key_findings': 5})
+
+AGENT 节点:
+  - step1_statistics (属性: {})
+  - step2_extract_saidit (属性: {})
+  - step3_john_analysis (属性: {})
+  - step4_swiftwren_chain (属性: {})
+  - step5_pattern_detection (属性: {})
+  - step6_network_analysis (属性: {})
+  - step7_report_generation (属性: {})
+
+======================================================================
+关系详情
+======================================================================
+  activity_3c3455d2 --[used]--> entity_71c26e4b
+  entity_8540a257 --[wasGeneratedBy]--> activity_3c3455d2
+  activity_3c3455d2 --[wasAssociatedWith]--> agent_203c87d2
+  entity_8540a257 --[wasDerivedFrom]--> entity_71c26e4b
+  activity_d938ea6f --[used]--> entity_e1855508
+  entity_f1019fac --[wasGeneratedBy]--> activity_d938ea6f
+  activity_d938ea6f --[wasAssociatedWith]--> agent_5b9a4f27
+  entity_f1019fac --[wasDerivedFrom]--> entity_e1855508
+  activity_a9b0d360 --[used]--> entity_3a4764b4
+  entity_0b33066d --[wasGeneratedBy]--> activity_a9b0d360
+  ... 还有 22 个关系
+
+======================================================================
+Mermaid 格式 (可在支持 Mermaid 的平台渲染)
+======================================================================
+graph TD
+    classDef entity fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef artifact fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef agent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,stroke-dasharray: 5 5
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json["MC2 data.json"]:::entity
+    _opentrace_session_20260617_153829_step1_stats_json["step1_stats.json"]:::entity
+    _opentrace_session_20260617_153829_step2_saidit_posts_json["step2_saidit_posts.json"]:::entity
+    _opentrace_session_20260617_153829_step3_john_analysis_json["step3_john_analysis.json"]:::entity
+    _opentrace_session_20260617_153829_step4_swiftwren_chain_json["step4_swiftwren_chain.json"]:::entity
+    _opentrace_session_20260617_153829_step5_similar_cases_json["step5_similar_cases.json"]:::entity
+    _opentrace_session_20260617_153829_step6_network_analysis_json["step6_network_analysis.json"]:::entity
+    _opentrace_session_20260617_153829_final_report_json["final_report.json"]:::entity
+    agent_203c87d2["step1_statistics"]:::agent
+    agent_5b9a4f27["step2_extract_saidit"]:::agent
+    agent_4e6c473f["step3_john_analysis"]:::agent
+    agent_477e0e42["step4_swiftwren_chain"]:::agent
+    agent_282673e4["step5_pattern_detection"]:::agent
+    agent_e2c70797["step6_network_analysis"]:::agent
+    agent_db4b126b["step7_report_generation"]:::agent
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json ==>|"data_analysis"| agent_203c87d2
+    agent_203c87d2 -.->|output| _opentrace_session_20260617_153829_step1_stats_json
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json ==>|"data_extraction"| agent_5b9a4f27
+    agent_5b9a4f27 -.->|output| _opentrace_session_20260617_153829_step2_saidit_posts_json
+    _opentrace_session_20260617_153829_step2_saidit_posts_json ==>|"data_analysis"| agent_4e6c473f
+    agent_4e6c473f -.->|output| _opentrace_session_20260617_153829_step3_john_analysis_json
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json ==>|"data_analysis"| agent_477e0e42
+    agent_477e0e42 -.->|output| _opentrace_session_20260617_153829_step4_swiftwren_chain_json
+    C__Users_83734_Desktop_opentrace_VAST_Challenge_2026_MC2_VAST_Challenge_2026_MC2_MC2_data_json ==>|"pattern_detection"| agent_282673e4
+    agent_282673e4 -.->|output| _opentrace_session_20260617_153829_step5_similar_cases_json
+    _opentrace_session_20260617_153829_step5_similar_cases_json ==>|"network_analysis"| agent_e2c70797
+    agent_e2c70797 -.->|output| _opentrace_session_20260617_153829_step6_network_analysis_json
+    _opentrace_session_20260617_153829_step3_john_analysis_json ==>|"report_generation"| agent_db4b126b
+    agent_db4b126b -.->|output| _opentrace_session_20260617_153829_final_report_json
+    _opentrace_session_20260617_153829_step4_swiftwren_chain_json ==>|"report_generation"| agent_db4b126b
+    agent_db4b126b -.->|output| _opentrace_session_20260617_153829_final_report_json
+    _opentrace_session_20260617_153829_step6_network_analysis_json ==>|"report_generation"| agent_db4b126b
+    agent_db4b126b -.->|output| _opentrace_session_20260617_153829_final_report_json
