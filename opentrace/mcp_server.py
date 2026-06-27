@@ -10,7 +10,7 @@ import hashlib
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 
 from opentrace.tracker import LineageTracker
 from opentrace.prov_dag import ProvDAG
@@ -21,23 +21,13 @@ def _get_default_base_dir() -> Path:
 
     优先级：
     1. 环境变量 OPENTRACE_BASE_DIR
-    2. opentrace 模块所在目录的 .opentrace
-    3. 当前工作目录的 .opentrace
+    2. 项目根目录下的 .opentrace
     """
-    # 1. 检查环境变量
     env_dir = os.environ.get("OPENTRACE_BASE_DIR")
     if env_dir:
         return Path(env_dir).absolute()
 
-    # 2. 使用模块所在目录（最可靠）
-    try:
-        module_dir = Path(__file__).parent.parent
-        return module_dir / ".opentrace"
-    except:
-        pass
-
-    # 3. 回退到当前工作目录
-    return Path.cwd() / ".opentrace"
+    return Path(__file__).resolve().parent.parent / ".opentrace"
 
 
 class OpenTraceServer:

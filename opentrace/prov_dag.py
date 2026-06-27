@@ -550,7 +550,7 @@ class ProvDAG:
 
 if __name__ == "__main__":
     # 测试代码
-    dag = ProvDAG("test_dag", Path(".opentrace_test"))
+    dag = ProvDAG("test_dag", Path("test/opentrace_test"))
 
     # 添加节点
     entity1 = dag.add_entity("dataset", "raw_data.csv", {"rows": 1000})

@@ -471,7 +471,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print("用法: python prov_visualizer.py <session_dir>")
-        print("示例: python prov_visualizer.py .opentrace_demo/session_20260616_114825")
+        print("示例: python prov_visualizer.py .opentrace/session_YYYYMMDD_HHMMSS")
         sys.exit(1)
 
     session_dir = sys.argv[1]

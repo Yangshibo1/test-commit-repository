@@ -30,7 +30,7 @@
 ```python
 from opentrace.mcp_server import get_server
 
-# 获取服务器实例（默认使用 opentrace 项目目录）
+# 获取服务器实例（默认使用项目根目录 .opentrace/）
 server = get_server()
 
 # 创建新会话
@@ -85,7 +85,7 @@ from opentrace.prov_visualizer import visualize_prov_dag
 from pathlib import Path
 
 # 生成可视化
-session_dir = Path(".opentrace") / session_id
+session_dir = Path(server.base_dir) / session_id
 visualize_prov_dag(str(session_dir), "data_flow.txt")
 
 # 输出包含：
@@ -100,6 +100,10 @@ visualize_prov_dag(str(session_dir), "data_flow.txt")
 2. **独立存储**: DAG 数据存储在独立文件中（prov_dag.json, prov_nodes.json, prov_edges.json）
 3. **支持复杂场景**: 支持聚合（多输入→单输出）和分叉（单输入→多输出）
 4. **临时 ID 必填**: 实体/活动/代理必须提供临时 ID 用于引用
+5. **工具失败处理**: 同一类工具调用连续失败 3 次后，必须停止重复尝试并向用户询问下一步，不要继续盲目重试
+6. **测试文件归档**: 后续生成的临时测试文件和测试数据统一放入 `test/` 文件夹，不要散落在项目根目录
+7. **VAST 数据归档**: VAST Challenge 相关测试数据分别存放在对应的数据目录中，不要与核心 OpenTrace 源码或通用测试文件混放
+8. **统一会话存储**: 除非显式设置 `OPENTRACE_BASE_DIR` 或传入 `get_server(base_dir)`，所有 OpenTrace session 统一写入项目根目录 `.opentrace/`，不要写入 VAST 子目录或 `opentrace/` 包目录
 
 ## 服务器实例管理
 

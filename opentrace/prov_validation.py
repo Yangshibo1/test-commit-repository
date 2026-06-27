@@ -302,11 +302,12 @@ def validate_session(session_dir: str) -> tuple[bool, List[str]]:
     # 验证 DAG
     is_valid, errors = validator.validate_dag(nodes, edges)
 
-    # 验证完整性
-    if is_valid:
+    # 验证完整性（普通会话可能没有完整性记录；受保护 DAG 会自动维护）
+    if is_valid and validator.integrity_file.exists():
         integrity_valid, details = validator.verify_integrity()
         if not integrity_valid:
             errors.append(f"完整性验证失败: {details}")
+            is_valid = False
 
     return is_valid, errors
 

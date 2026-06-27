@@ -6,18 +6,25 @@
 
 ## 核心原则
 
-1. **每步操作生成中间文件** - 不要在内存中处理，每次操作都保存结果
-2. **每步调用 trace 系统** - 使用 `server.record_prov_relation()` 记录 DAG
-3. **每步记录详情** - 使用 `server.record_step_details()` 记录代码和命令
-4. **数据流转清晰** - 明确每步读取哪些文件，输出哪些文件
+1. **Agent 逐步分析** - 每轮只执行一个明确的数据处理动作，禁止一次性 pipeline 脚本直接完成全部分析
+2. **每步操作生成中间文件** - 不要只在内存中处理，每次操作都保存结果
+3. **每步调用 trace 系统** - 使用 `server.record_prov_relation()` 记录 DAG
+4. **每步记录详情** - 使用 `server.record_step_details()` 记录代码、命令、输入输出和参数
+5. **每步结束后读取输出** - agent 必须检查本步结果文件，不能在未观察结果时预设后续步骤
+6. **每步结束后反思决策** - agent 必须总结本步发现，并基于结果决定下一步分析方向
+7. **数据流转清晰** - 明确每步读取哪些文件，输出哪些文件
    - 支持读取原始数据
    - 支持读取多个中间结果
    - 支持回溯重新分析
-5. **迭代式分析** - 根据上一步结果决定下一步方向
+8. **迭代式分析** - 根据上一步结果决定下一步方向
+
+## 禁止模式
+
+不要编写一个完整 Python pipeline 一次性完成加载、过滤、追踪、报告生成的全部工作。允许为单个步骤编写小脚本或一次性命令，但每个步骤完成后必须回到 agent 循环：读取输出、总结发现、记录 trace 和 step details、再决定下一步。
 
 ## 快速开始
 
-### 方法1: 使用 Python 模板
+### 方法1: 使用 Agent 迭代模板
 
 ```python
 from opentrace.mcp_server import get_server
@@ -26,14 +33,14 @@ import json
 from pathlib import Path
 
 # 初始化
-server = get_server(".opentrace")
+server = get_server()
 result = server.init_session(
     task_description="你的分析任务",
     data_path="data.json",
     data_type="json"
 )
 session_id = result["session_id"]
-work_dir = Path(f".opentrace/{session_id}")
+work_dir = Path(server.base_dir) / session_id
 
 # Step 1: 加载数据并记录
 with open("data.json") as f:
@@ -41,6 +48,14 @@ with open("data.json") as f:
 output = work_dir / "step1_loaded.json"
 with open(output, 'w') as f:
     json.dump(data, f)
+
+server.record_step(
+    session_id=session_id,
+    step_name="load_data",
+    operation="load",
+    description="加载原始数据并保存为第一个中间文件",
+    metadata={"output_file": str(output)}
+)
 
 server.record_prov_relation(
     session_id=session_id,
@@ -61,6 +76,20 @@ server.record_prov_relation(
         ("loaded", "raw", "wasDerivedFrom")
     ]
 )
+
+server.record_step_details(
+    session_id=session_id,
+    step_id="step_1",
+    step_name="load_data",
+    description="加载原始数据并保存为中间文件；本步完成后 agent 需要读取输出并决定下一步",
+    code_files=["<本步脚本或命令来源>"],
+    commands_run=["<本步运行的命令>"],
+    input_files=["data.json"],
+    output_files=[str(output)],
+    parameters={"next_decision_required": True}
+)
+
+# Agent 必须读取 step1_loaded.json，总结数据规模/关键字段，再决定 Step 2。
 
 # Step 2: 处理数据（读取 step1，输出 step2）
 with open(work_dir / "step1_loaded.json") as f:
@@ -90,9 +119,40 @@ server.record_prov_relation(
     ]
 )
 
+server.record_step_details(
+    session_id=session_id,
+    step_id="step_2",
+    step_name="filter_data",
+    description="基于上一步输出执行一次筛选；本步完成后 agent 需要读取筛选结果并决定下一步",
+    code_generated=["filtered = [x for x in data if condition(x)]"],
+    code_files=["<本步脚本或命令来源>"],
+    commands_run=["<本步运行的命令>"],
+    input_files=[str(work_dir / "step1_loaded.json")],
+    output_files=[str(output)],
+    parameters={"decision_after_reading_output": "继续追踪、回溯原始数据、或结束分析"}
+)
+
+# Agent 必须读取 step2_filtered.json，总结发现，并明确下一步理由。
+
 # 最终: 生成可视化
 visualize_prov_dag(str(work_dir), str(work_dir / "viz.txt")
 ```
+
+## 每步 Agent 循环
+
+每个数据处理步骤必须按以下顺序执行：
+
+1. 明确本步问题和输入文件。
+2. 运行一个小脚本、命令或工具完成本步处理。
+3. 保存本步输出到 session 工作目录。
+4. 调用 `server.record_step()` 记录基础步骤。
+5. 调用 `server.record_prov_relation()` 记录输入输出文件关系。
+6. 调用 `server.record_step_details()` 记录代码、命令、参数、输入和输出。
+7. 读取本步输出文件。
+8. 总结本步发现。
+9. 基于已观察结果决定下一步；如果结果不足，说明要回溯或补充哪类分析。
+
+只有最后一步才能生成 `final_report.json`。最终报告必须基于已经读取和记录过的中间结果，不能由一次性 pipeline 直接跳过中间观察过程生成。
 
 ## 记录步骤详情
 

@@ -109,7 +109,7 @@ server.record_prov_relation(
 from opentrace.prov_visualizer import visualize_prov_dag
 from pathlib import Path
 
-session_dir = Path(".opentrace") / session_id
+session_dir = Path(server.base_dir) / session_id
 visualize_prov_dag(str(session_dir), "data_flow.txt")
 ```
 
@@ -307,6 +307,8 @@ opentrace/
 ```
 
 ## 数据存储
+
+默认情况下，所有会话统一存储在项目根目录 `.opentrace/`。VAST Challenge 脚本也应写入同一个根目录；只有原始数据和中间业务数据保留在各自 VAST 数据目录。可通过 `OPENTRACE_BASE_DIR` 显式覆盖。
 
 ```
 .opentrace/
