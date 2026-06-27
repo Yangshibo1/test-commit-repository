@@ -1,5 +1,5 @@
 name: trace-guided-data-analysis
-description: "带数据血缘追踪的数据分析工作流 - 每步操作都记录到 OpenTrace 系统"
+description: "Agent 迭代式数据血缘追踪分析工作流 - 每步操作都记录到 OpenTrace 系统，并在观察结果后决定下一步"
 version: "1.0"
 
 metadata:
@@ -12,14 +12,17 @@ metadata:
 
 phases:
   - title: "初始化会话"
-    description: "加载数据并初始化 OpenTrace 会话"
+    description: "加载数据并初始化 OpenTrace 会话；只允许完成初始化和首个中间文件写入，不得一次性执行完整分析"
     steps:
       - name: "加载原始数据"
         action: |
-          1. 获取 OpenTrace 服务器实例: `server = get_server(".opentrace")`
+          1. 获取 OpenTrace 服务器实例: `server = get_server()`，工作目录使用 `Path(server.base_dir) / session_id`
           2. 初始化会话: `server.init_session(task_description, data_path, data_type)`
           3. 保存原始数据为中间文件: `working_dir/loaded_data.json`
-          4. 记录 PROV 关系（包含临时 id）
+          4. 调用 `server.record_step()` 记录基础步骤
+          5. 记录 PROV 关系（包含临时 id）
+          6. 调用 `server.record_step_details()` 记录本步代码、命令、输入输出和参数
+          7. 读取 `working_dir/loaded_data.json`，总结数据规模、字段和下一步候选方向
         trace:
           entities:
             - id: "raw_data"
@@ -43,18 +46,21 @@ phases:
             - ("load_act", "data_loader", "wasAssociatedWith") # 活动关联代理
             - ("loaded_data", "raw_data", "wasDerivedFrom")    # 输出来源自输入
 
-  - title: "迭代分析"
-    description: "逐步分析数据，每次操作都生成中间文件并记录 trace"
+  - title: "Agent 迭代分析"
+    description: "逐步分析数据，每次只执行一个明确的数据处理动作；每步结束后必须读取输出、总结发现、再决定下一步"
     steps:
       - name: "执行分析步骤"
         action: |
           对每个分析步骤：
-          1. 读取需要的文件（可以是原始数据、中间结果、或多个文件）
-          2. 执行数据操作（过滤、聚合、分析等）
+          1. 明确本步问题和输入文件（可以是原始数据、中间结果、或多个文件）
+          2. 执行一个小范围数据操作（过滤、聚合、分析、追踪等），禁止一次性脚本完成全部分析
           3. 保存结果为新的中间文件: `step<N>_output.json`
-          4. 调用 server.record_prov_relation() 记录所有输入输出关系
-          5. 调用 server.record_step_details() 记录步骤详情（包含生成的代码文件、命令、描述）
-          6. 根据结果决定下一步分析方向
+          4. 调用 `server.record_step()` 记录基础步骤
+          5. 调用 `server.record_prov_relation()` 记录所有输入输出关系
+          6. 调用 `server.record_step_details()` 记录步骤详情（包含生成的代码文件、命令、描述、输入输出、参数）
+          7. 读取本步输出文件，检查结果内容
+          8. 总结本步发现、异常、限制和可信度
+          9. 基于已观察结果决定下一步分析方向；如果结果不足，说明要回溯或补充哪类分析
         trace:
           entities:
             - id: "step_input"
@@ -80,7 +86,7 @@ phases:
             - ("step_output", "step_input", "wasDerivedFrom")  # 输出→输入
 
   - title: "生成报告和可视化"
-    description: "汇总所有分析结果，生成最终报告和数据血缘可视化"
+    description: "只在迭代分析完成后，基于已经读取和记录过的中间结果生成最终报告和数据血缘可视化"
     steps:
       - name: "汇总结果"
         action: |
@@ -112,13 +118,18 @@ phases:
             - ("aggregate_act", "report_agent", "wasAssociatedWith")
 
 rules:
+  - "禁止一次性 pipeline 脚本直接完成全部分析；每次只能执行一个明确的数据处理步骤"
   - "每步数据操作必须生成中间文件"
+  - "每步必须调用 server.record_step() 记录基础步骤"
   - "每步必须调用 server.record_prov_relation() 记录 DAG"
   - "每步必须调用 server.record_step_details() 记录步骤详情"
+  - "每步结束后必须读取本步输出文件"
+  - "每步结束后必须总结发现、限制和下一步理由"
   - "所有 entities/activities/agents 必须提供临时 id 字段"
   - "明确每步的输入输出文件（数据流转清晰）"
   - "支持读取原始数据、中间结果、或多个文件"
   - "根据上一步结果决定下一步方向（迭代式分析）"
+  - "final_report.json 只能在迭代分析完成后生成，且必须基于已记录的中间结果"
 
 output:
   files:

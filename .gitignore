@@ -1,0 +1,27 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS metadata
+.DS_Store
+__MACOSX/
+
+# OpenTrace generated sessions and artifacts
+.opentrace/
+.opentrace_*/
+
+# Claude Code temporary worktrees
+.claude/worktrees/
+
+# VAST challenge datasets and generated analysis artifacts
+VAST_Challenge_2026_MC1/
+VAST_Challenge_2026_MC2/*.json
+VAST_Challenge_2026_MC2/*.doc
+VAST_Challenge_2026_MC2/*.docx
+VAST_Challenge_2026_MC2/*.htm
+VAST_Challenge_2026_MC2/*.DS_Store
+VAST_Challenge_2026_MC2/__MACOSX/
+
+# Temporary test data and outputs
+test/

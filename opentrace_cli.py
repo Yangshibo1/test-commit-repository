@@ -12,12 +12,12 @@ OpenTrace 命令行工具
 import sys
 import json
 from pathlib import Path
-from opentrace.mcp_server import OpenTraceServer
+from opentrace.mcp_server import OpenTraceServer, get_server
 
 
 def cmd_start():
     """启动交互式追踪会话"""
-    server = OpenTraceServer('.opentrace')
+    server = get_server()
 
     print("=" * 60)
     print("OpenTrace 交互式追踪会话")
@@ -48,7 +48,7 @@ def cmd_start():
 
 def cmd_status():
     """查看当前会话状态"""
-    base_dir = Path('.opentrace')
+    base_dir = get_server().base_dir
 
     if not base_dir.exists():
         print("没有找到任何会话")
@@ -74,10 +74,10 @@ def cmd_status():
 
 def cmd_export(session_id):
     """导出指定会话"""
-    server = OpenTraceServer('.opentrace')
+    server = get_server()
 
     # 检查会话是否存在
-    session_dir = Path('.opentrace') / session_id
+    session_dir = server.base_dir / session_id
     if not session_dir.exists():
         print(f"会话不存在: {session_id}")
         return
@@ -85,7 +85,7 @@ def cmd_export(session_id):
     # 加载会话
     try:
         from opentrace.tracker import LineageTracker
-        tracker = LineageTracker.load_session(session_id, '.opentrace')
+        tracker = LineageTracker.load_session(session_id, str(server.base_dir))
         export_path = tracker.export_session()
         print(f"[OK] 会话已导出: {export_path}")
     except Exception as e:
@@ -98,7 +98,7 @@ def cmd_list():
 
 
 def main():
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2 or sys.argv[1] in {"--help", "-h", "help"}:
         print(__doc__)
         return
 
