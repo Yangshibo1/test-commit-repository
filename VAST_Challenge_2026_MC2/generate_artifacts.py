@@ -274,7 +274,7 @@ class LLMClient:
 
     def __init__(self, config: Config):
         self.config = config
-        self.client = httpx.Client(timeout=60.0)
+        self.client = httpx.Client(timeout=120.0)  # 增加超时时间到120秒
 
     def _build_payload(self, prompt: str) -> Dict[str, Any]:
         """构建 API 请求负载"""
@@ -476,14 +476,22 @@ class FileProcessor:
         input_file: Path,
         output_file: Path,
         file_type: str,
-        force: bool = False
+        force: bool = False,
+        index: int = 0,
+        total: int = 0
     ) -> bool:
         """处理单个文件"""
         if not self.should_process(input_file, output_file, force):
-            print(f"跳过（已存在）: {input_file}")
+            if total > 0:
+                print(f"[{index}/{total}] 跳过（已存在）: {input_file.name}")
+            else:
+                print(f"跳过（已存在）: {input_file}")
             return True
 
-        print(f"处理: {input_file}")
+        if total > 0:
+            print(f"[{index}/{total}] 处理: {input_file.name} ({file_type})")
+        else:
+            print(f"处理: {input_file} ({file_type})")
 
         try:
             # 读取文件内容
@@ -637,9 +645,10 @@ def main():
 
     # 处理文件
     success_count = 0
-    for input_file, file_type in files:
+    total_files = len(files)
+    for idx, (input_file, file_type) in enumerate(files, 1):
         output_file = file_processor.get_output_path(input_file, args.output)
-        if file_processor.process_file(input_file, output_file, file_type, args.force):
+        if file_processor.process_file(input_file, output_file, file_type, args.force, idx, total_files):
             success_count += 1
 
     # 关闭客户端
