@@ -1,0 +1,58 @@
+<h2>方案 A 细化：分层纵向 DAG 布局</h2>
+<p class="subtitle">目标是把“不会重叠”作为布局算法的硬约束，而不是靠调 CSS 间距碰运气。</p>
+
+<div class="mockup">
+  <div class="mockup-header">Top-to-bottom layered DAG / 节点只显示名称 + 简短描述</div>
+  <div class="mockup-body">
+    <div style="background:#fbf7f2;border:1px solid #eadfd4;border-radius:16px;padding:18px;font-family:Consolas,monospace;color:#2f2a24;overflow:auto;max-height:620px">
+      <div style="display:grid;grid-template-columns:1fr;gap:18px;justify-items:center;min-width:720px">
+        <div class="layer-title">Layer 0 · Source artifacts</div>
+        <div class="row"><div class="n file"><b>MC2 data</b><br><small>raw dataset</small></div></div>
+        <div class="edge">used / load ↓</div>
+        <div class="layer-title">Layer 1 · Processing agents</div>
+        <div class="row"><div class="n agent"><b>node 01</b><br><small>load data</small></div></div>
+        <div class="edge">output ↓</div>
+        <div class="layer-title">Layer 2 · Derived artifacts</div>
+        <div class="row"><div class="n file"><b>loaded data</b><br><small>complete event copy</small></div></div>
+        <div class="edge">filter ↓</div>
+        <div class="layer-title">Layer 3 · Processing agents</div>
+        <div class="row"><div class="n agent"><b>node 02</b><br><small>filter events</small></div></div>
+        <div class="edge">output ↓</div>
+        <div class="layer-title">Layer 4 · Branch-capable artifacts</div>
+        <div class="row"><div class="n file"><b>saidit events</b><br><small>filtered subset</small></div><div class="n file"><b>loaded data</b><br><small>merged reused artifact</small></div></div>
+        <div class="edge">trace / additional input ↓</div>
+        <div class="layer-title">Layer 5 · Multi-input processing</div>
+        <div class="row"><div class="n agent"><b>node 04</b><br><small>trace source</small></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>保证不重叠的布局规则</h3>
+  <ol>
+    <li><strong>固定节点盒模型：</strong>所有节点先统一测量为固定宽高，例如 220 × 96。节点内容超出则截断，完整内容进入右侧 Inspector。</li>
+    <li><strong>拓扑分层：</strong>根据 PROV 边计算 layer，上游 layer 小，下游 layer 大。每个 layer 是一行。</li>
+    <li><strong>同层排布：</strong>同一 layer 的节点横向排列，间距 = nodeWidth + columnGap。行高 = nodeHeight + rowGap。</li>
+    <li><strong>画布自增长：</strong>画布宽高由最大 layer 节点数和 layer 数计算，不强行塞进视口；允许滚动和缩放。</li>
+    <li><strong>边按层绘制：</strong>边从节点底部到下游节点顶部，边 label 放在中点，必要时使用曲线避让。</li>
+  </ol>
+</div>
+
+<div class="section">
+  <h3>节点内容边界</h3>
+  <p>节点内只保留：<strong>名称</strong> + <strong>一句简短描述</strong>。不放完整路径、input/output 列表、完整参数、代码片段、raw PROV。这些全部放右侧 Inspector。</p>
+</div>
+
+<style>
+.layer-title{font-size:11px;color:#82766a;text-transform:uppercase;letter-spacing:.08em}.row{display:flex;gap:60px;justify-content:center;align-items:center;min-height:72px}.n{width:170px;background:white;border:1px solid #e7b08d;border-left:4px solid #d97745;border-radius:12px;padding:10px 12px;box-shadow:0 8px 18px rgba(91,64,42,.08);font-size:13px;line-height:1.25}.n small{color:#82766a}.n.file{border-left-color:#8da36b}.n.agent{border-left-color:#d97745}.edge{color:#8b5a3c;font-size:12px}</style>
+
+<div class="options">
+  <div class="option" data-choice="approve-a" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>确认这个设计方向</h3>
+      <p>下一步把当前前端 DAG 改成严格的分层纵向布局，并把节点内容限制为名称 + 简短描述。</p>
+    </div>
+  </div>
+</div>

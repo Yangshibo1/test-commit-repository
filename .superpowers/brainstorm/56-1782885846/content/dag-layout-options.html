@@ -1,0 +1,70 @@
+<h2>DAG 布局避免重叠：三种候选方案</h2>
+<p class="subtitle">目标：节点只放“名称 + 简短描述”，完整 input/output/code/prov 放右侧 Inspector；图允许滚动和缩放，优先保证不重叠、关系可读。</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#fbf7f2;border:1px solid #eadfd4;border-radius:12px;padding:14px;height:320px;overflow:hidden;font-family:Consolas,monospace;color:#2f2a24">
+        <div style="font-weight:700;color:#d97745;margin-bottom:12px">A. 分层纵向布局：Topological Layers</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:20px">
+          <div style="display:flex;gap:34px"><div class="n file">raw data<br><small>dataset</small></div></div>
+          <div class="edge">↓ load</div>
+          <div style="display:flex;gap:34px"><div class="n agent">node 01<br><small>load data</small></div></div>
+          <div class="edge">↓ output</div>
+          <div style="display:flex;gap:34px"><div class="n file">loaded data<br><small>185k events</small></div></div>
+          <div class="edge">↓ filter</div>
+          <div style="display:flex;gap:34px"><div class="n agent">node 02<br><small>filter subset</small></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 分层纵向布局（推荐）</h3>
+      <p>根据 DAG 拓扑层级计算每一行。上游在上，下游在下；同层节点横向排列。适合分析流程，可滚动，可缩放，最符合“从上到下”的要求。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#fbf7f2;border:1px solid #eadfd4;border-radius:12px;padding:14px;height:320px;overflow:hidden;font-family:Consolas,monospace;color:#2f2a24">
+        <div style="font-weight:700;color:#d97745;margin-bottom:12px">B. Swimlane 布局：Artifacts / Agents</div>
+        <div style="display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:center">
+          <div style="color:#82766a">Artifact</div><div class="lane"><div class="n file">raw</div><div class="n file">loaded</div><div class="n file">filtered</div></div>
+          <div style="color:#82766a">Agent</div><div class="lane"><div class="n agent">load</div><div class="n agent">filter</div><div class="n agent">trace</div></div>
+          <div style="color:#82766a">Report</div><div class="lane"><div class="n report">final report</div><div class="n report">viz</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Swimlane 分区布局</h3>
+      <p>按节点类型分泳道：数据产物、处理程序、报告/可视化。结构清楚，但边会跨泳道，复杂分叉时连线可能较乱。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#fbf7f2;border:1px solid #eadfd4;border-radius:12px;padding:14px;height:320px;overflow:hidden;font-family:Consolas,monospace;color:#2f2a24">
+        <div style="font-weight:700;color:#d97745;margin-bottom:12px">C. 固定主链 + 侧边分支</div>
+        <div style="display:grid;grid-template-columns:1fr 130px;gap:18px">
+          <div style="display:flex;flex-direction:column;gap:12px;align-items:center">
+            <div class="n file">raw</div><div class="edge">↓</div><div class="n agent">load</div><div class="edge">↓</div><div class="n file">loaded</div><div class="edge">↓</div><div class="n agent">filter</div>
+          </div>
+          <div style="border-left:1px dashed #d9c4b4;padding-left:12px;display:flex;flex-direction:column;gap:12px">
+            <div class="n file">extra input</div><div class="n report">insight</div><div class="n file">validation</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 主链优先 + 分支挂载</h3>
+      <p>自动识别最长主路径，主链纵向展示，其他输入/输出挂到侧边。叙事性最强，但算法更复杂，通用性需要小心。</p>
+    </div>
+  </div>
+</div>
+
+<style>
+.n{min-width:100px;max-width:130px;background:white;border:1px solid #e7b08d;border-left:4px solid #d97745;border-radius:10px;padding:8px 10px;box-shadow:0 8px 18px rgba(91,64,42,.08);font-size:12px;line-height:1.2;text-align:left}.n small{color:#82766a}.n.file{border-left-color:#8da36b}.n.agent{border-left-color:#d97745}.n.report{border-left-color:#a4765c}.edge{color:#8b5a3c;font-size:11px}.lane{display:flex;gap:14px;align-items:center;min-height:78px;background:rgba(255,255,255,.55);border:1px dashed #eadfd4;border-radius:12px;padding:10px}</style>
+
+<div class="section">
+  <h3>我的初步建议</h3>
+  <p>采用 <strong>A. 分层纵向布局</strong> 作为 MVP：最通用、最容易保证不重叠、最符合 PROV DAG 的拓扑结构。之后可以在此基础上增加“主链高亮”和“分支折叠”。</p>
+</div>

@@ -1,0 +1,67 @@
+<h2>补充：跨层复用数据的 Edge 走线规则</h2>
+<p class="subtitle">你指出的是关键问题：如果后续节点复用了初始数据，不能强行从上到下穿过中间层，否则会压住节点、制造大量交叉。应该为“长距离依赖边”设计左右侧通道。</p>
+
+<div class="mockup">
+  <div class="mockup-header">推荐：主流程纵向 + 长距离依赖走侧边通道</div>
+  <div class="mockup-body">
+    <div style="background:#fbf7f2;border:1px solid #eadfd4;border-radius:16px;padding:20px;font-family:Consolas,monospace;color:#2f2a24;overflow:auto;max-height:640px">
+      <div style="position:relative;width:780px;height:720px;margin:auto;background:linear-gradient(90deg,rgba(217,119,69,.06) 0 80px,transparent 80px calc(100% - 80px),rgba(217,119,69,.06) calc(100% - 80px));border-radius:16px">
+        <svg style="position:absolute;inset:0;width:100%;height:100%;overflow:visible" viewBox="0 0 780 720">
+          <defs>
+            <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#d97745"/></marker>
+          </defs>
+          <!-- main vertical chain -->
+          <path d="M390 80 C390 120 390 120 390 158" stroke="#d97745" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+          <text x="408" y="122" fill="#8b5a3c" font-size="12">load</text>
+          <path d="M390 220 C390 260 390 260 390 298" stroke="#d97745" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+          <text x="408" y="262" fill="#8b5a3c" font-size="12">output</text>
+          <path d="M390 360 C390 400 390 400 390 438" stroke="#d97745" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+          <text x="408" y="402" fill="#8b5a3c" font-size="12">filter</text>
+          <path d="M390 500 C390 540 390 540 390 578" stroke="#d97745" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+          <text x="408" y="542" fill="#8b5a3c" font-size="12">output</text>
+
+          <!-- long dependency side edge -->
+          <path d="M295 50 C90 50 70 210 70 350 C70 510 110 610 285 610" stroke="#a4765c" stroke-width="2.4" fill="none" stroke-dasharray="7 5" marker-end="url(#arr)"/>
+          <text x="82" y="344" fill="#7c5137" font-size="12">reuse original data</text>
+
+          <!-- alternate right side dependency -->
+          <path d="M485 330 C690 330 710 440 710 610 C710 650 620 650 495 638" stroke="#a4765c" stroke-width="2.4" fill="none" stroke-dasharray="7 5" marker-end="url(#arr)"/>
+          <text x="604" y="462" fill="#7c5137" font-size="12">secondary input</text>
+        </svg>
+
+        <div class="side-label" style="left:16px">left dependency lane</div>
+        <div class="side-label" style="right:16px">right dependency lane</div>
+
+        <div class="node file" style="left:285px;top:24px"><b>raw data</b><br><small>initial dataset</small></div>
+        <div class="node agent" style="left:285px;top:164px"><b>node 01</b><br><small>load data</small></div>
+        <div class="node file" style="left:285px;top:304px"><b>loaded data</b><br><small>working copy</small></div>
+        <div class="node agent" style="left:285px;top:444px"><b>node 02</b><br><small>filter subset</small></div>
+        <div class="node agent" style="left:285px;top:584px"><b>node 04</b><br><small>trace with reused raw</small></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Edge 走线建议</h3>
+  <ol>
+    <li><strong>短边：</strong>相邻层或相隔 1 层的边，直接从上节点底部连到下节点顶部。</li>
+    <li><strong>长边：</strong>跨越 2 层以上的边，进入左/右 dependency lane，不穿过中间节点。</li>
+    <li><strong>左右分配：</strong>按边序号或源节点位置交替放到左侧/右侧，避免所有长边挤在一边。</li>
+    <li><strong>多输入节点：</strong>主输入走中间主链，补充输入走侧边通道。</li>
+    <li><strong>交互高亮：</strong>默认侧边长边可以更细/虚线；点击节点时高亮它的所有入边和出边。</li>
+  </ol>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="side-lanes" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>采用左右侧边通道</h3>
+      <p>主流程保持纵向，跨层复用数据通过左/右侧边连线，减少穿越节点和重叠。</p>
+    </div>
+  </div>
+</div>
+
+<style>
+.node{position:absolute;width:210px;background:white;border:1px solid #e7b08d;border-left:4px solid #d97745;border-radius:12px;padding:10px 12px;box-shadow:0 8px 18px rgba(91,64,42,.08);font-size:13px;line-height:1.25}.node small{color:#82766a}.node.file{border-left-color:#8da36b}.node.agent{border-left-color:#d97745}.side-label{position:absolute;top:10px;color:#b08a70;font-size:11px;writing-mode:vertical-rl;text-transform:uppercase;letter-spacing:.08em}</style>
