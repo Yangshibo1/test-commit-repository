@@ -1,44 +1,11 @@
 {
-  "algorithm_purpose": "基于当前 OpenTrace 会话的 PROV 数据生成数据血缘可视化文本，并将同一份可视化结果分别保存到业务 src 目录和 OpenTrace session 目录，同时记录该可视化步骤的 PROV 元数据和执行详情。",
-  "algorithm_logic": {
-    "description": "脚本首先从当前脚本所在目录读取 current_session.json，获取当前分析会话的 session_id，并通过 OpenTrace server 的 base_dir 定位对应的 session_dir。随后读取上一步生成的 node_05_final_report.json 作为最终分析报告输入，该报告本身不直接参与可视化计算，但其中的异常帖子 event_id 会被提取并写入 PROV 元数据。核心处理方法是调用 visualize_prov_dag(str(session_dir), None)，该方法扫描指定 session 目录中的 OpenTrace PROV 记录，并将已有的数据血缘关系转换为文本形式的可视化结果，格式标记为 text+mermaid。生成的 visualization 字符串被写入两个位置：一个是 src 下的 node_06_data_flow_visualization.txt，另一个是 OpenTrace session 目录下的同名文件，以保证分析产物和会话归档中都保留可视化结果。最后，脚本调用 record_prov_relation 记录本节点的输入报告、输出可视化、可视化活动、执行 agent 以及它们之间的 used、wasGeneratedBy、wasAssociatedWith、wasDerivedFrom 关系；再调用 record_step_details 记录步骤描述、输入输出文件、运行命令和可视化长度等执行参数。",
-    "key_parameters": [
-      {
-        "parameter": "session_id",
-        "value": "从 current_session.json 中读取",
-        "purpose": "确定当前 OpenTrace 分析会话，用于定位 PROV 数据所在的 session 目录，并将本步骤的血缘关系写入同一会话"
-      },
-      {
-        "parameter": "session_dir",
-        "value": "Path(server.base_dir) / session_id",
-        "purpose": "作为 visualize_prov_dag 的输入目录，决定可视化算法扫描哪一个会话中的 PROV 数据"
-      },
-      {
-        "parameter": "input_file",
-        "value": "src/node_05_final_report.json",
-        "purpose": "作为本节点的上游分析报告输入，并从其中提取 anomalous_post.event_id 用于记录可视化输入实体的元数据"
-      },
-      {
-        "parameter": "visualize_prov_dag_output_file",
-        "value": null,
-        "purpose": "传入 None 表示不依赖 visualize_prov_dag 自身的文件写入行为，而是由脚本显式控制输出写入位置"
-      },
-      {
-        "parameter": "output_file",
-        "value": "src/node_06_data_flow_visualization.txt",
-        "purpose": "保存生成的数据血缘可视化文本到业务脚本目录，作为后续节点或人工查看的可视化产物"
-      },
-      {
-        "parameter": "session_output_file",
-        "value": "<session_dir>/node_06_data_flow_visualization.txt",
-        "purpose": "将同一份可视化文本保存到 OpenTrace 会话目录，保证会话级归档完整性"
-      },
-      {
-        "parameter": "output_format",
-        "value": "txt / text+mermaid",
-        "purpose": "标识输出为文本化的 Mermaid/PROV DAG 可视化结果，影响产物的解释方式和下游展示方式"
-      }
-    ],
-    "data_flow": "输入: current_session.json 提供 session_id，node_05_final_report.json 提供上游报告元数据，session_dir 中已有的 OpenTrace PROV 记录提供血缘图结构 -> 处理: 根据 session_id 定位 session_dir，调用 visualize_prov_dag 将会话内 PROV DAG 转换为文本可视化字符串，并提取报告中的 anomalous_post.event_id 写入元数据 -> 输出: src/node_06_data_flow_visualization.txt 和 <session_dir>/node_06_data_flow_visualization.txt 两份相同的可视化文本，同时向 OpenTrace 记录 node06_input_report、node06_output_visualization、node06_visualize、node06_agent 及其 PROV 关系和步骤执行详情"
-  }
+  "algorithm_purpose": "读取最终分析报告，基于当前会话中的系统记录生成数据流可视化文本，并将结果保存到源码目录和会话目录，同时记录本步骤的执行信息。",
+  "algorithm_logic": [
+    "读取当前会话配置文件，获取本次分析任务对应的 session_id，并确定会话数据目录。",
+    "读取上一节点生成的最终报告文件 node_05_final_report.json，提取异常帖子等关键信息作为本节点输入依据。",
+    "根据当前会话目录中的记录生成数据流可视化文本内容。",
+    "将生成的可视化文本分别写入 src 目录和 session 目录，确保结果既便于查看也便于归档。",
+    "记录本节点的输入文件、输出文件、执行参数和处理过程，便于后续追踪分析流程。"
+  ],
+  "data_flow": "输入: current_session.json + node_05_final_report.json + session目录记录 -> 生成数据流可视化文本 -> 输出: node_06_data_flow_visualization.txt（保存到src目录和session目录）"
 }

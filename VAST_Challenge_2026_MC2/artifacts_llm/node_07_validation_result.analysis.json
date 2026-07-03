@@ -1,54 +1,75 @@
 {
-  "description": "该数据集是 node_07 步骤的验证结果文件，用于确认最终数据流可视化文件是否成功生成并通过校验。数据规模很小，包含 1 条验证记录，主要字段包括会话 ID、会话目录、验证状态、错误列表、最终可视化文件路径以及可视化文本长度。该数据集属于小型中间分析结果，特点是结构清晰、记录数量少、主要用于流程质量检查和产物追踪。",
-  "sample_data": [
-    {
-      "session_id": "session_20260630_172421",
-      "is_valid": true,
-      "errors": [],
-      "visualization_length": 17295
+  "description": "包含1条可视化验证结果记录，描述会话ID、会话目录、验证状态、错误列表、最终数据流可视化文件路径以及可视化文本长度等信息；该记录表明 node_07 的最终数据流可视化结果验证通过且无错误。",
+  "sample_data": {
+    "session_id": "session_20260630_172421",
+    "session_dir": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\.opentrace\\session_20260630_172421",
+    "is_valid": true,
+    "errors": [],
+    "final_visualization_src": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\VAST_Challenge_2026_MC2\\src\\node_07_final_data_flow_visualization.txt",
+    "final_visualization_session": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\.opentrace\\session_20260630_172421\\node_07_final_data_flow_visualization.txt",
+    "visualization_length": 17295
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "node_07 验证结果概览",
+      "left": "center"
     },
-    {
-      "final_visualization_src": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\VAST_Challenge_2026_MC2\\src\\node_07_final_data_flow_visualization.txt",
-      "final_visualization_session": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\.opentrace\\session_20260630_172421\\node_07_final_data_flow_visualization.txt"
-    },
-    {
-      "session_dir": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\.opentrace\\session_20260630_172421",
-      "validation_status": "passed",
-      "error_count": 0
-    }
-  ],
-  "input_datasets": [
-    "node_05_final_report.json",
-    "node_06_data_flow_visualization.txt"
-  ],
-  "output_datasets": [
-    "node_07_final_data_flow_visualization.txt",
-    "node_07_validation_result.json"
-  ],
-  "visualization": {
-    "type": "status_summary",
-    "title": "Node 07 验证结果概览",
-    "data": [
-      {
-        "metric": "验证状态",
-        "value": 1,
-        "label": "通过"
-      },
-      {
-        "metric": "错误数量",
-        "value": 0,
-        "label": "无错误"
-      },
-      {
-        "metric": "可视化文本长度",
-        "value": 17295,
-        "label": "17295 字符"
+    "tooltip": {
+      "trigger": "axis",
+      "axisPointer": {
+        "type": "shadow"
       }
-    ],
-    "encoding": {
-      "x": "metric",
-      "y": "value",
-      "label": "label"
-    }
+    },
+    "grid": {
+      "left": "12%",
+      "right": "8%",
+      "bottom": "15%",
+      "top": "18%"
+    },
+    "xAxis": {
+      "type": "category",
+      "data": [
+        "验证通过",
+        "错误数量",
+        "可视化长度"
+      ],
+      "axisLabel": {
+        "interval": 0
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "数值"
+    },
+    "series": [
+      {
+        "name": "验证指标",
+        "type": "bar",
+        "data": [
+          {
+            "value": 1,
+            "itemStyle": {
+              "color": "#52c41a"
+            }
+          },
+          {
+            "value": 0,
+            "itemStyle": {
+              "color": "#faad14"
+            }
+          },
+          {
+            "value": 17295,
+            "itemStyle": {
+              "color": "#1677ff"
+            }
+          }
+        ],
+        "label": {
+          "show": true,
+          "position": "top"
+        }
+      }
+    ]
   }
 }

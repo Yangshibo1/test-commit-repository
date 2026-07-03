@@ -1,54 +1,12 @@
 {
-  "algorithm_purpose": "从完整事件数据集中识别并抽取所有与 SaidIT 系统相关的事件，生成一个较小的 SaidIT 事件子集，供后续节点定位异常帖子和追踪事件链使用。",
-  "algorithm_logic": {
-    "description": "脚本读取 node_01_loaded.json 中的完整事件列表，对每条事件执行基于关键词的过滤。算法将事件的 short_name、details 和 parties 三类字段转换为可搜索文本，其中 short_name 和 details 被转为小写字符串，parties 被拼接为小写文本。随后使用字符串包含判断来识别 SaidIT 相关事件：只要事件类型名包含 saidit，或事件详情中包含 saidit，或参与方中包含 system:saidit，就将该事件判定为 SaidIT 相关事件并保留。被保留的事件会被标准化为 record 结构，包括事件 id、事件类型、原始时间戳、转换后的人类可读时间、参与方、详情以及完整原始事件。脚本还统计全量事件类型分布、SaidIT 子集中的事件类型分布，以及根据 details.poster_id、details.person 或 parties 中的 person 标识推断出的发帖人/相关人员计数。最终输出包含统计信息和所有 SaidIT 相关 records 的中间 JSON 文件，并记录数据血缘信息。",
-    "key_parameters": [
-      {
-        "parameter": "input_file",
-        "value": "node_01_loaded.json",
-        "purpose": "指定算法读取的完整事件数据来源，是 SaidIT 过滤的输入全集。"
-      },
-      {
-        "parameter": "events_field",
-        "value": "data.get('events', [])",
-        "purpose": "指定从输入 JSON 中提取事件列表的字段；如果缺失则使用空列表，影响实际被扫描的数据范围。"
-      },
-      {
-        "parameter": "saidit_filter_condition",
-        "value": "'saidit' in short_name or 'saidit' in details_text or 'system:saidit' in parties_text",
-        "purpose": "核心过滤条件，用于判断事件是否与 SaidIT 相关；任一条件满足即保留该事件。"
-      },
-      {
-        "parameter": "short_name_normalization",
-        "value": "str(event.get('short_name', '')).lower()",
-        "purpose": "将事件类型名转换为小写字符串，使 SaidIT 关键词匹配不受大小写影响。"
-      },
-      {
-        "parameter": "details_text_normalization",
-        "value": "json.dumps(event.get('details', {}), ensure_ascii=False).lower()",
-        "purpose": "将事件详情序列化为文本并小写化，使算法能够在嵌套详情内容中搜索 saidit 关键词。"
-      },
-      {
-        "parameter": "parties_text_normalization",
-        "value": "' '.join(event.get('parties', [])).lower()",
-        "purpose": "将参与方列表拼接为文本并小写化，用于检测参与方中是否包含 system:saidit。"
-      },
-      {
-        "parameter": "record_time_conversion",
-        "value": "datetime.fromtimestamp(when)",
-        "purpose": "将事件的 Unix 时间戳转换为可读 datetime 字符串，便于后续节点按日期和时间定位目标事件。"
-      },
-      {
-        "parameter": "poster_extraction_priority",
-        "value": "details.poster_id -> details.person -> first party containing 'person:'",
-        "purpose": "定义人员计数的推断顺序，用于统计 SaidIT 相关事件涉及的主要人员或发帖人。"
-      },
-      {
-        "parameter": "output_file",
-        "value": "node_02_saidit_events.json",
-        "purpose": "指定过滤后 SaidIT 事件子集和统计结果的保存位置，作为后续分析节点的输入。"
-      }
-    ],
-    "data_flow": "输入: node_01_loaded.json 中的完整事件数据，包含 185147 条事件 -> 提取 events 列表 -> 遍历每条事件 -> 将 short_name、details、parties 转换为可搜索的小写文本 -> 应用 SaidIT 关键词过滤条件 -> 将命中的事件标准化为 record 结构 -> 统计全量事件类型、SaidIT 事件类型和相关人员计数 -> 输出: node_02_saidit_events.json，包含 695 条 SaidIT 相关事件及其统计摘要。"
-  }
+  "algorithm_purpose": "从上一节点加载的完整事件数据集中筛选出所有与 SaidIT 平台相关的事件，生成一个供后续异常帖子定位使用的中间数据集。",
+  "algorithm_logic": [
+    "读取当前会话信息，并加载上一节点生成的完整事件数据文件 node_01_loaded.json。",
+    "统计输入数据中各类事件的数量，作为整体事件分布概览。",
+    "遍历所有事件，检查事件名称、事件详情和参与方信息中是否包含 SaidIT 相关标识。",
+    "将匹配到的 SaidIT 相关事件转换为统一记录格式，包括事件ID、事件类型、时间、参与方、详情和原始事件内容。",
+    "统计筛选后的 SaidIT 事件类型分布，并进一步统计可能的发帖人出现次数。",
+    "将筛选结果、统计信息和下一步分析提示写入 node_02_saidit_events.json，供后续节点继续定位异常帖子。"
+  ],
+  "data_flow": "输入: node_01_loaded.json（完整事件数据集） -> 按事件名称、详情和参与方中的 SaidIT 标识进行筛选 -> 统计 SaidIT 事件类型和发帖人分布 -> 输出: node_02_saidit_events.json（SaidIT 相关事件子集）"
 }

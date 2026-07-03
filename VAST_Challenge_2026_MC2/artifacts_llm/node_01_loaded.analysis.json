@@ -1,63 +1,20 @@
 {
-  "description": "该数据集为 VAST Challenge 2026 MC2 的 Tenant Thread 活动事件数据，记录多 agent 系统中人员、Agent、外部系统之间的交互事件。事件类型包括邮件访问与发送、会议提议、文件访问/读取/创建、下属任务排队、SaidIT 发帖与发帖检查、门禁与房间进入等。原始数据包含 185147 条事件记录，当前文件中展示了前 1000 条记录。每条事件通常包含事件类型 short_name、参与方 parties、时间戳 when、事件细节 details 和事件 id。数据具有明显的时序性、网络交互性和多主体协作特征，适合用于追踪异常 SaidIT 帖子的事件链、构建 agent 交互图谱、识别任务传播路径和历史异常模式。",
-  "sample_data_note": "数据集很大，以下为代表性示例记录。",
-  "sample_data": [
-    {
-      "id": 15249,
-      "short_name": "propose_meeting",
-      "when": 2409423542.0,
-      "parties": [
-        "person:levi_signal",
-        "person:avery_sextant",
-        "person:sophia_beacon",
-        "world:calendar",
-        "Agent/person:isaac_mast"
-      ],
-      "key_details": {
-        "person": "person:isaac_mast",
-        "organizer": "person:isaac_mast",
-        "participants": [
-          "person:sophia_beacon",
-          "person:avery_sextant",
-          "person:levi_signal"
-        ],
-        "system": "world:calendar",
-        "action": "propose_meeting"
-      }
-    },
-    {
-      "id": 15788,
-      "short_name": "queue_subordinate_task",
-      "when": 2409429003.0,
-      "parties": [
-        "Agent/person:gabriel_sonar",
-        "Agent/person:zoey_drydock"
-      ],
-      "key_details": {
-        "target_agent": "Agent/person:zoey_drydock",
-        "task": "read_file",
+  "description": "包含 Tenant Thread 多智能体系统的原始活动事件日志，原始数据共 185147 条记录；事件涵盖邮件访问与发送、会议提议、文件访问、子任务派发、SaidIt 发帖/检查、门禁与房间进入等行为，可用于追踪人员、Agent、系统服务之间的时序交互与异常传播链。",
+  "sample_data": {
+    "id": 15788,
+    "short_name": "queue_subordinate_task",
+    "parties": [
+      "Agent/person:gabriel_sonar",
+      "Agent/person:zoey_drydock"
+    ],
+    "when": 2409429003.0,
+    "details": {
+      "target_agent": "Agent/person:zoey_drydock",
+      "task": "read_file",
+      "args": {
         "path": "HiddenOrca_further_instructions.md"
       }
-    },
-    {
-      "id": 17073,
-      "short_name": "post_saidit",
-      "when": 2409442306.0,
-      "parties": [
-        "Agent/person:ava_tiller",
-        "system:saidit"
-      ],
-      "key_details": {
-        "person": "person:ava_tiller",
-        "content": "Vendor Dispatch & SLA Tracking Alerts",
-        "forum": "general"
-      }
     }
-  ],
-  "input_datasets": [
-    "MC2 data.json"
-  ],
-  "output_datasets": [
-    "node_01_loaded.json"
-  ]
+  },
+  "echarts_chart": null
 }

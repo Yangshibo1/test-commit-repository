@@ -1,69 +1,14 @@
 {
-  "algorithm_purpose": "刷新并生成包含当前节点记录的完整 OpenTrace PROV 数据血缘可视化，同时验证当前分析会话的完整性，并将最终可视化和验证结果落盘保存。",
-  "algorithm_logic": {
-    "description": "脚本首先从 current_session.json 读取当前 OpenTrace 会话 ID，并基于 OpenTrace 服务器的 base_dir 定位对应的会话目录。随后读取 node_05_final_report.json 作为最终分析报告输入，并检查 node_06_data_flow_visualization.txt 是否存在以获得上一版可视化文件大小。脚本的核心处理方法是先调用 server.record_prov_relation 将 node_07 自身的输入、输出、活动、执行代理以及它们之间的 PROV 关系写入会话 provenance 记录中；这样后续重新生成可视化时，最终图中会包含 node_07 节点本身。完成 PROV 记录后，脚本调用 visualize_prov_dag 对整个会话目录中的 PROV DAG 进行重新渲染，生成文本和 Mermaid 格式的最终数据流可视化，并分别保存到 src 工作目录和 OpenTrace session 目录。最后，脚本调用 validate_session 对会话完整性进行校验，将校验状态、错误列表、输出路径和可视化长度写入 JSON 验证结果文件，并通过 record_step_details 记录该节点的执行细节。",
-    "key_parameters": [
-      {
-        "parameter": "session_id",
-        "value": "从 current_session.json 中读取",
-        "purpose": "确定需要刷新可视化和验证完整性的 OpenTrace 会话，是所有 PROV 记录、可视化生成和会话验证的作用范围"
-      },
-      {
-        "parameter": "session_dir",
-        "value": "Path(server.base_dir) / session_id",
-        "purpose": "指定 PROV DAG 的读取目录、最终可视化副本的保存目录，以及会话完整性验证的目标目录"
-      },
-      {
-        "parameter": "input_report",
-        "value": "src/node_05_final_report.json",
-        "purpose": "作为最终报告输入，用于提取异常事件 ID，并作为最终可视化和验证结果的来源实体"
-      },
-      {
-        "parameter": "input_visualization",
-        "value": "src/node_06_data_flow_visualization.txt",
-        "purpose": "作为上一轮可视化输入，用于建立 node_07 最终可视化相对于 node_06 可视化的派生关系"
-      },
-      {
-        "parameter": "previous_viz_size",
-        "value": "input_visualization.stat().st_size if input_visualization.exists() else 0",
-        "purpose": "记录上一版可视化文件大小；当上一版可视化不存在时使用 0，影响 PROV 实体属性记录"
-      },
-      {
-        "parameter": "record_prov_relation.entities",
-        "value": "node07_input_report, node07_input_previous_viz, node07_output_final_viz, node07_output_validation",
-        "purpose": "定义本节点参与 PROV 关系的输入实体和输出实体，用于构建最终血缘图中的节点"
-      },
-      {
-        "parameter": "record_prov_relation.relations",
-        "value": "used, wasGeneratedBy, wasAssociatedWith, wasDerivedFrom",
-        "purpose": "定义输入、活动、输出和执行代理之间的 PROV 依赖关系，决定最终数据血缘图的边结构"
-      },
-      {
-        "parameter": "visualize_prov_dag(str(session_dir), None)",
-        "value": "会话目录作为输入，过滤参数为 None",
-        "purpose": "对完整会话目录中的全部 PROV 记录进行可视化，不对节点或关系进行额外过滤"
-      },
-      {
-        "parameter": "validate_session(str(session_dir))",
-        "value": "会话目录作为验证目标",
-        "purpose": "检查当前 OpenTrace 会话是否完整有效，并输出布尔校验结果和错误列表"
-      },
-      {
-        "parameter": "output_file",
-        "value": "src/node_07_final_data_flow_visualization.txt",
-        "purpose": "指定最终 PROV 可视化在 src 工作目录中的输出位置"
-      },
-      {
-        "parameter": "session_output_file",
-        "value": "session_dir/node_07_final_data_flow_visualization.txt",
-        "purpose": "指定最终 PROV 可视化在 OpenTrace 会话目录中的副本位置，便于会话级归档"
-      },
-      {
-        "parameter": "validation_file",
-        "value": "src/node_07_validation_result.json",
-        "purpose": "指定会话完整性验证结果的 JSON 输出位置"
-      }
-    ],
-    "data_flow": "输入: current_session.json 提供 session_id，node_05_final_report.json 提供最终报告和异常事件信息，node_06_data_flow_visualization.txt 提供上一版可视化及其文件大小 -> 处理: 定位 session_dir，读取报告，记录 node_07 的 PROV 实体、活动、代理和依赖关系，重新渲染完整 PROV DAG，验证会话完整性 -> 输出: src/node_07_final_data_flow_visualization.txt、session_dir/node_07_final_data_flow_visualization.txt 和 src/node_07_validation_result.json；同时 OpenTrace 会话中新增 node_07 的步骤详情和 PROV 关系记录"
-  }
+  "algorithm_purpose": "刷新最终数据流可视化结果，并对当前分析会话的完整性进行校验，确保最终输出文件包含最新节点信息且可用于后续报告或审查。",
+  "algorithm_logic": [
+    "读取当前会话ID，并根据服务器基础目录定位对应的会话目录。",
+    "加载前序节点生成的最终分析报告，并检查上一版数据流可视化文件是否存在及其文件大小。",
+    "登记本节点的输入、输出、处理活动和文件关系，用于记录本次刷新与校验过程。",
+    "重新生成完整的数据流可视化内容，使其包含当前节点产生的最新信息。",
+    "将最终可视化结果同时保存到脚本工作目录和会话目录中。",
+    "对当前会话目录进行完整性校验，得到校验是否通过以及错误列表。",
+    "将校验结果、可视化文件路径和可视化内容长度写入JSON结果文件。",
+    "记录本节点的执行细节，包括执行说明、关键代码片段、脚本文件和运行命令。"
+  ],
+  "data_flow": "输入: current_session.json、node_05_final_report.json、node_06_data_flow_visualization.txt、会话目录内容 -> 读取会话与前序结果 -> 记录刷新活动 -> 重新生成最终可视化 -> 校验会话完整性 -> 输出: node_07_final_data_flow_visualization.txt、会话目录副本、node_07_validation_result.json"
 }

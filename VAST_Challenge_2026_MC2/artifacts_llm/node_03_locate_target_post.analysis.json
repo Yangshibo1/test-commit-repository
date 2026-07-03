@@ -1,57 +1,14 @@
 {
-  "algorithm_purpose": "在上一节点筛选出的SaidIT事件子集中，定位发生在指定日期和精确时间点的异常发帖事件，并同时生成候选帖子、John Windward相关帖子和时间邻近帖子，用于后续追溯异常帖子的内容来源与事件链。",
-  "algorithm_logic": {
-    "description": "脚本读取node_02_saidit_events.json中的SaidIT事件记录，只在该子集内进行目标帖子定位。算法首先遍历所有记录，依据事件类型字段short_name过滤出真正的发帖事件，仅保留short_name为saidit_post或post_saidit的记录作为候选帖子。随后对每个候选帖子执行三类检查：第一，统计所有候选发帖事件；第二，将parties字段和details字段转换为小写文本，检查其中是否包含john_windward，用于统计John Windward相关发帖；第三，检查datetime字符串是否同时包含目标日期2046-05-17和目标时间19:21:15，若同时满足则判定为目标异常帖子。除精确匹配外，脚本还将所有候选帖子按照其when时间戳与目标时间戳之间的绝对差排序，取前10条作为nearby_posts，以便在没有精确秒级匹配时提供人工审阅候选。最终输出目标匹配结果、候选统计、John Windward帖子统计、最近时间候选以及下一步追溯建议。",
-    "key_parameters": [
-      {
-        "parameter": "input_file",
-        "value": "node_02_saidit_events.json",
-        "purpose": "限定算法只在上一节点筛选出的SaidIT相关事件子集中查找目标帖子，而不是扫描完整原始事件集"
-      },
-      {
-        "parameter": "post_event_types",
-        "value": [
-          "saidit_post",
-          "post_saidit"
-        ],
-        "purpose": "定义哪些事件类型被视为SaidIT发帖事件，是候选帖子筛选的核心条件"
-      },
-      {
-        "parameter": "target_date",
-        "value": "2046-05-17",
-        "purpose": "用于在datetime字段中匹配目标异常帖子所在日期"
-      },
-      {
-        "parameter": "target_time",
-        "value": "19:21:15",
-        "purpose": "用于在datetime字段中匹配目标异常帖子的精确时间点"
-      },
-      {
-        "parameter": "target_match_condition",
-        "value": "target_date in record['datetime'] and target_time in record['datetime']",
-        "purpose": "目标帖子判定逻辑，要求datetime字符串同时包含目标日期和目标时间"
-      },
-      {
-        "parameter": "john_identifier",
-        "value": "john_windward",
-        "purpose": "用于识别与John Windward相关的发帖事件，检查范围包括parties字段和details字段"
-      },
-      {
-        "parameter": "target_timestamp",
-        "value": 2410168875.0,
-        "purpose": "将目标时间2046-05-17 19:21:15转换为时间戳，用于计算候选帖子与目标时间的距离"
-      },
-      {
-        "parameter": "nearby_posts_limit",
-        "value": 10,
-        "purpose": "当需要辅助审阅时，按时间距离保留最接近目标时间的前10条候选帖子"
-      },
-      {
-        "parameter": "nearby_sort_key",
-        "value": "abs(float(record['when']) - target_timestamp)",
-        "purpose": "根据事件when时间戳与目标时间戳的绝对差，对候选帖子进行接近程度排序"
-      }
-    ],
-    "data_flow": "输入: node_02_saidit_events.json中的695条SaidIT相关记录 -> 提取records列表 -> 按short_name筛选出saidit_post和post_saidit类型的候选发帖事件 -> 在候选中统计John Windward相关帖子 -> 使用datetime字符串匹配2046-05-17和19:21:15定位目标异常帖子 -> 使用when时间戳计算并排序得到最接近目标时间的10条候选帖子 -> 输出node_03_target_post.json，包含候选帖子数量、John Windward帖子数量、目标匹配数量、目标匹配记录、时间邻近候选和后续追溯建议"
-  }
+  "algorithm_purpose": "在已提取的 SaidIT 事件子集中，定位 2046-05-17 19:21:15 发生的目标异常发帖事件，并输出精确匹配结果及附近候选帖子，供后续追溯内容来源和事件链使用。",
+  "algorithm_logic": [
+    "读取当前分析会话信息，并加载上一节点生成的 SaidIT 事件数据文件 node_02_saidit_events.json。",
+    "从输入数据中提取所有事件记录，并设定目标日期为 2046-05-17、目标时间为 19:21:15。",
+    "遍历所有事件记录，仅保留类型为 SaidIT 发帖的事件，形成候选发帖事件集合。",
+    "在候选发帖事件中检查参与方和事件详情，统计与 john_windward 相关的发帖事件。",
+    "检查每条候选发帖事件的日期时间字段，筛选出与目标日期和目标时间精确匹配的异常帖子。",
+    "如果存在精确匹配，则将其作为目标异常帖子；同时根据时间戳计算与目标时间最接近的帖子，保留前 10 条作为附近候选，便于人工复核。",
+    "汇总输入记录数量、候选发帖数量、John Windward 相关发帖数量、目标匹配数量、匹配事件和附近候选事件。",
+    "将定位结果写入 node_03_target_post.json，作为后续分析内容来源、任务传递链和删除行为的输入。"
+  ],
+  "data_flow": "输入: node_02_saidit_events.json 中的 SaidIT 事件记录 -> 筛选 SaidIT 发帖事件 -> 匹配目标日期 2046-05-17 和目标时间 19:21:15 -> 统计 John Windward 相关发帖并生成附近时间候选 -> 输出: node_03_target_post.json，包含目标异常帖子匹配结果和最近候选帖子"
 }

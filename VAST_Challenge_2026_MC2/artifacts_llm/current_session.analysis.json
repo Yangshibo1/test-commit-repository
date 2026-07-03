@@ -1,11 +1,36 @@
 {
-  "description": "当前数据集仅包含一次分析会话的元信息，用于标识本次 VAST Challenge 2026 MC2 分析任务的运行上下文。数据内容包括 session_id 和 work_dir 两个字段；未包含实际事件日志、SaidIT 帖子、agent 交互记录或分析结果。数据规模为 1 条会话记录，输入数据集列表为空，输出数据集列表为空。",
-  "sample_data": [
-    {
-      "session_id": "session_20260630_172421",
-      "work_dir": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\VAST_Challenge_2026_MC2\\src"
-    }
-  ],
-  "input_datasets": [],
-  "output_datasets": []
+  "description": "包含当前分析会话的元数据，包括会话ID和工作目录路径；该文件用于定位本次 VAST Challenge 2026 MC2 分析任务的运行环境，而非原始事件数据。",
+  "sample_data": {
+    "session_id": "session_20260630_172421",
+    "work_dir": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\VAST_Challenge_2026_MC2\\src"
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "当前会话元数据概览"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "type": "category",
+      "data": [
+        "session_id",
+        "work_dir"
+      ]
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "字段数量"
+    },
+    "series": [
+      {
+        "name": "存在字段",
+        "type": "bar",
+        "data": [
+          1,
+          1
+        ]
+      }
+    ]
+  }
 }

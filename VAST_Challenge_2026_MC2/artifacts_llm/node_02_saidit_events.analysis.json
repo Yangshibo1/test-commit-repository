@@ -1,47 +1,82 @@
 {
-  "description": "该数据集为从 node_01_loaded.json 的 185147 条全量系统事件中筛选出的 SaidIT 相关事件子集，共 695 条记录，输出文件为 node_02_saidit_events.json。数据包含 SaidIT 发帖、发帖检查、发帖任务分配、与 SaidIT 权限相关的 agent 问答、以及 saidit.json 文件读取等事件。主要事件类型包括 post_saidit 133 条、ask_agent 119 条、give_advice 119 条、saidit_post 108 条、assign_agent_task 105 条、saidit_post_check 71 条、access_files 20 条、read_file 20 条。数据主要用于定位 2046-05-17 John Windward 的异常 SaidIT 帖子，并为后续事件链追踪提供筛选后的时间序列基础。数据集记录数较多，以下仅给出代表性示例，不生成可视化配置。",
-  "sample_data": [
-    {
-      "event_id": 17073,
-      "type": "post_saidit",
-      "datetime": "2046-05-09 09:31:46",
-      "parties": [
-        "Agent/person:ava_tiller",
-        "system:saidit"
-      ],
-      "person": "person:ava_tiller",
+  "description": "该数据集是从185147条系统事件中过滤出的SaidIT相关事件子集，共695条记录，包含发帖、发帖检查、任务分配、询问权限、建议回复、读取saidit.json等事件；同时提供了事件类型计数、SaidIT相关类型计数和发帖/相关人员计数。数据中可见John Windward在2046-05-17 19:21:15发生一条异常SaidIT发布事件，内容来源为SwiftWren.txt。",
+  "sample_data": {
+    "id": 373902,
+    "short_name": "saidit_post",
+    "when": 2410168875.0,
+    "datetime": "2046-05-17 19:21:15",
+    "parties": [
+      "Agent/person:john_windward",
+      "system:saidit"
+    ],
+    "details": {
       "forum": "general",
-      "content": "Vendor Dispatch & SLA Tracking Alerts",
-      "note": "普通 SaidIT 发帖事件示例"
-    },
-    {
-      "event_id": 373902,
-      "type": "saidit_post",
-      "datetime": "2046-05-17 19:21:15",
-      "parties": [
-        "Agent/person:john_windward",
-        "system:saidit"
-      ],
-      "forum": "general",
-      "content_source": "SwiftWren.txt",
-      "note": "目标异常相关事件，John Windward 的 SaidIT 发帖来源为文件而非普通文本内容"
-    },
-    {
-      "event_id": 385826,
-      "type": "ask_agent",
-      "datetime": "2046-05-19 18:10:14",
-      "parties": [
-        "person:john_windward"
-      ],
-      "person": "person:john_windward",
-      "question": "What are the exact access/permission rules for posting to FleX and SaidIt (who can post, and any exceptions) based on our permissions.json?",
-      "note": "与 SaidIT 发帖权限相关的 agent 问答事件示例"
+      "content_source": "SwiftWren.txt"
     }
-  ],
-  "input_datasets": [
-    "node_01_loaded.json"
-  ],
-  "output_datasets": [
-    "node_02_saidit_events.json"
-  ]
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "SaidIT相关事件类型分布"
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "axisPointer": {
+        "type": "shadow"
+      }
+    },
+    "legend": {
+      "data": [
+        "事件数量"
+      ]
+    },
+    "grid": {
+      "left": "3%",
+      "right": "4%",
+      "bottom": "12%",
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "data": [
+        "post_saidit",
+        "ask_agent",
+        "give_advice",
+        "saidit_post",
+        "assign_agent_task",
+        "saidit_post_check",
+        "access_files",
+        "read_file"
+      ],
+      "axisLabel": {
+        "rotate": 35
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "数量"
+    },
+    "series": [
+      {
+        "name": "事件数量",
+        "type": "bar",
+        "data": [
+          133,
+          119,
+          119,
+          108,
+          105,
+          71,
+          20,
+          20
+        ],
+        "itemStyle": {
+          "color": "#5470C6"
+        },
+        "label": {
+          "show": true,
+          "position": "top"
+        }
+      }
+    ]
+  }
 }

@@ -1,87 +1,81 @@
 {
-  "description": "该数据集是用于定位 VAST Challenge 2026 MC2 中 John Windward 异常 SaidIT 帖子的中间分析结果。数据来自 SaidIT 事件子集 node_02_saidit_events.json，通过目标时间、发帖人和事件类型进行筛选，最终定位到 1 条目标异常帖子。输入 SaidIT 记录共 695 条，其中候选发帖事件 241 条，John Windward 相关发帖事件 45 条，目标匹配数为 1 条。数据主要包含目标帖子的事件 ID、时间戳、发帖主体、论坛、内容来源文件，以及若干相邻时间窗口内的 SaidIT 发帖记录，用于对比异常帖子与正常发帖行为。",
-  "sample_data": [
-    {
-      "event_id": 373902,
-      "event_type": "saidit_post",
-      "datetime": "2046-05-17 19:21:15",
-      "poster": "Agent/person:john_windward",
-      "system": "system:saidit",
-      "forum": "general",
-      "content_source": "SwiftWren.txt",
-      "note": "目标异常帖子，内容不是直接文本，而是来自外部文件 SwiftWren.txt"
+  "description": "该数据集是对 SaidIT 事件子集执行目标异常帖子定位后的中间分析结果，包含目标时间、筛选计数、唯一匹配的 John Windward 异常帖子、目标帖子附近的 SaidIT 发帖事件，以及下一步追溯 content_source 文件来源的分析观察。",
+  "sample_data": {
+    "event_id": 373902,
+    "type": "saidit_post",
+    "datetime": "2046-05-17 19:21:15",
+    "poster": "Agent/person:john_windward",
+    "system": "system:saidit",
+    "forum": "general",
+    "content_source": "SwiftWren.txt"
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "目标异常帖子定位筛选过程",
+      "subtext": "从 SaidIT 记录到唯一目标匹配"
     },
-    {
-      "event_id": 380638,
-      "event_type": "post_saidit",
-      "datetime": "2046-05-19 03:04:18",
-      "poster": "Agent/person:aria_towline",
-      "system": "system:saidit",
-      "forum": "general",
-      "content": "Resident Messaging: Building Announcements & Package Notifications",
-      "note": "相邻时间范围内的正常 Agent 发帖记录，内容为明确文本"
+    "tooltip": {
+      "trigger": "axis",
+      "axisPointer": {
+        "type": "shadow"
+      }
     },
-    {
-      "event_id": 387089,
-      "event_type": "post_saidit",
-      "datetime": "2046-05-19 21:38:24",
-      "poster": "Agent/person:dylan_hawser",
-      "system": "system:saidit",
-      "forum": "general",
-      "content": "Vendor Dispatch & SLA Tracking for Faster Unit Turns — CivicLoom Realty Partners",
-      "note": "相邻时间范围内的正常 Agent 发帖记录，可用于和目标异常帖子的 content_source 行为对比"
-    }
-  ],
-  "input_datasets": [
-    "node_02_saidit_events.json"
-  ],
-  "output_datasets": [
-    "node_03_target_post.json"
-  ],
-  "visualization": {
-    "dataset_type": "small_intermediate_dataset",
-    "recommended": true,
-    "charts": [
+    "grid": {
+      "left": "8%",
+      "right": "6%",
+      "bottom": "12%",
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "data": [
+        "输入SaidIT记录",
+        "候选发帖事件",
+        "John Windward发帖",
+        "目标匹配"
+      ],
+      "axisLabel": {
+        "rotate": 20
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "记录数"
+    },
+    "series": [
       {
-        "chart_type": "summary_metric_cards",
-        "title": "目标帖子筛选结果概览",
-        "metrics": [
+        "name": "事件数量",
+        "type": "bar",
+        "data": [
           {
-            "name": "输入 SaidIT 记录数",
-            "value": 695
+            "value": 695,
+            "itemStyle": {
+              "color": "#5470C6"
+            }
           },
           {
-            "name": "候选发帖事件数",
-            "value": 241
+            "value": 241,
+            "itemStyle": {
+              "color": "#91CC75"
+            }
           },
           {
-            "name": "John Windward 发帖事件数",
-            "value": 45
+            "value": 45,
+            "itemStyle": {
+              "color": "#FAC858"
+            }
           },
           {
-            "name": "目标匹配数",
-            "value": 1
+            "value": 1,
+            "itemStyle": {
+              "color": "#EE6666"
+            }
           }
-        ]
-      },
-      {
-        "chart_type": "timeline",
-        "title": "目标帖子与相邻 SaidIT 发帖时间线",
-        "x_field": "datetime",
-        "y_field": "event_type",
-        "color_field": "poster",
-        "highlight": {
-          "event_id": 373902,
-          "label": "目标异常帖子"
-        },
-        "description": "展示目标异常帖子及附近时间范围内其他 SaidIT 发帖事件，帮助观察该帖子在整体发帖序列中的位置。"
-      },
-      {
-        "chart_type": "bar_chart",
-        "title": "相邻帖子论坛分布",
-        "x_field": "forum",
-        "y_field": "count",
-        "description": "当前相邻帖子样本均集中在 general 论坛，可用于验证目标帖子是否与周边发帖论坛一致。"
+        ],
+        "label": {
+          "show": true,
+          "position": "top"
+        }
       }
     ]
   }

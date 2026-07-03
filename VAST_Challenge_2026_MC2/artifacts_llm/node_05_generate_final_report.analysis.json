@@ -1,49 +1,14 @@
 {
-  "algorithm_purpose": "基于上一节点已经追溯完成的异常帖子证据链，生成结构化最终调查报告，汇总异常帖子、源文件生命周期、任务链、删除行为和证据计数，并写入 node_05_final_report.json。",
-  "algorithm_logic": {
-    "description": "该脚本不重新扫描原始事件数据，而是读取 node_04_source_trace.json 中已经整理好的追踪结果。算法首先加载当前 OpenTrace 会话 ID，然后读取 node_04 的证据链数据，提取目标异常帖子 target_post、文件生命周期 file_lifecycle、帖子附近任务链 task_chain_near_post 以及内容来源 content_source。随后从文件生命周期中拆分出 created 和 deleted 事件列表，用于判断源文件的创建信息和帖子发布后的删除行为。脚本将这些输入数据重组为最终报告：在 executive_summary 中记录异常帖子的事件 ID、时间、发布者、事件类型、内容来源和论坛；从 created 列表首个事件中提取源文件创建者、创建时间和大小提示；遍历 task_chain_near_post 生成帖子前后的事件链摘要；遍历 deleted 列表生成删除行为摘要。接着脚本根据这些结构化证据生成 findings 文本结论、conclusion 归纳结论和 evidence_counts 证据数量统计。最终将完整 report 对象序列化为 JSON 文件，并记录该节点与输入输出文件之间的 PROV 数据血缘关系。",
-    "key_parameters": [
-      {
-        "parameter": "input_file",
-        "value": "node_04_source_trace.json",
-        "purpose": "作为唯一分析输入，提供已经追溯好的异常帖子、源文件生命周期和任务链证据；该脚本依赖该文件而不是重新扫描原始数据。"
-      },
-      {
-        "parameter": "target_post",
-        "value": "trace['target_post']",
-        "purpose": "确定最终报告聚焦的异常 SaidIT 帖子，提供事件 ID、时间、事件类型、论坛等核心字段。"
-      },
-      {
-        "parameter": "content_source",
-        "value": "trace['content_source']",
-        "purpose": "标识异常帖子内容来源文件，用于关联源文件生命周期和解释帖子内容来源。"
-      },
-      {
-        "parameter": "lifecycle.created",
-        "value": "trace['file_lifecycle'].get('created', [])",
-        "purpose": "提取源文件创建事件列表；脚本使用首个创建事件作为源文件起源证据。"
-      },
-      {
-        "parameter": "lifecycle.deleted",
-        "value": "trace['file_lifecycle'].get('deleted', [])",
-        "purpose": "提取源文件或相关指令文件删除事件列表，用于判断帖子发布后的清理或掩盖行为。"
-      },
-      {
-        "parameter": "task_chain",
-        "value": "trace['task_chain_near_post']",
-        "purpose": "提供异常帖子附近的直接任务链事件，脚本遍历该列表生成事件序列视图。"
-      },
-      {
-        "parameter": "created[0]",
-        "value": "首个创建事件；若 created 为空则使用 None 或 N/A",
-        "purpose": "作为源文件创建者、创建时间和 size_hint 的主要来源；该选择影响报告中对文件起源的判断。"
-      },
-      {
-        "parameter": "output_file",
-        "value": "node_05_final_report.json",
-        "purpose": "最终结构化报告的输出位置，供后续可视化节点读取。"
-      }
-    ],
-    "data_flow": "输入: node_04_source_trace.json 中的 target_post、content_source、file_lifecycle、task_chain_near_post、source_related_summary -> 提取 created/deleted 生命周期事件 -> 重组异常帖子摘要、文件起源、任务链、删除行为、证据计数和结论文本 -> 输出: node_05_final_report.json，供 node_06 生成 OpenTrace/PROV 可视化。"
-  }
+  "algorithm_purpose": "基于上一阶段已追溯出的异常帖子证据链，汇总生成最终调查报告，说明异常帖子的来源、事件链、文件生命周期和关键结论。",
+  "algorithm_logic": [
+    "读取当前分析会话信息，用于标识本次报告生成过程。",
+    "读取 node_04_source_trace.json，获取目标异常帖子、相关文件生命周期、帖子前后的任务链以及内容来源信息。",
+    "从目标帖子中提取事件编号、时间、发布主体、事件类型、论坛和内容来源等核心信息。",
+    "从文件生命周期中提取源文件的创建记录和删除记录，用于判断内容来源、创建者、创建时间以及发布后的清理行为。",
+    "整理异常帖子发生前的任务链，形成按时间排列的事件序列，描述 Daniel Gangway、Chloe Ballast 和 John Windward 之间的任务传递关系。",
+    "汇总帖子发布后的删除事件，记录被删除的目标文件、执行者和删除时间。",
+    "生成最终报告结构，包括执行摘要、关键发现、结论、证据数量统计和后续观察。",
+    "将最终报告写入 node_05_final_report.json 文件，作为本次异常帖子调查的最终结构化结果。"
+  ],
+  "data_flow": "输入: node_04_source_trace.json（目标帖子、文件生命周期、任务链、内容来源） -> 信息提取与证据汇总 -> 生成最终调查报告 -> 输出: node_05_final_report.json"
 }

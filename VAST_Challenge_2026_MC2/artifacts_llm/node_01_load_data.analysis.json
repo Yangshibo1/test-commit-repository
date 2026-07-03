@@ -1,39 +1,12 @@
 {
-  "algorithm_purpose": "加载VAST Challenge 2026 MC2原始JSON数据，保持原始数据结构不变，并生成后续分析节点可复用的完整数据副本，同时记录OpenTrace会话、数据血缘和步骤元信息。",
-  "algorithm_logic": {
-    "description": "脚本首先初始化一个OpenTrace分析会话，用于后续记录数据处理过程。随后从固定路径读取MC2原始JSON文件，使用UTF-8编码将整个文件解析为Python字典对象。算法不对原始数据进行过滤、聚合或清洗，而是通过data.get('events', [])提取events字段用于统计事件总数；如果events字段不存在，则使用空列表作为默认值，避免脚本中断。之后，脚本将完整原始数据按原结构写入node_01_loaded.json，作为后续节点的标准输入。最后，脚本记录该加载过程的PROV数据血缘关系、步骤详情和当前session_id，确保后续分析可以追踪输入、输出和处理活动之间的关系。",
-    "key_parameters": [
-      {
-        "parameter": "data_path",
-        "value": "VAST_Challenge_2026_MC2/MC2 data.json",
-        "purpose": "指定原始MC2 JSON数据文件的位置，是算法读取数据的唯一输入源"
-      },
-      {
-        "parameter": "encoding",
-        "value": "utf-8",
-        "purpose": "指定读取和写入JSON文件时使用的字符编码，确保文本内容和非ASCII字符能够正确保留"
-      },
-      {
-        "parameter": "events_key",
-        "value": "events",
-        "purpose": "指定从JSON顶层结构中提取事件列表的字段名，用于统计事件数量并记录元数据"
-      },
-      {
-        "parameter": "events_default",
-        "value": [],
-        "purpose": "当输入JSON中不存在events字段时使用空列表作为默认值，保证加载流程可以继续执行"
-      },
-      {
-        "parameter": "preserve_structure",
-        "value": true,
-        "purpose": "表示该节点不改变原始JSON结构，仅进行完整复制和保存，为后续节点提供无损数据基础"
-      },
-      {
-        "parameter": "output_file",
-        "value": "src/node_01_loaded.json",
-        "purpose": "指定加载后完整数据副本的保存位置，作为后续分析节点的输入"
-      }
-    ],
-    "data_flow": "输入: 原始文件VAST_Challenge_2026_MC2/MC2 data.json -> 使用UTF-8编码进行json.load解析 -> 提取events字段并统计事件总数 -> 将完整JSON数据不改变结构地写入src/node_01_loaded.json -> 记录PROV血缘、步骤详情和current_session.json供后续节点使用"
-  }
+  "algorithm_purpose": "加载MC2原始JSON数据，统计事件数量，并将完整数据结构保存为后续分析节点可使用的标准输出文件。",
+  "algorithm_logic": [
+    "初始化分析任务环境，确定原始数据文件路径和当前节点的工作目录",
+    "读取MC2原始JSON数据文件，保留数据的完整结构",
+    "从数据中提取events列表，并统计事件总数",
+    "将完整原始数据保存到node_01_loaded.json，作为后续分析步骤的输入",
+    "保存当前会话和工作目录信息，便于后续节点继续使用同一分析上下文",
+    "在终端输出加载结果，包括会话信息、工作目录、输出文件名和事件总数"
+  ],
+  "data_flow": "输入: MC2 data.json -> 读取JSON并统计events数量 -> 输出: node_01_loaded.json（完整原始数据）和current_session.json（会话与工作目录信息）"
 }
