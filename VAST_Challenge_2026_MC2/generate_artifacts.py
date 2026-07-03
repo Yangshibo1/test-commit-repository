@@ -51,12 +51,68 @@ class Config:
         self.default_output_dir = Path("VAST_Challenge_2026_MC2/artifacts_llm")
         self.default_context_dir = Path("VAST_Challenge_2026_MC2/context")
 
+        # 内容限制
+        self.max_file_content_chars = 10000  # 最大文件内容字符数
+        self.max_json_sample_items = 100     # JSON 数组最大采样数量
+
     @classmethod
     def from_env(cls) -> "Config":
         return cls()
 
 
 # ==================== 文件类型识别 ====================
+
+def truncate_file_content(content: str, file_path: Path, config: Config) -> str:
+    """截断文件内容以避免超过 token 限制"""
+    # 如果内容已经足够小，直接返回
+    if len(content) <= config.max_file_content_chars:
+        return content
+
+    print(f"  文件较大 ({len(content)} 字符)，截断到 {config.max_file_content_chars} 字符")
+
+    # 对于 JSON 文件，尝试智能截断
+    if file_path.suffix.lower() == ".json":
+        try:
+            data = json.loads(content)
+            # 如果是数组，保留更多项并添加摘要信息
+            if isinstance(data, list):
+                total_items = len(data)
+                sample_size = min(config.max_json_sample_items, total_items)
+                truncated = data[:sample_size]
+
+                # 添加元数据
+                metadata = {
+                    "_truncated": True,
+                    "_total_items": total_items,
+                    "_sample_size": sample_size,
+                    "_data": truncated
+                }
+                return json.dumps(metadata, ensure_ascii=False, indent=2)
+            # 如果是对象，尝试提取关键字段
+            elif isinstance(data, dict):
+                # 检查是否包含大型数组字段
+                result = {}
+                for key, value in data.items():
+                    value_str = json.dumps(value, ensure_ascii=False)
+                    if len(value_str) > config.max_file_content_chars // 4:
+                        # 字段太大，检查是否是数组
+                        if isinstance(value, list):
+                            result[key] = {
+                                "_truncated": True,
+                                "_total_items": len(value),
+                                "_sample_size": min(50, len(value)),
+                                "_data": value[:min(50, len(value))]
+                            }
+                        else:
+                            result[key] = f"[{type(value).__name__}, 太大已截断]"
+                    else:
+                        result[key] = value
+                return json.dumps(result, ensure_ascii=False, indent=2)
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"  JSON 解析失败，使用简单截断: {e}")
+
+    # 默认截断
+    return content[:config.max_file_content_chars] + "\n\n...[内容已截断]..."
 
 def get_file_type(file_path: Path) -> Optional[str]:
     """根据文件扩展名确定类型"""
@@ -499,6 +555,9 @@ class FileProcessor:
                 content = input_file.read_text(encoding="utf-8")
             except UnicodeDecodeError:
                 content = input_file.read_text(encoding="utf-8", errors="ignore")
+
+            # 截断过大的文件内容
+            content = truncate_file_content(content, input_file, self.config)
 
             # 加载上下文
             context = self.context_loader.load()
