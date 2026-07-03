@@ -1,0 +1,32 @@
+[project]
+name = "opentrace"
+version = "0.1.0"
+description = "数据血缘追踪系统 - 用于追踪 agent 数据分析流程"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "mcp>=0.1.0",
+]
+
+[project.optional-dependencies]
+pandas = [
+    "pandas>=2.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true

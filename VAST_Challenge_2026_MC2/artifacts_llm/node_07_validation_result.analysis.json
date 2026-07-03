@@ -1,0 +1,75 @@
+{
+  "description": "包含1条可视化验证结果记录，描述会话ID、会话目录、验证状态、错误列表、最终数据流可视化文件路径以及可视化文本长度等信息；该记录表明 node_07 的最终数据流可视化结果验证通过且无错误。",
+  "sample_data": {
+    "session_id": "session_20260630_172421",
+    "session_dir": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\.opentrace\\session_20260630_172421",
+    "is_valid": true,
+    "errors": [],
+    "final_visualization_src": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\VAST_Challenge_2026_MC2\\src\\node_07_final_data_flow_visualization.txt",
+    "final_visualization_session": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\.opentrace\\session_20260630_172421\\node_07_final_data_flow_visualization.txt",
+    "visualization_length": 17295
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "node_07 验证结果概览",
+      "left": "center"
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "axisPointer": {
+        "type": "shadow"
+      }
+    },
+    "grid": {
+      "left": "12%",
+      "right": "8%",
+      "bottom": "15%",
+      "top": "18%"
+    },
+    "xAxis": {
+      "type": "category",
+      "data": [
+        "验证通过",
+        "错误数量",
+        "可视化长度"
+      ],
+      "axisLabel": {
+        "interval": 0
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "数值"
+    },
+    "series": [
+      {
+        "name": "验证指标",
+        "type": "bar",
+        "data": [
+          {
+            "value": 1,
+            "itemStyle": {
+              "color": "#52c41a"
+            }
+          },
+          {
+            "value": 0,
+            "itemStyle": {
+              "color": "#faad14"
+            }
+          },
+          {
+            "value": 17295,
+            "itemStyle": {
+              "color": "#1677ff"
+            }
+          }
+        ],
+        "label": {
+          "show": true,
+          "position": "top"
+        }
+      }
+    ]
+  }
+}

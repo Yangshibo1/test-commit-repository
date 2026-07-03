@@ -1,0 +1,54 @@
+你是一个专业的数据分析和可视化专家。请分析以下数据集，给出简要说明和可视化配置。
+
+## 背景信息
+{background}
+
+## 核心问题
+{problems}
+
+## 数据集文件
+文件路径: {file_path}
+
+### 数据内容
+{file_content}
+
+## 任务要求
+
+请生成结构化的数据集分析，只包含三个字段：
+
+1. **description**（数据集描述）：简明描述这个数据集包含什么数据
+
+2. **sample_data**（数据示例）：一条代表性数据记录
+
+3. **echarts_chart**（ECharts图表）：
+   - **重要**：如果是大数据集（原始数据、超过1000条记录），设置为 null
+   - 如果是小型中间数据集（筛选结果、分析结果），生成前端可用的 ECharts 配置
+
+## ECharts 配置要求
+
+- 必须是完整可用的 ECharts option 对象
+- 选择适合数据的图表类型（柱状图、折线图、饼图等）
+- 数据从实际内容中提取，不要虚构
+
+## 输出格式
+
+输出严格的 JSON 格式，只输出 content 部分。
+
+示例：
+{{
+  "description": "包含1条目标异常帖子的定位结果",
+  "sample_data": {{"event_id": 373902, "type": "saidit_post", "datetime": "2046-05-17 19:21:15"}},
+  "echarts_chart": {{
+    "title": {{"text": "目标帖子信息"}},
+    "xAxis": {{"type": "category", "data": ["帖子"]}},
+    "yAxis": {{"type": "value"}},
+    "series": [{{"type": "bar", "data": [1]}}]
+  }}
+}}
+
+大数据集示例：
+{{
+  "description": "包含185147条原始事件记录",
+  "sample_data": {{"event_id": 1, "type": "access_files"}},
+  "echarts_chart": null
+}}

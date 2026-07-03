@@ -1,0 +1,20 @@
+{
+  "description": "包含 Tenant Thread 多智能体系统的原始活动事件日志，原始数据共 185147 条记录；事件涵盖邮件访问与发送、会议提议、文件访问、子任务派发、SaidIt 发帖/检查、门禁与房间进入等行为，可用于追踪人员、Agent、系统服务之间的时序交互与异常传播链。",
+  "sample_data": {
+    "id": 15788,
+    "short_name": "queue_subordinate_task",
+    "parties": [
+      "Agent/person:gabriel_sonar",
+      "Agent/person:zoey_drydock"
+    ],
+    "when": 2409429003.0,
+    "details": {
+      "target_agent": "Agent/person:zoey_drydock",
+      "task": "read_file",
+      "args": {
+        "path": "HiddenOrca_further_instructions.md"
+      }
+    }
+  },
+  "echarts_chart": null
+}

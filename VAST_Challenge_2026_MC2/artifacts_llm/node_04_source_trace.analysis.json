@@ -1,0 +1,144 @@
+{
+  "description": "包含对目标异常 SaidIt 帖子 373902 的来源追踪结果：目标帖子元数据、内容来源文件 SwiftWren.txt、文件创建/读取/删除生命周期、临近发帖的任务传递链，以及与该内容源相关的事件类型统计。该数据是小型中间分析结果，共汇总 191 个相关事件，其中核心事件链显示任务从 daniel_gangway 传递给 chloe_ballast，再传递给 john_windward，随后由 john_windward 发布帖子并删除相关文件。",
+  "sample_data": {
+    "event_id": 373902,
+    "type": "saidit_post",
+    "datetime": "2046-05-17 19:21:15",
+    "parties": [
+      "Agent/person:john_windward",
+      "system:saidit"
+    ],
+    "details": {
+      "forum": "general",
+      "content_source": "SwiftWren.txt"
+    }
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "异常帖子来源追踪时间线",
+      "subtext": "SwiftWren.txt 生命周期与近帖任务链"
+    },
+    "tooltip": {
+      "trigger": "item"
+    },
+    "legend": {
+      "data": [
+        "文件生命周期",
+        "任务传递与发帖"
+      ],
+      "top": 50
+    },
+    "grid": {
+      "left": 140,
+      "right": 80,
+      "top": 100,
+      "bottom": 80
+    },
+    "xAxis": {
+      "type": "time",
+      "name": "时间"
+    },
+    "yAxis": {
+      "type": "category",
+      "name": "交互对象",
+      "data": [
+        "Emma → FileSystem",
+        "Daniel → Chloe",
+        "Chloe → John",
+        "John → SaidIt",
+        "John → FileSystem"
+      ]
+    },
+    "series": [
+      {
+        "name": "文件生命周期",
+        "type": "scatter",
+        "symbolSize": 16,
+        "label": {
+          "show": true,
+          "position": "right",
+          "formatter": "{b}"
+        },
+        "data": [
+          {
+            "name": "create_file: SwiftWren.txt",
+            "value": [
+              "2046-05-09 23:02:01",
+              "Emma → FileSystem"
+            ],
+            "event_id": 21202
+          },
+          {
+            "name": "read_file: SwiftWren_further_instructions.md",
+            "value": [
+              "2046-05-09 23:02:02",
+              "Emma → FileSystem"
+            ],
+            "event_id": 21208
+          },
+          {
+            "name": "delete_file: SwiftWren_further_instructions.md",
+            "value": [
+              "2046-05-17 19:21:16",
+              "John → FileSystem"
+            ],
+            "event_id": 373909
+          },
+          {
+            "name": "delete_file: SwiftWren.txt",
+            "value": [
+              "2046-05-17 19:21:17",
+              "John → FileSystem"
+            ],
+            "event_id": 373913
+          }
+        ]
+      },
+      {
+        "name": "任务传递与发帖",
+        "type": "scatter",
+        "symbol": "diamond",
+        "symbolSize": 18,
+        "label": {
+          "show": true,
+          "position": "right",
+          "formatter": "{b}"
+        },
+        "data": [
+          {
+            "name": "queue: read SwiftWren_further_instructions.md",
+            "value": [
+              "2046-05-17 19:12:24",
+              "Daniel → Chloe"
+            ],
+            "event_id": 373882
+          },
+          {
+            "name": "queue: read SwiftWren_further_instructions.md",
+            "value": [
+              "2046-05-17 19:21:13",
+              "Chloe → John"
+            ],
+            "event_id": 373893
+          },
+          {
+            "name": "saidit_post_check",
+            "value": [
+              "2046-05-17 19:21:14",
+              "John → SaidIt"
+            ],
+            "event_id": 373899
+          },
+          {
+            "name": "saidit_post: general / SwiftWren.txt",
+            "value": [
+              "2046-05-17 19:21:15",
+              "John → SaidIt"
+            ],
+            "event_id": 373902
+          }
+        ]
+      }
+    ]
+  }
+}

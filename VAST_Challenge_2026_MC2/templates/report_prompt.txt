@@ -1,0 +1,41 @@
+你是一个专业的数据分析专家。请分析以下报告，提取核心数据发现。
+
+## 背景信息
+{background}
+
+## 核心问题
+{problems}
+
+## 报告文件
+文件路径: {file_path}
+
+报告内容：
+{file_content}
+
+## 任务要求
+
+请生成结构化的报告分析，只包含核心数据发现：
+
+1. **key_findings**（核心数据发现）：
+   - 报告中最重要的数据发现
+   - 每个发现包含具体的数据值
+   - 不要描述分析方法或过程
+
+2. **answers**（问题答案）：
+   - 针对核心问题的简洁答案
+   - 只包含关键数据证据
+
+## 输出格式
+
+输出严格的 JSON 格式，只输出 content 部分。
+
+示例：
+{{
+  "key_findings": [
+    {{"finding": "异常帖子事件ID为373902", "data": {{"event_id": 373902}}}},
+    {{"finding": "内容来源为SwiftWren.txt", "data": {{"source": "SwiftWren.txt"}}}}
+  ],
+  "answers": [
+    {{"question": "异常帖子如何产生", "answer": "由John Windward发布，内容来自SwiftWren.txt", "key_data": "event_id: 373902"}}
+  ]
+}}

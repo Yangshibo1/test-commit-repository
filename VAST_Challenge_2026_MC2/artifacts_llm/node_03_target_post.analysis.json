@@ -1,0 +1,82 @@
+{
+  "description": "该数据集是对 SaidIT 事件子集执行目标异常帖子定位后的中间分析结果，包含目标时间、筛选计数、唯一匹配的 John Windward 异常帖子、目标帖子附近的 SaidIT 发帖事件，以及下一步追溯 content_source 文件来源的分析观察。",
+  "sample_data": {
+    "event_id": 373902,
+    "type": "saidit_post",
+    "datetime": "2046-05-17 19:21:15",
+    "poster": "Agent/person:john_windward",
+    "system": "system:saidit",
+    "forum": "general",
+    "content_source": "SwiftWren.txt"
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "目标异常帖子定位筛选过程",
+      "subtext": "从 SaidIT 记录到唯一目标匹配"
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "axisPointer": {
+        "type": "shadow"
+      }
+    },
+    "grid": {
+      "left": "8%",
+      "right": "6%",
+      "bottom": "12%",
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "data": [
+        "输入SaidIT记录",
+        "候选发帖事件",
+        "John Windward发帖",
+        "目标匹配"
+      ],
+      "axisLabel": {
+        "rotate": 20
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "记录数"
+    },
+    "series": [
+      {
+        "name": "事件数量",
+        "type": "bar",
+        "data": [
+          {
+            "value": 695,
+            "itemStyle": {
+              "color": "#5470C6"
+            }
+          },
+          {
+            "value": 241,
+            "itemStyle": {
+              "color": "#91CC75"
+            }
+          },
+          {
+            "value": 45,
+            "itemStyle": {
+              "color": "#FAC858"
+            }
+          },
+          {
+            "value": 1,
+            "itemStyle": {
+              "color": "#EE6666"
+            }
+          }
+        ],
+        "label": {
+          "show": true,
+          "position": "top"
+        }
+      }
+    ]
+  }
+}

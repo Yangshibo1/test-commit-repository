@@ -1,0 +1,82 @@
+{
+  "description": "该数据集是从185147条系统事件中过滤出的SaidIT相关事件子集，共695条记录，包含发帖、发帖检查、任务分配、询问权限、建议回复、读取saidit.json等事件；同时提供了事件类型计数、SaidIT相关类型计数和发帖/相关人员计数。数据中可见John Windward在2046-05-17 19:21:15发生一条异常SaidIT发布事件，内容来源为SwiftWren.txt。",
+  "sample_data": {
+    "id": 373902,
+    "short_name": "saidit_post",
+    "when": 2410168875.0,
+    "datetime": "2046-05-17 19:21:15",
+    "parties": [
+      "Agent/person:john_windward",
+      "system:saidit"
+    ],
+    "details": {
+      "forum": "general",
+      "content_source": "SwiftWren.txt"
+    }
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "SaidIT相关事件类型分布"
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "axisPointer": {
+        "type": "shadow"
+      }
+    },
+    "legend": {
+      "data": [
+        "事件数量"
+      ]
+    },
+    "grid": {
+      "left": "3%",
+      "right": "4%",
+      "bottom": "12%",
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "data": [
+        "post_saidit",
+        "ask_agent",
+        "give_advice",
+        "saidit_post",
+        "assign_agent_task",
+        "saidit_post_check",
+        "access_files",
+        "read_file"
+      ],
+      "axisLabel": {
+        "rotate": 35
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "数量"
+    },
+    "series": [
+      {
+        "name": "事件数量",
+        "type": "bar",
+        "data": [
+          133,
+          119,
+          119,
+          108,
+          105,
+          71,
+          20,
+          20
+        ],
+        "itemStyle": {
+          "color": "#5470C6"
+        },
+        "label": {
+          "show": true,
+          "position": "top"
+        }
+      }
+    ]
+  }
+}
