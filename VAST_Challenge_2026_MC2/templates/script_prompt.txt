@@ -19,10 +19,12 @@
 
 1. **algorithm_purpose**（算法目标）：简明描述这个脚本的核心目的
 
-2. **algorithm_logic**（算法逻辑说明）：分条描述算法的工作步骤
-   - 步骤1：做了什么
-   - 步骤2：做了什么
-   - 步骤3：做了什么
+2. **algorithm_logic**（算法逻辑说明）：仍然使用自然语言分条说明，但每一条都要更具体、更详细地描述实际代码逻辑，要求：
+   - 说明代码实际读取了哪些文件、字段或数据结构
+   - 说明具体的过滤条件、匹配条件、比较逻辑和固定参数值
+   - 说明数据被加入哪个列表、字典或输出字段
+   - 按代码执行顺序描述，不要写成真实伪代码
+   - 避免泛泛描述。例如不要写“遍历所有事件并筛选目标记录”，而要写“遍历 records 列表中的每条 record，先检查 short_name 是否为 saidit_post 或 post_saidit，再检查 datetime 是否同时包含 2046-05-17 和 19:21:15”
 
 3. **data_flow**（数据流程）：输入 -> 处理 -> 输出
 
@@ -32,18 +34,22 @@
 
 示例：
 {{
-  "algorithm_purpose": "根据时间窗口筛选特定日期范围内的事件",
+  "algorithm_purpose": "根据目标时间筛选 SaidIT 异常帖子",
   "algorithm_logic": [
-    "读取输入数据集文件",
-    "遍历所有事件记录，检查时间戳是否匹配目标日期和时间",
-    "筛选出匹配的事件记录",
-    "输出筛选结果到JSON文件"
+    "从 node_02_saidit_events.json 读取 records 字段，获取 SaidIT 事件记录列表",
+    "遍历 records 中的每条 record，先检查 short_name 字段是否为 saidit_post 或 post_saidit，只有匹配这两类发帖事件的记录才进入后续判断",
+    "对通过事件类型过滤的记录，读取 datetime 字段，并检查该字段是否同时包含目标日期 2046-05-17 和目标时间 19:21:15",
+    "将满足目标日期和目标时间条件的记录加入 target_matches 列表，同时保留所有候选发帖事件用于后续按时间距离排序",
+    "根据 when 字段计算候选帖子与目标时间戳的距离，取距离最近的前 10 条记录作为 nearby_posts",
+    "将 target_matches、nearby_posts 和统计计数写入 node_03_target_post.json"
   ],
-  "data_flow": "输入: node_02_saidit_events.json (695条) -> 时间过滤 -> 输出: node_03_target_post.json (1条)"
+  "data_flow": "输入: node_02_saidit_events.json 中的 SaidIT 事件记录 -> 按事件类型和目标时间过滤 -> 输出: node_03_target_post.json 中的目标帖子和相邻候选帖子"
 }}
 
 ## 重要原则
 
-- 分条描述算法步骤，清晰易懂
-- 重点描述"做了什么"，避免技术细节
-- 不要提及 OpenTrace、PROV、血缘等技术概念
+- 保持自然语言表达，不要生成真实伪代码
+- algorithm_logic 每一条都要尽量包含具体字段名、变量名、条件值或输出位置
+- 不新增 key_parameters 字段
+- 不修改输出 schema，只优化 algorithm_logic 的颗粒度
+- 不要提及 OpenTrace、PROV 等技术概念
