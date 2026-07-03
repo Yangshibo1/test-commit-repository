@@ -1,0 +1,89 @@
+{
+  "algorithm_purpose": "追溯目标异常 SaidIT 帖子的内容来源，围绕 content_source 在原始事件集中重建相关文件生命周期、临近任务链、关键人员交互以及 Daniel 的上游任务记录，为后续报告生成提供证据链数据。",
+  "algorithm_logic": {
+    "description": "脚本首先读取 node_03_target_post.json 中已经定位出的目标异常帖子，提取该帖子的时间戳和 details.content_source 字段。随后读取完整原始事件数据 node_01_loaded.json，并以 content_source 及其去掉 .txt 后缀的文件名 stem 作为全文匹配关键词，在所有事件的 JSON 文本表示中检索相关事件。检索出的事件被进一步按事件类型拆分为文件创建、文件读取、文件删除和 SaidIT 相关事件，用于描述目标内容源文件的生命周期。接着，算法以目标帖子时间为中心构造一个临近时间窗口，即发帖前 10 分钟到发帖后 2 分钟，扫描所有事件，保留时间窗口内且事件文本中包含关键人员或目标文件 stem 的事件。之后从这些临近事件中筛选出与任务链和帖子生成直接相关的事件类型，包括 queue_subordinate_task、saidit_post_check、saidit_post、delete_file 和 read_file。最后，脚本额外回看目标帖发布前 1 小时内 Daniel Gangway 是否接收到 queue_subordinate_task 类型任务，用于识别可能的上游触发源。所有结果被压缩为结构化事件记录，并输出包含目标帖子、内容源、来源相关事件统计、文件生命周期、临近任务链和 Daniel 前置任务的 JSON 文件。",
+    "key_parameters": [
+      {
+        "parameter": "target_matches[0]",
+        "value": "node_03_target_post.json 中的第一条 target_matches 记录",
+        "purpose": "确定需要追溯的目标异常帖子，后续所有时间窗口和内容源分析都围绕该事件展开"
+      },
+      {
+        "parameter": "target_when",
+        "value": "float(target_post['when'])",
+        "purpose": "作为目标发帖时间戳，用于构建临近事件窗口和前置任务回溯窗口"
+      },
+      {
+        "parameter": "content_source",
+        "value": "target_post.details.content_source，例如 SwiftWren.txt",
+        "purpose": "作为追溯目标帖子内容来源的核心匹配关键词，用于在全量事件中搜索相关文件和传播记录"
+      },
+      {
+        "parameter": "source_stem",
+        "value": "content_source.replace('.txt', '')，例如 SwiftWren",
+        "purpose": "扩展匹配范围，使算法不仅匹配完整文件名，也能匹配不带扩展名的相关事件"
+      },
+      {
+        "parameter": "source_related_events_filter",
+        "value": "content_source in event_text or source_stem in event_text",
+        "purpose": "从全量事件中筛选所有与目标内容源文件相关的事件，是文件生命周期追踪的主要过滤条件"
+      },
+      {
+        "parameter": "file_lifecycle_event_types",
+        "value": [
+          "create_file",
+          "read_file",
+          "delete_file"
+        ],
+        "purpose": "将内容源相关事件拆分为创建、读取和删除三个生命周期阶段"
+      },
+      {
+        "parameter": "saidit_event_filter",
+        "value": "'saidit' in short_name.lower()",
+        "purpose": "识别与 SaidIT 平台行为相关的内容源事件，用于判断内容源是否参与发帖或帖子检查流程"
+      },
+      {
+        "parameter": "key_people",
+        "value": [
+          "daniel_gangway",
+          "chloe_ballast",
+          "john_windward",
+          "emma_harbor"
+        ],
+        "purpose": "限定临近事件搜索关注的关键人员，用于捕捉与目标帖子生成相关的人或 agent 交互"
+      },
+      {
+        "parameter": "nearby_time_window",
+        "value": "target_when - 600 到 target_when + 120",
+        "purpose": "定义目标帖发布前 10 分钟至发布后 2 分钟的事件搜索窗口，用于重建发帖前后的直接任务链"
+      },
+      {
+        "parameter": "nearby_key_events_filter",
+        "value": "事件时间在 nearby_time_window 内，且事件文本包含 key_people 中任一人员或 source_stem",
+        "purpose": "从全量事件中筛选与关键人员或目标文件相关的临近上下文事件"
+      },
+      {
+        "parameter": "task_chain_event_types",
+        "value": [
+          "queue_subordinate_task",
+          "saidit_post_check",
+          "saidit_post",
+          "delete_file",
+          "read_file"
+        ],
+        "purpose": "从临近关键事件中提取与任务派发、帖子检查、发帖、文件读取和删除相关的直接事件链"
+      },
+      {
+        "parameter": "daniel_prior_window",
+        "value": "target_when - 3600 到 target_when",
+        "purpose": "定义目标帖发布前 1 小时的回溯窗口，用于查找 Daniel Gangway 是否存在上游任务触发"
+      },
+      {
+        "parameter": "daniel_prior_task_filter",
+        "value": "short_name == 'queue_subordinate_task' 且事件文本包含 'daniel_gangway'",
+        "purpose": "筛选 Daniel 在目标帖之前收到的任务派发事件，用于推断可能的责任链上游"
+      }
+    ],
+    "data_flow": "输入: node_03_target_post.json 中的目标异常帖子 + node_01_loaded.json 中的全量事件 -> 提取目标帖时间戳和 content_source -> 使用 content_source/source_stem 在全量事件中全文匹配相关事件 -> 按 create_file/read_file/delete_file/saidit 类型归类文件生命周期和平台行为 -> 在目标帖前 10 分钟至后 2 分钟窗口内筛选关键人员或目标文件相关事件 -> 从临近事件中提取任务链事件 -> 在目标帖前 1 小时内查找 Daniel Gangway 的 queue_subordinate_task 上游任务 -> 统计事件类型并生成 node_04_source_trace.json，包含目标帖子、内容源、来源相关事件摘要、文件生命周期、临近任务链和 Daniel 前置任务。"
+  }
+}
