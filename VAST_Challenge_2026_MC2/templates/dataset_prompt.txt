@@ -1,4 +1,4 @@
-你是一个专业的数据分析专家。请分析以下数据集，给出简洁的描述和示例。
+你是一个专业的数据分析和可视化专家。请分析以下数据集，给出简要说明和可视化配置。
 
 ## 背景信息
 {background}
@@ -9,61 +9,46 @@
 ## 数据集文件
 文件路径: {file_path}
 
-### 输入数据集
-{input_datasets}
-
-### 输出数据集
-{output_datasets}
-
 ### 数据内容
 {file_content}
 
 ## 任务要求
 
-请生成结构化的数据集分析：
+请生成结构化的数据集分析，只包含三个字段：
 
-1. **description**（数据集描述）：
-   - 这个数据集包含什么数据
-   - 数据规模（记录数、文件大小等）
-   - 数据的主要特点
+1. **description**（数据集描述）：简明描述这个数据集包含什么数据
 
-2. **sample_data**（数据示例）：
-   - 提取2-3条代表性数据记录
-   - 每条记录包含关键字段
-   - 如果是大数据集，说明"数据集很大，以下为示例"
+2. **sample_data**（数据示例）：一条代表性数据记录
 
-3. **input_datasets**（输入数据集）：列出此步骤使用的数据集
+3. **echarts_chart**（ECharts图表）：
+   - **重要**：如果是大数据集（原始数据、超过1000条记录），设置为 null
+   - 如果是小型中间数据集（筛选结果、分析结果），生成前端可用的 ECharts 配置
 
-4. **output_datasets**（输出数据集）：列出此步骤生成的数据集
+## ECharts 配置要求
 
-## 数据集分类原则
-
-- **大数据集**（原始数据、完整事件列表）：
-  - 只给出数据示例和说明
-  - **不需要可视化**
-
-- **小型中间数据集**（筛选结果、分析结果）：
-  - 给出数据示例
-  - 需要可视化配置
-
-## 可视化规则
-
-只有当数据集是**小型中间数据集**时才生成 visualization 字段：
-- 包含较少记录（通常 < 100 条）
-- 是筛选、聚合或分析的结果
-- 适合展示统计、分布或关系
+- 必须是完整可用的 ECharts option 对象
+- 选择适合数据的图表类型（柱状图、折线图、饼图等）
+- 数据从实际内容中提取，不要虚构
 
 ## 输出格式
 
 输出严格的 JSON 格式，只输出 content 部分。
 
-示例格式：
+示例：
 {{
-  "description": "包含695条SaidIT相关事件的中间数据集，是从185147条原始事件中筛选出来的",
-  "sample_data": [
-    {{"event_id": 12345, "type": "saidit_post", "datetime": "2046-05-17 19:21:15", "author": "john_windward"}},
-    {{"event_id": 12346, "type": "ask_agent", "datetime": "2046-05-17 19:22:00", "author": "ava_tiller"}}
-  ],
-  "input_datasets": ["node_01_loaded.json"],
-  "output_datasets": ["node_02_saidit_events.json"]
+  "description": "包含1条目标异常帖子的定位结果",
+  "sample_data": {{"event_id": 373902, "type": "saidit_post", "datetime": "2046-05-17 19:21:15"}},
+  "echarts_chart": {{
+    "title": {{"text": "目标帖子信息"}},
+    "xAxis": {{"type": "category", "data": ["帖子"]}},
+    "yAxis": {{"type": "value"}},
+    "series": [{{"type": "bar", "data": [1]}}]
+  }}
+}}
+
+大数据集示例：
+{{
+  "description": "包含185147条原始事件记录",
+  "sample_data": {{"event_id": 1, "type": "access_files"}},
+  "echarts_chart": null
 }}

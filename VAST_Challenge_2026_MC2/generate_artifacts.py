@@ -279,14 +279,15 @@ class ContextLoader:
 
         self._context = {
             "background": "",
-            "problems": [],
-            "step_details": {}
+            "problems": []
         }
 
-        # 加载背景
+        # 加载背景（简化版本，只保留问题描述）
         background_file = self.context_dir / "background.md"
         if background_file.exists():
-            self._context["background"] = background_file.read_text(encoding="utf-8")
+            content = background_file.read_text(encoding="utf-8")
+            # 只保留问题描述部分，去除技术细节
+            self._context["background"] = content
 
         # 加载问题列表
         problems_file = self.context_dir / "problems.json"
@@ -295,17 +296,6 @@ class ContextLoader:
                 self._context["problems"] = json.loads(problems_file.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
                 self._context["problems"] = []
-        else:
-            # 如果没有文件，使用默认问题
-            self._context["problems"] = ["识别虚假信息传播链路", "分析关键影响节点"]
-
-        # 加载步骤详情
-        step_details_file = self.context_dir / "step_details.json"
-        if step_details_file.exists():
-            try:
-                self._context["step_details"] = json.loads(step_details_file.read_text(encoding="utf-8"))
-            except json.JSONDecodeError:
-                self._context["step_details"] = {}
 
         return self._context
 
@@ -470,36 +460,6 @@ class FileProcessor:
         # 加载上下文
         background = context.get("background", "")
         problems = context.get("problems", [])
-        step_details = context.get("step_details", {})
-
-        # 尝试从 step_details 中提取相关的输入输出数据集信息
-        file_stem = file_path.stem
-        input_datasets = []
-        output_datasets = []
-
-        # 处理真实的 step_details 结构（包含 steps 数组）
-        if step_details and isinstance(step_details, dict):
-            steps = step_details.get("steps", [])
-            for step in steps:
-                step_id = step.get("step_id", "")
-                # 匹配文件名与 step_id
-                if file_stem == step_id or step_id in file_stem or file_stem in step_id:
-                    # 提取输入文件
-                    if "input_files" in step:
-                        input_files = step["input_files"]
-                        if isinstance(input_files, list):
-                            # 只保留文件名部分
-                            input_datasets = [Path(f).name for f in input_files]
-                        else:
-                            input_datasets = [Path(input_files).name]
-                    # 提取输出文件
-                    if "output_files" in step:
-                        output_files = step["output_files"]
-                        if isinstance(output_files, list):
-                            output_datasets = [Path(f).name for f in output_files]
-                        else:
-                            output_datasets = [Path(output_files).name]
-                    break
 
         # 格式化问题列表
         problems_text = "\n".join([f"- {p}" for p in problems]) if problems else "无"
@@ -507,11 +467,10 @@ class FileProcessor:
         return template.format(
             background=background,
             problems=problems_text,
-            step_details=json.dumps(step_details, ensure_ascii=False, indent=2),
             file_path=str(file_path),
             file_content=file_content,
-            input_datasets=json.dumps(input_datasets, ensure_ascii=False, indent=2),
-            output_datasets=json.dumps(output_datasets, ensure_ascii=False, indent=2)
+            input_datasets="[]",
+            output_datasets="[]"
         )
 
     def process_file(
