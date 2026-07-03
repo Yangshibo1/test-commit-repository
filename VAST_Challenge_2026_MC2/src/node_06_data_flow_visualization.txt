@@ -1,0 +1,132 @@
+======================================================================
+PROV DAG 可视化
+======================================================================
+
+节点统计:
+  实体: 11
+  活动: 5
+  代理: 5
+  边: 22
+
+======================================================================
+数据流图 (实体→处理→产物)
+======================================================================
+
+【输入】C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\MC2 data.json
+      属性: file_size=70239944, events=185147
+      ↓ [load] 加载MC2原始数据
+      by: node_01_load_data
+      【输出】C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_01_loaded.json
+            属性: events=185147, description=MC2原始数据完整加载
+
+【输入】C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_01_loaded.json
+      属性: events=185147, from_node=node_01
+      ↓ [filter] 从node_01_loaded.json中过滤SaidIT相关事件
+      by: node_02_filter_saidit_events
+      【输出】C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_02_saidit_events.json
+            属性: events=695, filter=saidit, from_node=node_02
+
+【输入】C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_02_saidit_events.json
+      属性: events=695, from_node=node_02
+      ↓ [filter] 在SaidIT中间数据集中定位目标时间的异常帖子
+      by: node_03_locate_target_post
+      【输出】C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_03_target_post.json
+            属性: target_matches=1, candidate_posts=241, from_node=node_03
+
+【输入】C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_03_target_post.json
+      属性: target_matches=1, from_node=node_03
+      ↓ [trace] 基于目标帖子content_source追溯文件生命周期和任务链
+      by: node_04_trace_target_source
+      【输出】C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_04_source_trace.json
+            属性: source_related_events=191, content_source=SwiftWren.txt, from_node=node_04
+
+【输入】C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_01_loaded.json
+      属性: events=185147, from_node=node_01, usage=按content_source追溯
+      ↓ [trace] 基于目标帖子content_source追溯文件生命周期和任务链
+      by: node_04_trace_target_source
+      【输出】C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_04_source_trace.json
+            属性: source_related_events=191, content_source=SwiftWren.txt, from_node=node_04
+
+【输入】C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_04_source_trace.json
+      属性: from_node=node_04, source_related_events=191
+      ↓ [aggregate] 基于node_04证据链生成最终分析报告
+      by: node_05_generate_final_report
+      【输出】C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_05_final_report.json
+            属性: from_node=node_05, target_event=373902
+
+======================================================================
+节点详情
+======================================================================
+
+ENTITY 节点:
+  - C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\MC2 data.json (属性: {'file_size': 70239944, 'events': 185147})
+  - C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_01_loaded.json (属性: {'events': 185147, 'description': 'MC2原始数据完整加载'})
+  - C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_01_loaded.json (属性: {'events': 185147, 'from_node': 'node_01'})
+  - C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_02_saidit_events.json (属性: {'events': 695, 'filter': 'saidit', 'from_node': 'node_02'})
+  - C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_02_saidit_events.json (属性: {'events': 695, 'from_node': 'node_02'})
+  - C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_03_target_post.json (属性: {'target_matches': 1, 'candidate_posts': 241, 'from_node': 'node_03'})
+  - C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_03_target_post.json (属性: {'target_matches': 1, 'from_node': 'node_03'})
+  - C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_01_loaded.json (属性: {'events': 185147, 'from_node': 'node_01', 'usage': '按content_source追溯'})
+  - C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_04_source_trace.json (属性: {'source_related_events': 191, 'content_source': 'SwiftWren.txt', 'from_node': 'node_04'})
+  - C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_04_source_trace.json (属性: {'from_node': 'node_04', 'source_related_events': 191})
+  - C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_05_final_report.json (属性: {'from_node': 'node_05', 'target_event': 373902})
+
+ACTIVITY 节点:
+  - 加载MC2原始数据 (属性: {'operation': 'json.load', 'encoding': 'utf-8', 'preserve_structure': True})
+  - 从node_01_loaded.json中过滤SaidIT相关事件 (属性: {'input_events': 185147, 'output_events': 695, 'predicate': 'saidit in short_name/details/parties'})
+  - 在SaidIT中间数据集中定位目标时间的异常帖子 (属性: {'target_datetime': '2046-05-17 19:21:15', 'input_records': 695, 'matches': 1})
+  - 基于目标帖子content_source追溯文件生命周期和任务链 (属性: {'content_source': 'SwiftWren.txt', 'target_post_id': 373902, 'window_seconds_before': 600, 'window_seconds_after': 120})
+  - 基于node_04证据链生成最终分析报告 (属性: {'input_nodes': ['node_04'], 'output_format': 'json_report'})
+
+AGENT 节点:
+  - node_01_load_data (属性: {'script': 'node_01_load_data.py', 'purpose': '数据加载'})
+  - node_02_filter_saidit_events (属性: {'script': 'node_02_filter_saidit_events.py'})
+  - node_03_locate_target_post (属性: {'script': 'node_03_locate_target_post.py'})
+  - node_04_trace_target_source (属性: {'script': 'node_04_trace_target_source.py'})
+  - node_05_generate_final_report (属性: {'script': 'node_05_generate_final_report.py'})
+
+======================================================================
+关系详情
+======================================================================
+  activity_7e9c2643 --[used]--> entity_20d518ba
+  entity_22e79b9b --[wasGeneratedBy]--> activity_7e9c2643
+  activity_7e9c2643 --[wasAssociatedWith]--> agent_38189dee
+  entity_22e79b9b --[wasDerivedFrom]--> entity_20d518ba
+  activity_b7378c3a --[used]--> entity_ac0fd9db
+  entity_9c75029e --[wasGeneratedBy]--> activity_b7378c3a
+  activity_b7378c3a --[wasAssociatedWith]--> agent_ddc2e601
+  entity_9c75029e --[wasDerivedFrom]--> entity_ac0fd9db
+  activity_66341a3f --[used]--> entity_c60f1aba
+  entity_db8eb3fe --[wasGeneratedBy]--> activity_66341a3f
+  ... 还有 12 个关系
+
+======================================================================
+Mermaid 格式 (可在支持 Mermaid 的平台渲染)
+======================================================================
+graph TD
+    classDef entity fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef artifact fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef agent fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,stroke-dasharray: 5 5
+    C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\MC2_data_json["C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\MC2 data.json"]:::entity
+    C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_01_loaded_json["C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_01_loaded.json"]:::entity
+    C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_02_saidit_events_json["C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_02_saidit_events.json"]:::entity
+    C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_03_target_post_json["C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_03_target_post.json"]:::entity
+    C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_04_source_trace_json["C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_04_source_trace.json"]:::entity
+    C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_05_final_report_json["C:\Users\83734\Desktop\opentrace\test-commit-repository\VAST_Challenge_2026_MC2\src\node_05_final_report.json"]:::entity
+    agent_38189dee["node_01_load_data"]:::agent
+    agent_ddc2e601["node_02_filter_saidit_events"]:::agent
+    agent_12bd68c9["node_03_locate_target_post"]:::agent
+    agent_04faabf2["node_04_trace_target_source"]:::agent
+    agent_1d3bce48["node_05_generate_final_report"]:::agent
+    C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\MC2_data_json ==>|"load"| agent_38189dee
+    agent_38189dee -.->|output| C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_01_loaded_json
+    C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_01_loaded_json ==>|"filter"| agent_ddc2e601
+    agent_ddc2e601 -.->|output| C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_02_saidit_events_json
+    C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_02_saidit_events_json ==>|"filter"| agent_12bd68c9
+    agent_12bd68c9 -.->|output| C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_03_target_post_json
+    C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_03_target_post_json ==>|"trace"| agent_04faabf2
+    agent_04faabf2 -.->|output| C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_04_source_trace_json
+    C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_01_loaded_json ==>|"trace"| agent_04faabf2
+    agent_04faabf2 -.->|output| C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_04_source_trace_json
+    C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_04_source_trace_json ==>|"aggregate"| agent_1d3bce48
+    agent_1d3bce48 -.->|output| C_\Users\83734\Desktop\opentrace\test_commit_repository\VAST_Challenge_2026_MC2\src\node_05_final_report_json
