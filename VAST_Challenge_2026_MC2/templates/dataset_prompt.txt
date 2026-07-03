@@ -1,13 +1,10 @@
-你是一个专业的数据可视化和数据分析专家。请分析以下数据集，生成可视化配置。
+你是一个专业的数据分析专家。请分析以下数据集，给出简洁的描述和示例。
 
 ## 背景信息
 {background}
 
 ## 核心问题
 {problems}
-
-## 步骤详情
-{step_details}
 
 ## 数据集文件
 文件路径: {file_path}
@@ -23,51 +20,50 @@
 
 ## 任务要求
 
-请生成结构化的数据集分析，包含以下字段：
+请生成结构化的数据集分析：
 
-1. **description**（数据内容简介）：简明描述这个数据集包含什么数据、数据规模、数据特点
+1. **description**（数据集描述）：
+   - 这个数据集包含什么数据
+   - 数据规模（记录数、文件大小等）
+   - 数据的主要特点
 
-2. **input_datasets**（输入数据集）：列出此步骤使用的数据集文件名
+2. **sample_data**（数据示例）：
+   - 提取2-3条代表性数据记录
+   - 每条记录包含关键字段
+   - 如果是大数据集，说明"数据集很大，以下为示例"
 
-3. **output_datasets**（输出数据集）：列出此步骤生成的数据集文件名
+3. **input_datasets**（输入数据集）：列出此步骤使用的数据集
 
-4. **visualization**（可视化配置）：
-   - **design_choice**：选择 "result_visualization" 或 "process_visualization"
-   - **choice_reasoning**：解释为什么选择这种可视化形式
-   - **echarts_config**：完整的ECharts配置JSON
+4. **output_datasets**（输出数据集）：列出此步骤生成的数据集
 
-## 可视化选择原则
+## 数据集分类原则
 
-- **优先结果可视化**：展示结果数据的统计、分布、趋势
-  - 柱状图：分类数据对比
-  - 折线图：时间序列趋势
-  - 饼图：占比分析
-  
-- **选择流程可视化**：展示数据处理流程
-  - 桑基图：数据流转
-  - 关系图：实体关联
+- **大数据集**（原始数据、完整事件列表）：
+  - 只给出数据示例和说明
+  - **不需要可视化**
 
-- **禁止想象**：基于真实数据选择最合适的形式
+- **小型中间数据集**（筛选结果、分析结果）：
+  - 给出数据示例
+  - 需要可视化配置
+
+## 可视化规则
+
+只有当数据集是**小型中间数据集**时才生成 visualization 字段：
+- 包含较少记录（通常 < 100 条）
+- 是筛选、聚合或分析的结果
+- 适合展示统计、分布或关系
 
 ## 输出格式
 
-输出严格的 JSON 格式，不要包含任何其他文字。
+输出严格的 JSON 格式，只输出 content 部分。
 
 示例格式：
 {{
-  "description": "包含185147个事件的原始MC2数据集",
-  "input_datasets": ["MC2 data.json"],
-  "output_datasets": [],
-  "visualization": {{
-    "design_choice": "result_visualization",
-    "choice_reasoning": "数据包含大量结构化事件，适合展示事件类型分布",
-    "echarts_config": {{
-      "title": {{"text": "事件类型分布"}},
-      "tooltip": {{}},
-      "legend": {{"data": ["类型A", "类型B"]}},
-      "xAxis": {{"type": "category", "data": ["类型A", "类型B"]}},
-      "yAxis": {{"type": "value"}},
-      "series": [{{"type": "bar", "data": [100, 200]}}]
-    }}
-  }}
+  "description": "包含695条SaidIT相关事件的中间数据集，是从185147条原始事件中筛选出来的",
+  "sample_data": [
+    {{"event_id": 12345, "type": "saidit_post", "datetime": "2046-05-17 19:21:15", "author": "john_windward"}},
+    {{"event_id": 12346, "type": "ask_agent", "datetime": "2046-05-17 19:22:00", "author": "ava_tiller"}}
+  ],
+  "input_datasets": ["node_01_loaded.json"],
+  "output_datasets": ["node_02_saidit_events.json"]
 }}

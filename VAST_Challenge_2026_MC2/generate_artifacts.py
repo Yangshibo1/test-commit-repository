@@ -63,56 +63,43 @@ class Config:
 # ==================== 文件类型识别 ====================
 
 def truncate_file_content(content: str, file_path: Path, config: Config) -> str:
-    """截断文件内容以避免超过 token 限制"""
-    # 如果内容已经足够小，直接返回
-    if len(content) <= config.max_file_content_chars:
-        return content
-
-    print(f"  文件较大 ({len(content)} 字符)，截断到 {config.max_file_content_chars} 字符")
-
+    """截断文件内容，对大数据集只读取前1000条"""
     # 对于 JSON 文件，尝试智能截断
     if file_path.suffix.lower() == ".json":
         try:
             data = json.loads(content)
-            # 如果是数组，保留更多项并添加摘要信息
-            if isinstance(data, list):
-                total_items = len(data)
-                sample_size = min(config.max_json_sample_items, total_items)
-                truncated = data[:sample_size]
-
-                # 添加元数据
+            # 如果是大型数组（超过1000条），只保留前1000条
+            if isinstance(data, list) and len(data) > 1000:
+                print(f"  大型数据集 ({len(data)} 条)，只读取前1000条")
+                truncated = data[:1000]
+                # 添加说明
                 metadata = {
-                    "_truncated": True,
-                    "_total_items": total_items,
-                    "_sample_size": sample_size,
+                    "_note": f"原数据集包含 {len(data)} 条记录，以下为前1000条示例",
                     "_data": truncated
                 }
                 return json.dumps(metadata, ensure_ascii=False, indent=2)
-            # 如果是对象，尝试提取关键字段
+            # 如果是对象，检查是否有大型数组字段
             elif isinstance(data, dict):
-                # 检查是否包含大型数组字段
                 result = {}
                 for key, value in data.items():
-                    value_str = json.dumps(value, ensure_ascii=False)
-                    if len(value_str) > config.max_file_content_chars // 4:
-                        # 字段太大，检查是否是数组
-                        if isinstance(value, list):
-                            result[key] = {
-                                "_truncated": True,
-                                "_total_items": len(value),
-                                "_sample_size": min(50, len(value)),
-                                "_data": value[:min(50, len(value))]
-                            }
-                        else:
-                            result[key] = f"[{type(value).__name__}, 太大已截断]"
+                    if isinstance(value, list) and len(value) > 1000:
+                        print(f"  大型数组字段 {key} ({len(value)} 条)，截断到1000条")
+                        result[key] = {
+                            "_note": f"原数据包含 {len(value)} 条记录，以下为前1000条",
+                            "_data": value[:1000]
+                        }
                     else:
                         result[key] = value
                 return json.dumps(result, ensure_ascii=False, indent=2)
         except (json.JSONDecodeError, ValueError) as e:
-            print(f"  JSON 解析失败，使用简单截断: {e}")
+            print(f"  JSON 解析失败，使用原始内容: {e}")
 
-    # 默认截断
-    return content[:config.max_file_content_chars] + "\n\n...[内容已截断]..."
+    # 如果内容仍然太大，进一步截断
+    if len(content) > config.max_file_content_chars:
+        print(f"  内容仍然较大 ({len(content)} 字符)，截断到 {config.max_file_content_chars} 字符")
+        return content[:config.max_file_content_chars] + "\n\n...[内容已截断]..."
+
+    return content
 
 def get_file_type(file_path: Path) -> Optional[str]:
     """根据文件扩展名确定类型"""
@@ -579,19 +566,8 @@ class FileProcessor:
                 self.failed_files.append(str(input_file))
                 return False
 
-            # 构建输出结构
-            output_data = {
-                "version": "1.0",
-                "type": file_type,
-                "source_file": str(input_file),
-                "generated_at": datetime.now(timezone.utc).isoformat(),
-                "context": {
-                    "background": context.get("background", ""),
-                    "problems": context.get("problems", []),
-                    "step_details": context.get("step_details", {})
-                },
-                "content": result
-            }
+            # 只保存 content 部分
+            output_data = result
 
             # 写入输出文件
             output_file.parent.mkdir(parents=True, exist_ok=True)
