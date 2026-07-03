@@ -87,7 +87,10 @@ class PromptTemplate:
         self._templates = {}
 
         # 确保模板目录存在
-        if not self.templates_dir.exists():
+        self.templates_dir.mkdir(parents=True, exist_ok=True)
+
+        # 检查模板文件是否存在，不存在则创建
+        if not (self.templates_dir / "script_prompt.txt").exists():
             self._create_default_templates()
 
     def _create_default_templates(self):
@@ -316,10 +319,13 @@ class LLMClient:
                 # 提取响应内容
                 if "choices" in result and len(result["choices"]) > 0:
                     content = result["choices"][0]["message"]["content"]
+                    print(f"调试: LLM 返回内容（前200字符）: {content[:200]}")
+
                     # 尝试解析 JSON
                     try:
                         return json.loads(content)
-                    except json.JSONDecodeError:
+                    except json.JSONDecodeError as e:
+                        print(f"JSON 解析错误: {e}")
                         # 尝试提取 JSON 片段
                         content = content.strip()
                         if content.startswith("```json"):
@@ -328,7 +334,13 @@ class LLMClient:
                             content = content[3:]
                         if content.endswith("```"):
                             content = content[:-3]
-                        return json.loads(content.strip())
+
+                        try:
+                            return json.loads(content.strip())
+                        except json.JSONDecodeError as e2:
+                            print(f"清理后仍然无法解析 JSON: {e2}")
+                            print(f"内容: {content[:500]}")
+                            return None
                 else:
                     print(f"警告: API 响应格式异常: {result}")
                     return None

@@ -35,20 +35,16 @@
 输出严格的 JSON 格式，不要包含任何其他文字或解释。
 
 示例格式：
-{
+{{
   "algorithm_purpose": "加载原始MC2数据集...",
-  "algorithm_logic": {
+  "algorithm_logic": {{
     "description": "读取JSON文件，提取events字段...",
     "parameters": [
-      {
-        "name": "data_path",
-        "description": "输入数据文件路径",
-        "type": "string"
-      }
+      {{"name": "data_path", "description": "输入数据文件路径", "type": "string"}}
     ],
     "data_flow": "1. 读取JSON文件 -> 2. 提取events字段 -> 3. 输出到JSON文件"
-  }
-}
+  }}
+}}
 
 ## 重要原则
 

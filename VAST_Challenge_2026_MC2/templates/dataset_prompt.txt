@@ -54,20 +54,20 @@
 输出严格的 JSON 格式，不要包含任何其他文字。
 
 示例格式：
-{
+{{
   "description": "包含185147个事件的原始MC2数据集",
   "input_datasets": ["MC2 data.json"],
   "output_datasets": [],
-  "visualization": {
+  "visualization": {{
     "design_choice": "result_visualization",
     "choice_reasoning": "数据包含大量结构化事件，适合展示事件类型分布",
-    "echarts_config": {
-      "title": {"text": "事件类型分布"},
-      "tooltip": {},
-      "legend": {"data": ["类型A", "类型B"]},
-      "xAxis": {"type": "category", "data": ["类型A", "类型B"]},
-      "yAxis": {"type": "value"},
-      "series": [{"type": "bar", "data": [100, 200]}]
-    }
-  }
-}
+    "echarts_config": {{
+      "title": {{"text": "事件类型分布"}},
+      "tooltip": {{}},
+      "legend": {{"data": ["类型A", "类型B"]}},
+      "xAxis": {{"type": "category", "data": ["类型A", "类型B"]}},
+      "yAxis": {{"type": "value"}},
+      "series": [{{"type": "bar", "data": [100, 200]}}]
+    }}
+  }}
+}}
