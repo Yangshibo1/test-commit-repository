@@ -1,0 +1,58 @@
+你是一个专业的数据分析师和算法专家。请分析以下脚本文件，提取算法信息。
+
+## 背景信息
+{background}
+
+## 核心问题
+{problems}
+
+## 步骤详情
+{step_details}
+
+## 脚本文件
+文件路径: {file_path}
+
+```python
+{file_content}
+```
+
+## 任务要求
+
+请生成结构化的算法描述，包含以下字段：
+
+1. **algorithm_purpose**（算法目标/作用）：简明描述这个脚本的作用、目标和在整体流程中的位置
+
+2. **algorithm_logic**（算法逻辑）：
+   - **description**（算法逻辑说明）：详细描述算法的工作原理和核心逻辑
+   - **parameters**（参数列表）：列出脚本使用的关键参数，每个参数包含：
+     - name: 参数名称
+     - description: 参数说明
+     - type: 参数类型（string/int/float/list/dict等）
+   - **data_flow**（处理数据流程）：描述数据如何被处理和转换的流程
+
+## 输出格式
+
+输出严格的 JSON 格式，不要包含任何其他文字或解释。
+
+示例格式：
+{
+  "algorithm_purpose": "加载原始MC2数据集...",
+  "algorithm_logic": {
+    "description": "读取JSON文件，提取events字段...",
+    "parameters": [
+      {
+        "name": "data_path",
+        "description": "输入数据文件路径",
+        "type": "string"
+      }
+    ],
+    "data_flow": "1. 读取JSON文件 -> 2. 提取events字段 -> 3. 输出到JSON文件"
+  }
+}
+
+## 重要原则
+
+- 基于实际代码内容进行分析，不要想象
+- 参数列表应包含脚本实际使用的参数
+- 数据流程应清晰描述输入到输出的转换过程
+- 所有字段必须有值，不能为空
