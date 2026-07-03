@@ -52,8 +52,8 @@ class Config:
         self.default_context_dir = Path("VAST_Challenge_2026_MC2/context")
 
         # 内容限制
-        self.max_file_content_chars = 10000  # 最大文件内容字符数
-        self.max_json_sample_items = 100     # JSON 数组最大采样数量
+        self.max_file_content_chars = 5000   # 最大文件内容字符数
+        self.max_json_sample_items = 50      # JSON 数组最大采样数量
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -564,6 +564,12 @@ class FileProcessor:
 
             # 构建 prompt
             prompt = self.build_prompt(file_type, input_file, content, context)
+
+            # 检查 prompt 长度
+            if len(prompt) > 15000:
+                print(f"  警告: Prompt 太长 ({len(prompt)} 字符)，可能导致 API 错误")
+
+            print(f"  Prompt 长度: {len(prompt)} 字符")
 
             # 调用 LLM
             result = self.llm_client.call(prompt)
