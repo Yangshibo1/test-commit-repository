@@ -12,7 +12,7 @@ import 'reactflow/dist/style.css';
 import CustomNode from './CustomNode';
 import CustomEdge from './CustomEdge';
 import { ProvNode, ProvEdge } from '../types';
-import { createNodeLayout, createDAGPages, DAGPage } from '../utils/nodeLayoutEngine';
+import { createDAGPages } from '../utils/nodeLayoutEngine';
 
 const nodeTypes: NodeTypes = {
   entity: CustomNode,
@@ -44,11 +44,34 @@ interface TraceGraphProps {
 
 const TraceGraph = forwardRef<TraceGraphRef, TraceGraphProps>(({ provNodes, provEdges, onNodeClick, onPageChange }, ref) => {
   const reactFlowInstance = useRef<any>(null);
+  const nodesRef = useRef<any[]>([]);
+  const edgesRef = useRef<any[]>([]);
+
+  // Store latest callbacks in refs to avoid closure issues
+  const onNodeClickRef = useRef(onNodeClick);
+  const onPageChangeRef = useRef(onPageChange);
 
   // Page and fullscreen state
   const [currentPage, setCurrentPage] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null);
+
+  // Track if mouse was dragged (to distinguish from click)
+  const isDraggingRef = useRef(false);
+  const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Refs for state values to access in useImperativeHandle
+  const currentPageRef = useRef(currentPage);
+  const totalPagesRef = useRef(1);
+
+  // Update refs when callbacks or state changes
+  useEffect(() => {
+    onNodeClickRef.current = onNodeClick;
+  }, [onNodeClick]);
+
+  useEffect(() => {
+    onPageChangeRef.current = onPageChange;
+  }, [onPageChange]);
 
   // Create all DAG pages
   const dagPages = useMemo(() => {
@@ -80,30 +103,95 @@ const TraceGraph = forwardRef<TraceGraphRef, TraceGraphProps>(({ provNodes, prov
     }
   }, [currentPage, totalPages, onPageChange]);
 
+  // Handle direct click from CustomNode component
+  const handleNodeDirectClick = useCallback((provNode: ProvNode) => {
+    const nodeId = provNode.id;
+    const currentEdges = edgesRef.current;
+
+    // Toggle highlight state
+    setHighlightedNodeId(prev => {
+      const newId = prev === nodeId ? null : nodeId;
+
+      // Update node and edge styles immediately
+      if (newId) {
+        const relatedNodeIds = new Set([newId]);
+        currentEdges.forEach(edge => {
+          if (edge.source === newId) relatedNodeIds.add(edge.target);
+          if (edge.target === newId) relatedNodeIds.add(edge.source);
+        });
+
+        setNodes(currentNodes =>
+          currentNodes.map(n => ({
+            ...n,
+            style: {
+              ...n.style,
+              opacity: relatedNodeIds.has(n.id) ? 1 : 0.3,
+            },
+          }))
+        );
+
+        setEdges(currentEdges =>
+          currentEdges.map(edge => {
+            const isRelated = edge.source === newId || edge.target === newId;
+            return {
+              ...edge,
+              style: {
+                ...edge.style,
+                opacity: isRelated ? 1 : 0.15,
+                stroke: isRelated ? '#d97745' : '#a8a29e',
+                strokeWidth: isRelated ? 2.5 : 1.5,
+              },
+            };
+          })
+        );
+      } else {
+        setNodes(currentNodes =>
+          currentNodes.map(n => ({
+            ...n,
+            style: { ...n.style, opacity: 1 },
+          }))
+        );
+        setEdges(currentEdges =>
+          currentEdges.map(edge => ({
+            ...edge,
+            style: {
+              ...edge.style,
+              opacity: 1,
+              stroke: '#a8a29e',
+              strokeWidth: 1.5,
+            },
+          }))
+        );
+      }
+
+      return newId;
+    });
+
+    // Update Inspector immediately
+    if (onNodeClickRef.current) {
+      onNodeClickRef.current(provNode);
+    }
+  }, [setNodes, setEdges]);
+
   // Update nodes and edges when page changes
   useEffect(() => {
-    setNodes(currentPageData.nodes);
+    // Add onNodeClick callback to each node
+    const nodesWithCallback = currentPageData.nodes.map(node => ({
+      ...node,
+      data: {
+        ...node.data,
+        onNodeClick: handleNodeDirectClick,
+      },
+    }));
+    setNodes(nodesWithCallback);
     setEdges(currentPageData.edges);
+
+    // Sync refs
+    nodesRef.current = nodesWithCallback;
+    edgesRef.current = currentPageData.edges;
+
     setHighlightedNodeId(null); // Reset highlight when page changes
-  }, [currentPage, currentPageData, setNodes, setEdges]);
-
-  const handleNodeClick = useCallback(
-    (_event: React.MouseEvent, node: any) => {
-      const provNode = node.data.provNode as ProvNode;
-
-      // Toggle highlight
-      if (highlightedNodeId === node.id) {
-        setHighlightedNodeId(null);
-      } else {
-        setHighlightedNodeId(node.id);
-      }
-
-      if (provNode && onNodeClick) {
-        onNodeClick(provNode);
-      }
-    },
-    [onNodeClick, highlightedNodeId]
-  );
+  }, [currentPage, currentPageData, setNodes, setEdges, handleNodeDirectClick]);
 
   const handleZoomIn = useCallback(() => {
     if (reactFlowInstance.current) {
@@ -118,58 +206,45 @@ const TraceGraph = forwardRef<TraceGraphRef, TraceGraphProps>(({ provNodes, prov
   }, []);
 
   const goToPage = useCallback((page: number) => {
-    setCurrentPage(Math.max(0, Math.min(totalPages - 1, page)));
+    const newPage = Math.max(0, Math.min(totalPages - 1, page));
+    setCurrentPage(newPage);
   }, [totalPages]);
 
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev);
   }, []);
 
-  // Expose methods via ref
+  // Keep refs in sync with state
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
+
+  useEffect(() => {
+    totalPagesRef.current = totalPages;
+  }, [totalPages]);
+
+  // Expose methods via ref - use function closures to always access latest state
   useImperativeHandle(ref, () => ({
-    zoomIn: handleZoomIn,
-    zoomOut: handleZoomOut,
-    toggleFullscreen,
-    goToPage,
-    getCurrentPage: () => currentPage,
-    getTotalPages: () => totalPages,
-  }), [handleZoomIn, handleZoomOut, toggleFullscreen, goToPage, currentPage, totalPages]);
-
-  // Apply highlight styles to edges
-  const styledEdges = useMemo(() => {
-    if (!highlightedNodeId) return edges;
-
-    return edges.map(edge => {
-      const isRelated = edge.source === highlightedNodeId || edge.target === highlightedNodeId;
-      return {
-        ...edge,
-        style: {
-          ...edge.style,
-          opacity: isRelated ? 1 : 0.15,
-          stroke: isRelated ? '#d97745' : '#a8a29e',
-          strokeWidth: isRelated ? 2.5 : 1.5,
-        },
-      };
-    });
-  }, [edges, highlightedNodeId]);
-
-  // Apply highlight styles to nodes
-  const styledNodes = useMemo(() => {
-    if (!highlightedNodeId) return nodes;
-
-    return nodes.map(node => {
-      const isRelated = node.id === highlightedNodeId ||
-        edges.some(e => (e.source === highlightedNodeId && e.target === node.id) ||
-                          (e.target === highlightedNodeId && e.source === node.id));
-      return {
-        ...node,
-        style: {
-          ...node.style,
-          opacity: isRelated ? 1 : 0.3,
-        },
-      };
-    });
-  }, [nodes, edges, highlightedNodeId]);
+    zoomIn: () => {
+      if (reactFlowInstance.current) {
+        reactFlowInstance.current.zoomIn();
+      }
+    },
+    zoomOut: () => {
+      if (reactFlowInstance.current) {
+        reactFlowInstance.current.zoomOut();
+      }
+    },
+    toggleFullscreen: () => {
+      setIsFullscreen(prev => !prev);
+    },
+    goToPage: (page: number) => {
+      const newPage = Math.max(0, Math.min(totalPagesRef.current - 1, page));
+      setCurrentPage(newPage);
+    },
+    getCurrentPage: () => currentPageRef.current,
+    getTotalPages: () => totalPagesRef.current,
+  }), []);
 
   const containerClass = isFullscreen
     ? 'fixed inset-0 z-50 bg-[#fffaf5]'
@@ -214,11 +289,10 @@ const TraceGraph = forwardRef<TraceGraphRef, TraceGraphProps>(({ provNodes, prov
       )}
 
       <ReactFlow
-        nodes={styledNodes}
-        edges={styledEdges}
+        nodes={nodes}
+        edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView

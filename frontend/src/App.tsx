@@ -64,9 +64,11 @@ function App() {
   }, []);
 
   const handleNodeClick = useCallback((node: ProvNode) => {
-    setSelectedProvId(node.id);
+    // Use original_id if available (for merged nodes from buildProvDAGFlow)
+    const nodeId = node.original_ids?.[0] || node.id;
+    setSelectedProvId(nodeId);
     if (trace) {
-      const step = findStepForProvNode(trace, node.id);
+      const step = findStepForProvNode(trace, nodeId);
       if (step) {
         setSelectedStepId(step.step_id);
       }

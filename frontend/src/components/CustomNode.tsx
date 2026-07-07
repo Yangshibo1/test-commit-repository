@@ -1,9 +1,19 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { ProvNode } from '../types';
 
-const CustomNode = ({ data, selected }: NodeProps) => {
-  const provNode = data.provNode as ProvNode;
+interface CustomNodeData {
+  label: string;
+  nodeType: string;
+  description?: string;
+  location?: string;
+  provNode: ProvNode;
+  onNodeClick?: (node: ProvNode) => void;
+}
+
+const CustomNode = ({ data, selected }: NodeProps<CustomNodeData>) => {
+  const nodeData = data as CustomNodeData;
+  const provNode = nodeData.provNode as ProvNode;
   const nodeType = provNode?.type || 'default';
 
   const getBorderColor = () => {
@@ -33,8 +43,16 @@ const CustomNode = ({ data, selected }: NodeProps) => {
     return (provNode?.description || provNode?.name || 'PROV node').slice(0, 72);
   };
 
+  const handleClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (nodeData.onNodeClick && provNode) {
+      nodeData.onNodeClick(provNode);
+    }
+  }, [nodeData.onNodeClick, provNode]);
+
   return (
     <div
+      onClick={handleClick}
       className={`
         px-3 py-2 rounded-xl border border-[rgba(184,165,143,0.58)]
         bg-[rgba(255,255,255,0.92)] shadow-lg
@@ -48,7 +66,7 @@ const CustomNode = ({ data, selected }: NodeProps) => {
         {getSubtype()}
       </div>
       <div className="font-bold text-sm leading-tight overflow-hidden line-clamp-2">
-        {data.label}
+        {nodeData.label}
       </div>
       <div className="text-[11px] text-[#6b5b4f] mt-1 leading-tight overflow-hidden line-clamp-2">
         {getDescription()}
