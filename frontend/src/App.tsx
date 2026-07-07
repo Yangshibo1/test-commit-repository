@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import TraceGraph from './components/TraceGraph';
+import { useState, useCallback, useRef } from 'react';
+import TraceGraph, { TraceGraphRef } from './components/TraceGraph';
 import Timeline from './components/Timeline';
 import Inspector from './components/Inspector';
 import FollowPanel from './components/FollowPanel';
@@ -13,6 +13,9 @@ function App() {
   const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
   const [selectedProvId, setSelectedProvId] = useState<string | null>(null);
   const [followPanelOpen, setFollowPanelOpen] = useState(false);
+  const traceGraphRef = useRef<TraceGraphRef>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -76,6 +79,13 @@ function App() {
     setSelectedProvId(null);
     const fileInput = document.getElementById('fileInput') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
+    setCurrentPage(0);
+    setTotalPages(1);
+  }, []);
+
+  const handlePageChange = useCallback((page: number, total: number) => {
+    setCurrentPage(page);
+    setTotalPages(total);
   }, []);
 
   const selectedStep = trace?.steps.find((s) => s.step_id === selectedStepId);
@@ -207,14 +217,60 @@ function App() {
 
           {/* Graph */}
           <div className="border border-[rgba(184,165,143,0.42)] rounded-3xl overflow-hidden bg-panel shadow-lg">
-            <div className="h-12 flex items-center px-4 border-b border-[rgba(184,165,143,0.38)] text-accent font-mono text-xs uppercase tracking-wider bg-[rgba(255,255,255,0.42)]">
-              PROV DAG + Analysis Results
+            <div className="h-12 flex items-center justify-between px-4 border-b border-[rgba(184,165,143,0.38)] text-accent font-mono text-xs uppercase tracking-wider bg-[rgba(255,255,255,0.42)]">
+              <span>PROV DAG + Analysis Results</span>
+              {trace && (
+                <div className="flex items-center gap-2">
+                  {totalPages > 1 && (
+                    <>
+                      <button
+                        onClick={() => traceGraphRef.current?.goToPage(currentPage - 1)}
+                        disabled={currentPage === 0}
+                        className="px-2 py-1 rounded border border-[rgba(184,165,143,0.38)] bg-white text-[10px] font-mono hover:border-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        ◀
+                      </button>
+                      <span className="text-[10px] font-mono text-[#6b5b4f]">
+                        {currentPage + 1}/{totalPages}
+                      </span>
+                      <button
+                        onClick={() => traceGraphRef.current?.goToPage(currentPage + 1)}
+                        disabled={currentPage === totalPages - 1}
+                        className="px-2 py-1 rounded border border-[rgba(184,165,143,0.38)] bg-white text-[10px] font-mono hover:border-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        ▶
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => traceGraphRef.current?.toggleFullscreen()}
+                    className="px-2 py-1 rounded border border-[rgba(184,165,143,0.38)] bg-white text-[10px] font-mono hover:border-accent transition-colors"
+                    title="Fullscreen"
+                  >
+                    ⛶
+                  </button>
+                  <button
+                    onClick={() => traceGraphRef.current?.zoomOut()}
+                    className="px-2 py-1 rounded border border-[rgba(184,165,143,0.38)] bg-white text-[10px] font-mono hover:border-accent transition-colors"
+                  >
+                    −
+                  </button>
+                  <button
+                    onClick={() => traceGraphRef.current?.zoomIn()}
+                    className="px-2 py-1 rounded border border-[rgba(184,165,143,0.38)] bg-white text-[10px] font-mono hover:border-accent transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              )}
             </div>
             {trace ? (
               <TraceGraph
+                ref={traceGraphRef}
                 provNodes={flow.nodes}
                 provEdges={flow.edges}
                 onNodeClick={handleNodeClick}
+                onPageChange={handlePageChange}
               />
             ) : (
               <div className="h-full flex items-center justify-center text-muted text-sm p-8 text-center">

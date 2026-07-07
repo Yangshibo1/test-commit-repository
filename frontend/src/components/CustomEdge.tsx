@@ -21,11 +21,15 @@ const CustomEdge = ({
   targetY,
   sourcePosition,
   targetPosition,
+  style,
 }: EdgeProps<CustomEdgeData>) => {
   const edgeData = data as CustomEdgeData;
   const isSequential = edgeData?.isSequential || false;
   const sourceRow = edgeData?.sourceRow || 0;
   const targetRow = edgeData?.targetRow || 0;
+
+  // Use provided style or default
+  const edgeStyle = style || {};
 
   // For sequential edges: draw vertical straight line
   if (isSequential) {
@@ -40,10 +44,7 @@ const CustomEdge = ({
           id={id}
           path={path}
           markerEnd={getMarkerEnd(markerEnd as any)}
-          style={{
-            stroke: selected ? '#d97745' : '#a8a29e',
-            strokeWidth: selected ? 2 : 1.5,
-          }}
+          style={edgeStyle}
         />
         {label && (
           <EdgeLabelRenderer>
@@ -60,6 +61,7 @@ const CustomEdge = ({
                 border: '1px solid rgba(184,165,143,0.58)',
                 pointerEvents: 'none',
                 userSelect: 'none',
+                opacity: edgeStyle.opacity || 1,
               }}
             >
               {label}
@@ -96,10 +98,7 @@ const CustomEdge = ({
         id={id}
         path={path}
         markerEnd={getMarkerEnd(markerEnd as any)}
-        style={{
-          stroke: selected ? '#d97745' : '#a8a29e',
-          strokeWidth: selected ? 2 : 1.5,
-        }}
+        style={edgeStyle}
       />
       {label && (
         <EdgeLabelRenderer>
@@ -116,6 +115,7 @@ const CustomEdge = ({
               border: '1px solid rgba(184,165,143,0.58)',
               pointerEvents: 'none',
               userSelect: 'none',
+              opacity: edgeStyle.opacity || 1,
             }}
           >
             {label}
