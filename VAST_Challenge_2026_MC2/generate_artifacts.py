@@ -13,9 +13,6 @@ import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-import hashlib
-from datetime import datetime
-from datetime import timezone
 
 try:
     import httpx
@@ -37,7 +34,12 @@ class Config:
     """配置管理"""
 
     def __init__(self):
-        load_dotenv()
+        script_dir = Path(__file__).resolve().parent
+        env_file = script_dir / ".env"
+        if env_file.exists():
+            load_dotenv(env_file)
+        else:
+            load_dotenv()
 
         self.api_base_url = os.getenv("LLM_API_BASE_URL", "https://hk.coin.hhm.moe")
         self.model = os.getenv("LLM_MODEL", "gpt-5.5")
@@ -52,8 +54,9 @@ class Config:
         self.default_context_dir = Path("VAST_Challenge_2026_MC2/context")
 
         # 内容限制
-        self.max_file_content_chars = 5000   # 最大文件内容字符数
-        self.max_json_sample_items = 50      # JSON 数组最大采样数量
+        self.large_json_sample_items = 1000      # 大型 JSON 数组最大样例数量
+        self.max_file_content_chars = 12000      # 传给 LLM 的最大文件内容字符数
+        self.fallback_json_sample_items = 20     # 内容仍过大时保留的兜底样例数量
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -62,41 +65,68 @@ class Config:
 
 # ==================== 文件类型识别 ====================
 
+def summarize_json_data(data: Any, config: Config, fallback: bool = False) -> Any:
+    """为大型 JSON 构建摘要和样例，避免把完整数据塞进 prompt。"""
+    sample_size = config.fallback_json_sample_items if fallback else config.large_json_sample_items
+
+    if isinstance(data, list):
+        return {
+            "_summary": {
+                "json_type": "array",
+                "total_items": len(data),
+                "sample_items": min(len(data), sample_size),
+                "fields": sorted(data[0].keys()) if data and isinstance(data[0], dict) else []
+            },
+            "sample_data": data[:sample_size]
+        }
+
+    if isinstance(data, dict):
+        result = {"_summary": {"json_type": "object", "keys": list(data.keys())}}
+        for key, value in data.items():
+            if isinstance(value, list):
+                result[key] = {
+                    "_summary": {
+                        "json_type": "array_field",
+                        "total_items": len(value),
+                        "sample_items": min(len(value), sample_size),
+                        "fields": sorted(value[0].keys()) if value and isinstance(value[0], dict) else []
+                    },
+                    "sample_data": value[:sample_size]
+                }
+            else:
+                result[key] = value
+        return result
+
+    return data
+
+
 def truncate_file_content(content: str, file_path: Path, config: Config) -> str:
-    """截断文件内容，对大数据集只读取前1000条"""
-    # 对于 JSON 文件，尝试智能截断
+    """截断文件内容；大型 JSON 使用摘要 + 样例，避免 API 请求过大。"""
     if file_path.suffix.lower() == ".json":
         try:
             data = json.loads(content)
-            # 如果是大型数组（超过1000条），只保留前1000条
-            if isinstance(data, list) and len(data) > 1000:
-                print(f"  大型数据集 ({len(data)} 条)，只读取前1000条")
-                truncated = data[:1000]
-                # 添加说明
-                metadata = {
-                    "_note": f"原数据集包含 {len(data)} 条记录，以下为前1000条示例",
-                    "_data": truncated
-                }
-                return json.dumps(metadata, ensure_ascii=False, indent=2)
-            # 如果是对象，检查是否有大型数组字段
-            elif isinstance(data, dict):
-                result = {}
-                for key, value in data.items():
-                    if isinstance(value, list) and len(value) > 1000:
-                        print(f"  大型数组字段 {key} ({len(value)} 条)，截断到1000条")
-                        result[key] = {
-                            "_note": f"原数据包含 {len(value)} 条记录，以下为前1000条",
-                            "_data": value[:1000]
-                        }
-                    else:
-                        result[key] = value
-                return json.dumps(result, ensure_ascii=False, indent=2)
+            summarized = summarize_json_data(data, config)
+            summarized_text = json.dumps(summarized, ensure_ascii=False, indent=2)
+
+            if summarized_text != content:
+                print(f"  JSON 已整理为摘要 + 样例 ({len(summarized_text)} 字符)")
+
+            if len(summarized_text) <= config.max_file_content_chars:
+                return summarized_text
+
+            fallback = summarize_json_data(data, config, fallback=True)
+            fallback_text = json.dumps(fallback, ensure_ascii=False, indent=2)
+            if len(fallback_text) <= config.max_file_content_chars:
+                print(f"  JSON 摘要仍较大，兜底保留前 {config.fallback_json_sample_items} 条样例")
+                return fallback_text
+
+            print(f"  JSON 内容仍然较大 ({len(fallback_text)} 字符)，截断到 {config.max_file_content_chars} 字符")
+            return fallback_text[:config.max_file_content_chars] + "\n\n...[内容已截断]..."
         except (json.JSONDecodeError, ValueError) as e:
             print(f"  JSON 解析失败，使用原始内容: {e}")
 
-    # 如果内容仍然太大，进一步截断
     if len(content) > config.max_file_content_chars:
-        print(f"  内容仍然较大 ({len(content)} 字符)，截断到 {config.max_file_content_chars} 字符")
+        print(f"  内容较大 ({len(content)} 字符)，截断到 {config.max_file_content_chars} 字符")
         return content[:config.max_file_content_chars] + "\n\n...[内容已截断]..."
 
     return content
@@ -104,6 +134,9 @@ def truncate_file_content(content: str, file_path: Path, config: Config) -> str:
 def get_file_type(file_path: Path) -> Optional[str]:
     """根据文件扩展名确定类型"""
     suffix = file_path.suffix.lower()
+
+    if file_path.name.endswith(".analysis.json"):
+        return None
 
     if suffix == ".py":
         return "script"
@@ -125,131 +158,22 @@ def get_file_type(file_path: Path) -> Optional[str]:
 class PromptTemplate:
     """Prompt 模板管理"""
 
+    REQUIRED_TEMPLATES = ("script", "dataset", "report")
+
     def __init__(self, templates_dir: Path):
         self.templates_dir = templates_dir
         self._templates = {}
+        self._validate_templates()
 
-        # 确保模板目录存在
-        self.templates_dir.mkdir(parents=True, exist_ok=True)
-
-        # 检查模板文件是否存在，不存在则创建
-        if not (self.templates_dir / "script_prompt.txt").exists():
-            self._create_default_templates()
-
-    def _create_default_templates(self):
-        """创建默认模板"""
-        self.templates_dir.mkdir(parents=True, exist_ok=True)
-
-        # Script 模板
-        script_template = """你是一个数据分析专家。请分析以下脚本文件，提取算法信息。
-
-背景：
-{background}
-
-问题：
-{problems}
-
-步骤详情：
-{step_details}
-
-脚本文件：{file_path}
-
-内容：
-```python
-{file_content}
-```
-
-请生成结构化的算法描述，包括：
-1. 算法目标/作用（algorithm_purpose）
-2. 算法逻辑（algorithm_logic）：
-   - 描述（description）
-   - 参数列表（parameters）：每个参数包含 name、description、type
-   - 数据流程（data_flow）
-
-输出严格的 JSON 格式，不要包含任何其他文字。
-"""
-
-        # Dataset 模板
-        dataset_template = """你是一个数据可视化专家。请分析以下数据集，生成可视化配置。
-
-背景：
-{background}
-
-问题：
-{problems}
-
-步骤详情：
-{step_details}
-
-数据集文件：{file_path}
-
-输入数据集：
-{input_datasets}
-
-输出数据集：
-{output_datasets}
-
-数据内容：
-```json
-{file_content}
-```
-
-请生成：
-1. 数据集描述（description）
-2. 输入输出数据集（input_datasets, output_datasets）
-3. 可视化配置（visualization）：
-   - design_choice: "result_visualization" 或 "process_visualization"
-   - choice_reasoning: 选择理由
-   - echarts_config: ECharts 配置 JSON
-
-可视化选择原则：
-- 优先展示结果数据的统计分布、趋势、关系
-- 如需展示数据处理流程（如过滤、转换），选择流程可视化
-- 禁止想象，基于真实数据选择最合适的形式
-
-输出严格的 JSON 格式，不要包含任何其他文字。
-"""
-
-        # Report 模板
-        report_template = """你是一个数据分析报告专家。请分析以下报告，提取关键发现。
-
-背景：
-{background}
-
-问题：
-{problems}
-
-步骤详情：
-{step_details}
-
-报告文件：{file_path}
-
-内容：
-```
-{file_content}
-```
-
-请生成：
-1. 每个问题的答案（problems 数组）：
-   - problem: 问题描述
-   - answer: 基于数据的答案
-   - evidence_from_data: 支持答案的数据证据列表
-2. 整体摘要（summary）
-
-重要原则：
-- 所有答案必须基于报告内容
-- 禁止添加未在数据中支持的推断
-- 对每个结论提供明确的数据来源
-
-输出严格的 JSON 格式，不要包含任何其他文字。
-"""
-
-        # 写入模板文件
-        (self.templates_dir / "script_prompt.txt").write_text(script_template, encoding="utf-8")
-        (self.templates_dir / "dataset_prompt.txt").write_text(dataset_template, encoding="utf-8")
-        (self.templates_dir / "report_prompt.txt").write_text(report_template, encoding="utf-8")
-
-        print(f"创建默认 Prompt 模板到: {self.templates_dir}")
+    def _validate_templates(self):
+        """检查外部模板是否齐全；缺失时直接报错，不自动创建。"""
+        missing = [
+            str(self.templates_dir / f"{file_type}_prompt.txt")
+            for file_type in self.REQUIRED_TEMPLATES
+            if not (self.templates_dir / f"{file_type}_prompt.txt").exists()
+        ]
+        if missing:
+            raise ValueError("Prompt 模板文件缺失，请手动创建:\n" + "\n".join(missing))
 
     def get_template(self, file_type: str) -> str:
         """获取指定类型的 prompt 模板"""
@@ -629,14 +553,18 @@ def main():
     config = Config.from_env()
 
     # 初始化组件
-    prompt_template = PromptTemplate(args.templates_dir)
-    context_loader = ContextLoader(args.context_dir)
+    templates_dir = args.templates_dir if args.templates_dir.is_absolute() else Path.cwd() / args.templates_dir
+    context_dir = args.context_dir if args.context_dir.is_absolute() else Path.cwd() / args.context_dir
+    prompt_template = PromptTemplate(templates_dir)
+    context_loader = ContextLoader(context_dir)
     llm_client = LLMClient(config)
     file_processor = FileProcessor(config, prompt_template, context_loader, llm_client)
 
     # 扫描文件
-    print(f"扫描输入目录: {args.input}")
-    files = scan_files(args.input, args.type)
+    input_dir = args.input if args.input.is_absolute() else Path.cwd() / args.input
+    output_dir = args.output if args.output.is_absolute() else Path.cwd() / args.output
+    print(f"扫描输入目录: {input_dir}")
+    files = scan_files(input_dir, args.type)
     print(f"找到 {len(files)} 个待处理文件")
 
     if not files:
@@ -647,7 +575,7 @@ def main():
     success_count = 0
     total_files = len(files)
     for idx, (input_file, file_type) in enumerate(files, 1):
-        output_file = file_processor.get_output_path(input_file, args.output)
+        output_file = file_processor.get_output_path(input_file, output_dir)
         if file_processor.process_file(input_file, output_file, file_type, args.force, idx, total_files):
             success_count += 1
 
@@ -660,7 +588,8 @@ def main():
     print(f"  失败: {len(file_processor.failed_files)}")
 
     if file_processor.failed_files:
-        failed_file = args.output.parent / "failed_files.txt"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        failed_file = output_dir / "failed_files.txt"
         failed_file.write_text("\n".join(file_processor.failed_files), encoding="utf-8")
         print(f"  失败列表已保存到: {failed_file}")
 

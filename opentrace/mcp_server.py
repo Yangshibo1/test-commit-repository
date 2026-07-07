@@ -697,8 +697,11 @@ class OpenTraceServer:
     # ==================== 辅助方法 ====================
 
     def _generate_session_id(self) -> str:
-        """生成唯一会话ID"""
+        """生成唯一会话ID，包含时间戳和 Claude Code session id"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        claude_session_id = os.environ.get("CLAUDE_CODE_SESSION_ID", "")
+        if claude_session_id:
+            return f"session_{timestamp}_{claude_session_id}"
         return f"session_{timestamp}"
 
     def _load_existing_sessions(self):

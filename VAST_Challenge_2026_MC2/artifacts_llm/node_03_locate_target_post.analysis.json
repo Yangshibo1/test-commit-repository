@@ -1,27 +1,11 @@
 {
-  "algorithm_purpose": "在 node_02 生成的 SaidIT 事件子集中，定位发生在 2046-05-17 19:21:15 的目标异常发帖事件，并输出精确匹配结果、John Windward 相关发帖记录和时间邻近候选帖子。",
+  "algorithm_purpose": "从 SaidIT 事件子集中定位发生在 2046-05-17 19:21:15 的目标异常发帖事件，并提供最接近该时间的候选帖子用于辅助核查。",
   "algorithm_logic": [
-    "脚本首先从当前脚本所在目录读取 current_session.json，并从其中解析 session_id 字段；该字段只用于运行过程记录，不参与目标帖子筛选逻辑。",
-    "脚本将输入文件固定为当前目录下的 node_02_saidit_events.json，使用 json.load 读取该文件内容，并从顶层字典中通过 saidit_data.get(\"records\", []) 获取 records 列表；如果 records 字段不存在，则使用空列表作为后续输入。",
-    "脚本将目标日期固定设置为字符串 target_date = \"2046-05-17\"，将目标时间固定设置为字符串 target_time = \"19:21:15\"，后续精确匹配依赖于 record 的 datetime 字段是否同时包含这两个字符串。",
-    "脚本初始化三个列表：candidate_posts 用于保存所有 SaidIT 发帖候选事件，target_matches 用于保存目标日期和目标时间精确匹配的发帖事件，john_matches 用于保存与 John Windward 相关的发帖事件。",
-    "脚本遍历 records 列表中的每一条 record，首先读取 record.get(\"short_name\")；只有当 short_name 等于 \"saidit_post\" 或 \"post_saidit\" 时，该 record 才会被视为 SaidIT 发帖事件并进入后续处理，否则直接跳过。",
-    "对于 short_name 为 \"saidit_post\" 或 \"post_saidit\" 的记录，脚本会立即将整条 record 加入 candidate_posts 列表，用于统计候选发帖事件数量以及后续按时间距离查找附近帖子。",
-    "对于每条候选发帖事件，脚本读取 record.get(\"datetime\", \"\") 得到 dt 字符串，用于与固定目标日期 \"2046-05-17\" 和固定目标时间 \"19:21:15\" 进行包含式匹配。",
-    "脚本读取 record.get(\"parties\", [])，将 parties 列表用空格拼接成一个字符串，再转换为小写，得到 parties_text；该字段用于检测参与方信息中是否出现 \"john_windward\"。",
-    "脚本读取 record.get(\"details\", {}) 得到 details 字典，再通过 json.dumps(details, ensure_ascii=False).lower() 将 details 内容序列化为小写文本 details_text；该字段用于检测事件详情中是否出现 \"john_windward\"。",
-    "如果 parties_text 或 details_text 中包含字符串 \"john_windward\"，脚本就将当前候选发帖 record 加入 john_matches 列表，用于统计 John Windward 相关的 SaidIT 发帖事件数量。",
-    "如果当前候选发帖事件的 datetime 字段 dt 同时包含目标日期字符串 \"2046-05-17\" 和目标时间字符串 \"19:21:15\"，脚本就将整条 record 加入 target_matches 列表，作为目标异常帖子的精确时间匹配结果。",
-    "完成所有 records 遍历后，脚本使用 datetime(2046, 5, 17, 19, 21, 15).timestamp() 生成目标时间戳 target_timestamp；该时间戳用于和候选发帖事件的 when 字段进行数值距离比较。",
-    "脚本对 candidate_posts 列表进行排序，排序键为 abs(float(r.get(\"when\", 0)) - target_timestamp)，也就是每条候选发帖事件的 when 字段与目标时间戳之间的绝对差值；如果某条记录没有 when 字段，则默认使用 0 参与计算。",
-    "脚本从按时间距离排序后的 candidate_posts 中截取前 10 条记录，保存为 nearby_posts，用于在没有精确匹配或需要人工审阅时查看最接近目标时间的发帖候选事件。",
-    "脚本构造 output 字典，其中 node_id 固定为 \"node_03\"，input_file 保存输入文件路径字符串，operation 固定为 \"locate_target_saidit_post\"，target 字段保存目标 date、time 和 timestamp。",
-    "脚本在 output 中写入 input_saidit_records，值为 records 的总长度；写入 candidate_post_events，值为 candidate_posts 的长度；写入 john_windward_post_events，值为 john_matches 的长度；写入 target_matches_count，值为 target_matches 的长度。",
-    "脚本在 output 中写入 target_matches 字段，保存所有 datetime 同时包含 \"2046-05-17\" 和 \"19:21:15\" 的目标匹配记录；同时写入 nearby_posts 字段，保存与目标时间戳距离最近的 10 条候选发帖事件。",
-    "脚本根据 target_matches 是否为空生成 observation.summary：如果 target_matches 存在记录，则写入“在SaidIT子集中定位到目标时间的异常帖子。”；如果没有精确匹配，则写入“未精确定位到目标时间，已输出最近候选。”。",
-    "脚本在 observation.next_decision 中固定写入下一步分析建议：“读取异常帖子的content_source，并追溯该文件来源、任务传递链和删除行为。”，表示后续应围绕异常帖子的内容来源继续追踪。",
-    "脚本将 output 字典以 JSON 格式写入当前目录下的 node_03_target_post.json，写入时使用 ensure_ascii=False 保留中文字符，并使用 indent=2 生成缩进格式。",
-    "脚本最后在控制台打印输入 SaidIT 记录数、候选发帖事件数、目标匹配数和输出文件路径；如果 target_matches 非空，还会打印第一条匹配记录的 id、datetime 和 details 字段，便于快速确认定位结果。"
+    "仅将 `short_name` 等于 `saidit_post` 或 `post_saidit` 的记录视为 SaidIT 发帖事件，其他 SaidIT 相关事件不参与目标帖子定位。",
+    "使用目标时间 `2046-05-17 19:21:15` 作为精确匹配条件：当事件的 `datetime` 字段同时包含日期 `2046-05-17` 和时间 `19:21:15` 时，将其判定为目标异常帖子匹配结果。",
+    "使用 `john_windward` 作为目标用户识别关键词，在事件的 `parties` 字段和 `details` 字段中进行包含匹配，用于统计与 John Windward 相关的发帖事件数量，辅助判断目标用户是否出现在 SaidIT 发帖记录中。",
+    "当需要辅助审阅时间邻近事件时，以目标时间 `2046-05-17 19:21:15` 转换得到的时间戳为基准，计算每个候选发帖事件的 `when` 时间戳与目标时间戳之间的绝对时间距离。",
+    "按照候选发帖事件与目标时间的时间距离从近到远排序，并保留距离最近的前 10 条作为附近候选帖子。"
   ],
-  "data_flow": "输入: 当前目录下 current_session.json 中的 session_id，以及 node_02_saidit_events.json 中的 records 事件列表 -> 处理: 从 records 中筛选 short_name 为 saidit_post 或 post_saidit 的发帖事件，统计 John Windward 相关记录，使用 datetime 字段匹配 2046-05-17 和 19:21:15，并基于 when 字段计算与目标时间戳的距离选出最近 10 条候选 -> 输出: 当前目录下 node_03_target_post.json，包含 target_matches、nearby_posts、候选事件数量、John Windward 相关事件数量、目标匹配数量和下一步追踪建议"
+  "data_flow": "输入: `node_02_saidit_events.json` 中的 SaidIT 事件记录 -> 按 SaidIT 发帖类型、目标时间和 John Windward 关键词进行筛选与统计，并按时间距离生成附近候选 -> 输出: `node_03_target_post.json` 中的目标异常帖子匹配结果和最近候选帖子。"
 }

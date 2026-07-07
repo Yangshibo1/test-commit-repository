@@ -1,0 +1,886 @@
+{
+  "node_id": "node_10",
+  "operation": "generate_supplemental_similarity_report",
+  "generated_at": "2026-07-04 13:30:59.595078",
+  "session_id": "session_20260630_172421",
+  "input_file": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\VAST_Challenge_2026_MC2\\src\\node_09_instruction_outcome_comparison.json",
+  "question": "历史系统行为中是否发现其他类似实例？为什么只有 John Windward 的异常帖子发了出来，其他人没有？",
+  "answer_summary": {
+    "similar_instances_found": true,
+    "similar_instance_definition": "收到或传播 SwiftWren_further_instructions.md 读取任务的 queue_subordinate_task。",
+    "similar_instruction_tasks": 186,
+    "tasks_before_target_post": 186,
+    "outcome_counts": {
+      "no_saidit_post_attempt_observed": 131,
+      "checked_saidit_but_no_swiftwren_post": 54,
+      "swiftwren_posted": 1
+    },
+    "only_successful_swiftwren_poster": "person:john_windward",
+    "john_instruction_count": 5,
+    "john_successful_task_ids": [
+      373893
+    ],
+    "john_source_agents": {
+      "person:olivia_keel": 2,
+      "person:liam_anchor": 1,
+      "person:john_windward": 1,
+      "person:chloe_ballast": 1
+    }
+  },
+  "core_findings": [
+    "存在历史类似实例：共有 186 条 SwiftWren_further_instructions.md 读取任务，涉及多个目标人员。",
+    "这些类似任务全部发生在目标异常帖子之前；其中 131 条后续未观察到 SaidIT 发帖尝试。",
+    "另有 54 条出现了 saidit_post_check，但没有产生 content_source=SwiftWren.txt 的 saidit_post。",
+    "只有 1 条任务形成完整异常发布链，目标人员是 John Windward，对应任务事件 ID 373893。",
+    "John 的成功链为：Chloe Ballast 指派 John 读取 SwiftWren_further_instructions.md → John 进行 SaidIT 发布检查 → John 发布 content_source=SwiftWren.txt → John 删除指令文件和源文件。"
+  ],
+  "why_only_john_posted": {
+    "evidence_based_explanation": [
+      "John Windward 是唯一在收到 SwiftWren 指令后 2 分钟内产生 content_source=SwiftWren.txt 的 saidit_post 的人员。",
+      "其他人员虽然有相似的 SwiftWren 指令任务，但后续行为停在两个状态：没有 SaidIT 发布尝试，或只有 saidit_post_check 而没有异常内容发布。",
+      "John 的任务链时间极短且连续：19:21:13 收到 Chloe 指令，19:21:14 saidit_post_check，19:21:15 saidit_post，19:21:16/17 删除文件。这个完整序列在其他目标人员中没有出现。",
+      "因此，不是没有其他类似实例；而是只有 John 的实例完成了从指令到平台检查、发帖、清理痕迹的完整执行链。"
+    ],
+    "successful_sequence": [
+      {
+        "instruction_task": {
+          "id": 373893,
+          "short_name": "queue_subordinate_task",
+          "when": 2410168873.0,
+          "datetime": "2046-05-17 19:21:13",
+          "parties": [
+            "Agent/person:chloe_ballast",
+            "Agent/person:john_windward"
+          ],
+          "details": {
+            "target_agent": "Agent/person:john_windward",
+            "task": "read_file",
+            "args": {
+              "path": "SwiftWren_further_instructions.md"
+            }
+          }
+        },
+        "source_agent": "person:chloe_ballast",
+        "target_agent": "person:john_windward",
+        "sequence": [
+          {
+            "id": 373899,
+            "short_name": "saidit_post_check",
+            "when": 2410168874.0,
+            "datetime": "2046-05-17 19:21:14",
+            "parties": [
+              "Agent/person:john_windward",
+              "system:saidit"
+            ],
+            "details": {}
+          },
+          {
+            "id": 373902,
+            "short_name": "saidit_post",
+            "when": 2410168875.0,
+            "datetime": "2046-05-17 19:21:15",
+            "parties": [
+              "Agent/person:john_windward",
+              "system:saidit"
+            ],
+            "details": {
+              "forum": "general",
+              "content_source": "SwiftWren.txt"
+            }
+          },
+          {
+            "id": 373909,
+            "short_name": "delete_file",
+            "when": 2410168876.0,
+            "datetime": "2046-05-17 19:21:16",
+            "parties": [
+              "Agent/person:john_windward",
+              "system:file_system"
+            ],
+            "details": {
+              "action": "delete_file",
+              "target": "SwiftWren_further_instructions.md"
+            }
+          },
+          {
+            "id": 373913,
+            "short_name": "delete_file",
+            "when": 2410168877.0,
+            "datetime": "2046-05-17 19:21:17",
+            "parties": [
+              "Agent/person:john_windward",
+              "system:file_system"
+            ],
+            "details": {
+              "action": "delete_file",
+              "target": "SwiftWren.txt"
+            }
+          }
+        ]
+      }
+    ],
+    "representative_non_success_checked_examples": [
+      {
+        "task_event": {
+          "id": 22234,
+          "short_name": "queue_subordinate_task",
+          "when": 2409501408.0,
+          "datetime": "2046-05-10 01:56:48",
+          "parties": [
+            "Agent/person:chloe_ballast",
+            "Agent/person:mia_fender"
+          ],
+          "details": {
+            "target_agent": "Agent/person:mia_fender",
+            "task": "read_file",
+            "args": {
+              "path": "SwiftWren_further_instructions.md"
+            }
+          }
+        },
+        "source_agent": "person:chloe_ballast",
+        "target_agent": "person:mia_fender",
+        "seconds_from_target_post": -667467.0,
+        "outcome": "checked_saidit_but_no_swiftwren_post",
+        "read_instruction_events_2m": [],
+        "saidit_post_check_events_2m": [
+          {
+            "id": 22237,
+            "short_name": "saidit_post_check",
+            "when": 2409501409.0,
+            "datetime": "2046-05-10 01:56:49",
+            "parties": [
+              "Agent/person:mia_fender",
+              "system:saidit"
+            ],
+            "details": {}
+          }
+        ],
+        "swiftwren_posts_2m": [],
+        "delete_source_events_2m": [],
+        "any_saidit_posts_30m": []
+      },
+      {
+        "task_event": {
+          "id": 23869,
+          "short_name": "queue_subordinate_task",
+          "when": 2409512063.0,
+          "datetime": "2046-05-10 04:54:23",
+          "parties": [
+            "Agent/person:owen_hatch",
+            "Agent/person:victoria_rigging"
+          ],
+          "details": {
+            "target_agent": "Agent/person:victoria_rigging",
+            "task": "read_file",
+            "args": {
+              "path": "SwiftWren_further_instructions.md"
+            }
+          }
+        },
+        "source_agent": "person:owen_hatch",
+        "target_agent": "person:victoria_rigging",
+        "seconds_from_target_post": -656812.0,
+        "outcome": "checked_saidit_but_no_swiftwren_post",
+        "read_instruction_events_2m": [],
+        "saidit_post_check_events_2m": [
+          {
+            "id": 23873,
+            "short_name": "saidit_post_check",
+            "when": 2409512064.0,
+            "datetime": "2046-05-10 04:54:24",
+            "parties": [
+              "Agent/person:victoria_rigging",
+              "system:saidit"
+            ],
+            "details": {}
+          }
+        ],
+        "swiftwren_posts_2m": [],
+        "delete_source_events_2m": [],
+        "any_saidit_posts_30m": []
+      },
+      {
+        "task_event": {
+          "id": 26552,
+          "short_name": "queue_subordinate_task",
+          "when": 2409557365.0,
+          "datetime": "2046-05-10 17:29:25",
+          "parties": [
+            "Agent/person:evelyn_dock",
+            "Agent/person:daniel_gangway"
+          ],
+          "details": {
+            "target_agent": "Agent/person:daniel_gangway",
+            "task": "read_file",
+            "args": {
+              "path": "SwiftWren_further_instructions.md"
+            }
+          }
+        },
+        "source_agent": "person:evelyn_dock",
+        "target_agent": "person:daniel_gangway",
+        "seconds_from_target_post": -611510.0,
+        "outcome": "checked_saidit_but_no_swiftwren_post",
+        "read_instruction_events_2m": [],
+        "saidit_post_check_events_2m": [
+          {
+            "id": 26555,
+            "short_name": "saidit_post_check",
+            "when": 2409557366.0,
+            "datetime": "2046-05-10 17:29:26",
+            "parties": [
+              "Agent/person:daniel_gangway",
+              "system:saidit"
+            ],
+            "details": {}
+          }
+        ],
+        "swiftwren_posts_2m": [],
+        "delete_source_events_2m": [],
+        "any_saidit_posts_30m": []
+      },
+      {
+        "task_event": {
+          "id": 27220,
+          "short_name": "queue_subordinate_task",
+          "when": 2409568451.0,
+          "datetime": "2046-05-10 20:34:11",
+          "parties": [
+            "Agent/person:owen_hatch",
+            "Agent/person:liam_anchor"
+          ],
+          "details": {
+            "target_agent": "Agent/person:liam_anchor",
+            "task": "read_file",
+            "args": {
+              "path": "SwiftWren_further_instructions.md"
+            }
+          }
+        },
+        "source_agent": "person:owen_hatch",
+        "target_agent": "person:liam_anchor",
+        "seconds_from_target_post": -600424.0,
+        "outcome": "checked_saidit_but_no_swiftwren_post",
+        "read_instruction_events_2m": [],
+        "saidit_post_check_events_2m": [
+          {
+            "id": 27224,
+            "short_name": "saidit_post_check",
+            "when": 2409568452.0,
+            "datetime": "2046-05-10 20:34:12",
+            "parties": [
+              "Agent/person:liam_anchor",
+              "system:saidit"
+            ],
+            "details": {}
+          }
+        ],
+        "swiftwren_posts_2m": [],
+        "delete_source_events_2m": [],
+        "any_saidit_posts_30m": []
+      },
+      {
+        "task_event": {
+          "id": 27502,
+          "short_name": "queue_subordinate_task",
+          "when": 2409572699.0,
+          "datetime": "2046-05-10 21:44:59",
+          "parties": [
+            "Agent/person:liam_anchor",
+            "Agent/person:gabriel_sonar"
+          ],
+          "details": {
+            "target_agent": "Agent/person:gabriel_sonar",
+            "task": "read_file",
+            "args": {
+              "path": "SwiftWren_further_instructions.md"
+            }
+          }
+        },
+        "source_agent": "person:liam_anchor",
+        "target_agent": "person:gabriel_sonar",
+        "seconds_from_target_post": -596176.0,
+        "outcome": "checked_saidit_but_no_swiftwren_post",
+        "read_instruction_events_2m": [],
+        "saidit_post_check_events_2m": [
+          {
+            "id": 27507,
+            "short_name": "saidit_post_check",
+            "when": 2409572700.0,
+            "datetime": "2046-05-10 21:45:00",
+            "parties": [
+              "Agent/person:gabriel_sonar",
+              "system:saidit"
+            ],
+            "details": {}
+          }
+        ],
+        "swiftwren_posts_2m": [],
+        "delete_source_events_2m": [],
+        "any_saidit_posts_30m": []
+      }
+    ],
+    "representative_non_success_no_attempt_examples": [
+      {
+        "task_event": {
+          "id": 21209,
+          "short_name": "queue_subordinate_task",
+          "when": 2409490923.0,
+          "datetime": "2046-05-09 23:02:03",
+          "parties": [
+            "Agent/person:emma_harbor",
+            "Agent/person:evelyn_dock"
+          ],
+          "details": {
+            "target_agent": "Agent/person:evelyn_dock",
+            "task": "read_file",
+            "args": {
+              "path": "SwiftWren_further_instructions.md"
+            }
+          }
+        },
+        "source_agent": "person:emma_harbor",
+        "target_agent": "person:evelyn_dock",
+        "seconds_from_target_post": -677952.0,
+        "outcome": "no_saidit_post_attempt_observed",
+        "read_instruction_events_2m": [],
+        "saidit_post_check_events_2m": [],
+        "swiftwren_posts_2m": [],
+        "delete_source_events_2m": [],
+        "any_saidit_posts_30m": []
+      },
+      {
+        "task_event": {
+          "id": 21882,
+          "short_name": "queue_subordinate_task",
+          "when": 2409497533.0,
+          "datetime": "2046-05-10 00:52:13",
+          "parties": [
+            "Agent/person:evelyn_dock",
+            "Agent/person:chloe_ballast"
+          ],
+          "details": {
+            "target_agent": "Agent/person:chloe_ballast",
+            "task": "read_file",
+            "args": {
+              "path": "SwiftWren_further_instructions.md"
+            }
+          }
+        },
+        "source_agent": "person:evelyn_dock",
+        "target_agent": "person:chloe_ballast",
+        "seconds_from_target_post": -671342.0,
+        "outcome": "no_saidit_post_attempt_observed",
+        "read_instruction_events_2m": [],
+        "saidit_post_check_events_2m": [],
+        "swiftwren_posts_2m": [],
+        "delete_source_events_2m": [],
+        "any_saidit_posts_30m": []
+      },
+      {
+        "task_event": {
+          "id": 22642,
+          "short_name": "queue_subordinate_task",
+          "when": 2409506475.0,
+          "datetime": "2046-05-10 03:21:15",
+          "parties": [
+            "Agent/person:mia_fender",
+            "Agent/person:levi_signal"
+          ],
+          "details": {
+            "target_agent": "Agent/person:levi_signal",
+            "task": "read_file",
+            "args": {
+              "path": "SwiftWren_further_instructions.md"
+            }
+          }
+        },
+        "source_agent": "person:mia_fender",
+        "target_agent": "person:levi_signal",
+        "seconds_from_target_post": -662400.0,
+        "outcome": "no_saidit_post_attempt_observed",
+        "read_instruction_events_2m": [],
+        "saidit_post_check_events_2m": [],
+        "swiftwren_posts_2m": [],
+        "delete_source_events_2m": [],
+        "any_saidit_posts_30m": []
+      },
+      {
+        "task_event": {
+          "id": 22644,
+          "short_name": "queue_subordinate_task",
+          "when": 2409506536.0,
+          "datetime": "2046-05-10 03:22:16",
+          "parties": [
+            "Agent/person:levi_signal",
+            "Agent/person:owen_hatch"
+          ],
+          "details": {
+            "target_agent": "Agent/person:owen_hatch",
+            "task": "read_file",
+            "args": {
+              "path": "SwiftWren_further_instructions.md"
+            }
+          }
+        },
+        "source_agent": "person:levi_signal",
+        "target_agent": "person:owen_hatch",
+        "seconds_from_target_post": -662339.0,
+        "outcome": "no_saidit_post_attempt_observed",
+        "read_instruction_events_2m": [],
+        "saidit_post_check_events_2m": [],
+        "swiftwren_posts_2m": [],
+        "delete_source_events_2m": [],
+        "any_saidit_posts_30m": []
+      },
+      {
+        "task_event": {
+          "id": 24188,
+          "short_name": "queue_subordinate_task",
+          "when": 2409516820.0,
+          "datetime": "2046-05-10 06:13:40",
+          "parties": [
+            "Agent/person:victoria_rigging",
+            "Agent/person:owen_hatch"
+          ],
+          "details": {
+            "target_agent": "Agent/person:owen_hatch",
+            "task": "read_file",
+            "args": {
+              "path": "SwiftWren_further_instructions.md"
+            }
+          }
+        },
+        "source_agent": "person:victoria_rigging",
+        "target_agent": "person:owen_hatch",
+        "seconds_from_target_post": -652055.0,
+        "outcome": "no_saidit_post_attempt_observed",
+        "read_instruction_events_2m": [],
+        "saidit_post_check_events_2m": [],
+        "swiftwren_posts_2m": [],
+        "delete_source_events_2m": [],
+        "any_saidit_posts_30m": []
+      }
+    ]
+  },
+  "per_target_summary": {
+    "person:chloe_ballast": {
+      "instruction_count": 13,
+      "outcomes": {
+        "no_saidit_post_attempt_observed": 13
+      },
+      "source_agents": {
+        "person:evelyn_dock": 3,
+        "person:daniel_gangway": 2,
+        "person:zoey_drydock": 2,
+        "person:levi_signal": 2,
+        "person:gabriel_sonar": 1,
+        "person:olivia_keel": 1,
+        "person:owen_hatch": 1,
+        "person:chloe_ballast": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [],
+      "first_instruction_time": "2046-05-10 00:52:13",
+      "last_instruction_time": "2046-05-17 19:12:24"
+    },
+    "person:daniel_gangway": {
+      "instruction_count": 11,
+      "outcomes": {
+        "no_saidit_post_attempt_observed": 8,
+        "checked_saidit_but_no_swiftwren_post": 3
+      },
+      "source_agents": {
+        "person:gabriel_sonar": 3,
+        "person:evelyn_dock": 2,
+        "person:zoey_drydock": 2,
+        "person:chloe_ballast": 1,
+        "person:james_stern": 1,
+        "person:owen_hatch": 1,
+        "person:lily_anchorline": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        26552,
+        351563,
+        373831
+      ],
+      "first_instruction_time": "2046-05-10 10:05:42",
+      "last_instruction_time": "2046-05-17 18:11:31"
+    },
+    "person:david_breakwater": {
+      "instruction_count": 4,
+      "outcomes": {
+        "no_saidit_post_attempt_observed": 2,
+        "checked_saidit_but_no_swiftwren_post": 2
+      },
+      "source_agents": {
+        "person:owen_hatch": 2,
+        "person:liam_anchor": 2
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        341255,
+        367149
+      ],
+      "first_instruction_time": "2046-05-11 07:50:24",
+      "last_instruction_time": "2046-05-16 09:01:55"
+    },
+    "person:evelyn_dock": {
+      "instruction_count": 17,
+      "outcomes": {
+        "no_saidit_post_attempt_observed": 11,
+        "checked_saidit_but_no_swiftwren_post": 6
+      },
+      "source_agents": {
+        "person:mia_fender": 4,
+        "person:victoria_rigging": 3,
+        "person:zoey_drydock": 2,
+        "person:evelyn_dock": 2,
+        "person:levi_signal": 2,
+        "person:emma_harbor": 1,
+        "person:henry_sail": 1,
+        "person:michael_capstan": 1,
+        "person:lily_anchorline": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        342159,
+        358243,
+        362878,
+        363298,
+        367310,
+        369837
+      ],
+      "first_instruction_time": "2046-05-09 23:02:03",
+      "last_instruction_time": "2046-05-16 21:19:28"
+    },
+    "person:gabriel_sonar": {
+      "instruction_count": 16,
+      "outcomes": {
+        "no_saidit_post_attempt_observed": 7,
+        "checked_saidit_but_no_swiftwren_post": 9
+      },
+      "source_agents": {
+        "person:victoria_rigging": 3,
+        "person:james_stern": 3,
+        "person:lily_anchorline": 2,
+        "person:evelyn_dock": 2,
+        "person:liam_anchor": 1,
+        "person:zoey_drydock": 1,
+        "person:gabriel_sonar": 1,
+        "person:john_windward": 1,
+        "person:daniel_gangway": 1,
+        "person:owen_hatch": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        27502,
+        27935,
+        172346,
+        211405,
+        307392,
+        347144,
+        361958,
+        362358,
+        367975
+      ],
+      "first_instruction_time": "2046-05-10 13:17:59",
+      "last_instruction_time": "2046-05-17 08:51:43"
+    },
+    "person:henry_sail": {
+      "instruction_count": 10,
+      "outcomes": {
+        "no_saidit_post_attempt_observed": 6,
+        "checked_saidit_but_no_swiftwren_post": 4
+      },
+      "source_agents": {
+        "person:gabriel_sonar": 2,
+        "person:henry_sail": 2,
+        "person:evelyn_dock": 2,
+        "person:david_breakwater": 1,
+        "person:zoey_drydock": 1,
+        "person:lily_anchorline": 1,
+        "person:olivia_keel": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        85342,
+        86741,
+        119716,
+        119950
+      ],
+      "first_instruction_time": "2046-05-11 01:38:22",
+      "last_instruction_time": "2046-05-16 01:21:35"
+    },
+    "person:james_stern": {
+      "instruction_count": 7,
+      "outcomes": {
+        "checked_saidit_but_no_swiftwren_post": 4,
+        "no_saidit_post_attempt_observed": 3
+      },
+      "source_agents": {
+        "person:mia_fender": 2,
+        "person:david_breakwater": 1,
+        "person:levi_signal": 1,
+        "person:daniel_gangway": 1,
+        "person:chloe_ballast": 1,
+        "person:liam_anchor": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        341502,
+        345062,
+        346789,
+        361644
+      ],
+      "first_instruction_time": "2046-05-13 01:41:07",
+      "last_instruction_time": "2046-05-17 07:48:45"
+    },
+    "person:john_windward": {
+      "instruction_count": 5,
+      "outcomes": {
+        "no_saidit_post_attempt_observed": 4,
+        "swiftwren_posted": 1
+      },
+      "source_agents": {
+        "person:olivia_keel": 2,
+        "person:liam_anchor": 1,
+        "person:john_windward": 1,
+        "person:chloe_ballast": 1
+      },
+      "successful_task_ids": [
+        373893
+      ],
+      "check_task_ids": [
+        373893
+      ],
+      "first_instruction_time": "2046-05-11 05:22:27",
+      "last_instruction_time": "2046-05-17 19:21:13"
+    },
+    "person:levi_signal": {
+      "instruction_count": 15,
+      "outcomes": {
+        "no_saidit_post_attempt_observed": 12,
+        "checked_saidit_but_no_swiftwren_post": 3
+      },
+      "source_agents": {
+        "person:mia_fender": 3,
+        "person:henry_sail": 3,
+        "person:gabriel_sonar": 3,
+        "person:owen_hatch": 2,
+        "person:evelyn_dock": 1,
+        "person:liam_anchor": 1,
+        "person:daniel_gangway": 1,
+        "person:lily_anchorline": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        28404,
+        328327,
+        356995
+      ],
+      "first_instruction_time": "2046-05-10 03:21:15",
+      "last_instruction_time": "2046-05-16 21:10:26"
+    },
+    "person:liam_anchor": {
+      "instruction_count": 11,
+      "outcomes": {
+        "checked_saidit_but_no_swiftwren_post": 3,
+        "no_saidit_post_attempt_observed": 8
+      },
+      "source_agents": {
+        "person:owen_hatch": 2,
+        "person:chloe_ballast": 2,
+        "person:levi_signal": 2,
+        "person:michael_capstan": 2,
+        "person:liam_anchor": 1,
+        "person:daniel_gangway": 1,
+        "person:zoey_drydock": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        27220,
+        361444,
+        366880
+      ],
+      "first_instruction_time": "2046-05-10 20:34:11",
+      "last_instruction_time": "2046-05-16 07:51:59"
+    },
+    "person:lily_anchorline": {
+      "instruction_count": 9,
+      "outcomes": {
+        "no_saidit_post_attempt_observed": 7,
+        "checked_saidit_but_no_swiftwren_post": 2
+      },
+      "source_agents": {
+        "person:victoria_rigging": 2,
+        "person:daniel_gangway": 2,
+        "person:chloe_ballast": 1,
+        "person:evelyn_dock": 1,
+        "person:lily_anchorline": 1,
+        "person:david_breakwater": 1,
+        "person:zoey_drydock": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        367253,
+        368876
+      ],
+      "first_instruction_time": "2046-05-10 12:56:09",
+      "last_instruction_time": "2046-05-17 16:16:07"
+    },
+    "person:mia_fender": {
+      "instruction_count": 12,
+      "outcomes": {
+        "checked_saidit_but_no_swiftwren_post": 2,
+        "no_saidit_post_attempt_observed": 10
+      },
+      "source_agents": {
+        "person:chloe_ballast": 4,
+        "person:owen_hatch": 2,
+        "person:liam_anchor": 1,
+        "person:levi_signal": 1,
+        "person:olivia_keel": 1,
+        "person:mia_fender": 1,
+        "person:michael_capstan": 1,
+        "person:zoey_drydock": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        22234,
+        361089
+      ],
+      "first_instruction_time": "2046-05-10 01:56:48",
+      "last_instruction_time": "2046-05-17 13:34:32"
+    },
+    "person:michael_capstan": {
+      "instruction_count": 6,
+      "outcomes": {
+        "no_saidit_post_attempt_observed": 4,
+        "checked_saidit_but_no_swiftwren_post": 2
+      },
+      "source_agents": {
+        "person:lily_anchorline": 2,
+        "person:michael_capstan": 2,
+        "person:liam_anchor": 1,
+        "person:chloe_ballast": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        352406,
+        370548
+      ],
+      "first_instruction_time": "2046-05-13 05:57:15",
+      "last_instruction_time": "2046-05-17 04:50:01"
+    },
+    "person:olivia_keel": {
+      "instruction_count": 10,
+      "outcomes": {
+        "no_saidit_post_attempt_observed": 8,
+        "checked_saidit_but_no_swiftwren_post": 2
+      },
+      "source_agents": {
+        "person:levi_signal": 2,
+        "person:olivia_keel": 2,
+        "person:victoria_rigging": 1,
+        "person:owen_hatch": 1,
+        "person:zoey_drydock": 1,
+        "person:henry_sail": 1,
+        "person:david_breakwater": 1,
+        "person:gabriel_sonar": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        28793,
+        368034
+      ],
+      "first_instruction_time": "2046-05-11 02:48:40",
+      "last_instruction_time": "2046-05-16 12:32:29"
+    },
+    "person:owen_hatch": {
+      "instruction_count": 13,
+      "outcomes": {
+        "no_saidit_post_attempt_observed": 11,
+        "checked_saidit_but_no_swiftwren_post": 2
+      },
+      "source_agents": {
+        "person:levi_signal": 3,
+        "person:victoria_rigging": 3,
+        "person:john_windward": 2,
+        "person:liam_anchor": 2,
+        "person:olivia_keel": 2,
+        "person:evelyn_dock": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        59126,
+        354067
+      ],
+      "first_instruction_time": "2046-05-10 03:22:16",
+      "last_instruction_time": "2046-05-16 19:30:03"
+    },
+    "person:victoria_rigging": {
+      "instruction_count": 13,
+      "outcomes": {
+        "checked_saidit_but_no_swiftwren_post": 4,
+        "no_saidit_post_attempt_observed": 9
+      },
+      "source_agents": {
+        "person:evelyn_dock": 3,
+        "person:gabriel_sonar": 2,
+        "person:mia_fender": 2,
+        "person:james_stern": 2,
+        "person:owen_hatch": 1,
+        "person:daniel_gangway": 1,
+        "person:zoey_drydock": 1,
+        "person:levi_signal": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        23869,
+        343098,
+        343785,
+        357996
+      ],
+      "first_instruction_time": "2046-05-10 04:54:23",
+      "last_instruction_time": "2046-05-17 13:52:51"
+    },
+    "person:zoey_drydock": {
+      "instruction_count": 14,
+      "outcomes": {
+        "no_saidit_post_attempt_observed": 8,
+        "checked_saidit_but_no_swiftwren_post": 6
+      },
+      "source_agents": {
+        "person:henry_sail": 3,
+        "person:gabriel_sonar": 3,
+        "person:daniel_gangway": 2,
+        "person:levi_signal": 1,
+        "person:zoey_drydock": 1,
+        "person:olivia_keel": 1,
+        "person:james_stern": 1,
+        "person:chloe_ballast": 1,
+        "person:victoria_rigging": 1
+      },
+      "successful_task_ids": [],
+      "check_task_ids": [
+        120525,
+        210651,
+        210817,
+        304495,
+        366616,
+        373282
+      ],
+      "first_instruction_time": "2046-05-11 09:42:45",
+      "last_instruction_time": "2046-05-17 14:44:28"
+    }
+  },
+  "conclusion": {
+    "other_instances_exist": true,
+    "other_instances_nature": "类似传播/尝试实例，而不是成功异常发帖实例。",
+    "john_unique_condition": "只有 John 的指令后续产生了 saidit_post_check + saidit_post(content_source=SwiftWren.txt) + 删除源文件的完整链。",
+    "final_answer": "历史系统行为中发现了大量相似 SwiftWren 指令实例，但只有 John Windward 的实例完成异常发帖；其他人没有发出异常帖子，是因为他们的后续事件没有进入完整 SaidIT 发布链，最多只出现检查动作或没有任何发帖尝试。"
+  }
+}

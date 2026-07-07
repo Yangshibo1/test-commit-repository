@@ -101,6 +101,42 @@
     .loader label:hover, button:hover { border-color: var(--accent); transform: translateY(-1px); }
     input[type=file] { display: none; }
 
+    .follow-panel {
+      position: fixed;
+      right: 18px;
+      top: 104px;
+      width: min(560px, calc(100vw - 36px));
+      max-height: calc(100vh - 124px);
+      overflow: auto;
+      z-index: 20;
+      border: 1px solid rgba(184, 165, 143, 0.58);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: 0 24px 80px rgba(91, 64, 42, 0.18);
+      padding: 16px;
+      backdrop-filter: blur(16px);
+    }
+    .follow-panel.hidden { display: none; }
+    .follow-panel h3 { margin: 0 0 8px; font-family: Cambria, Georgia, serif; font-size: 22px; }
+    .follow-panel p { margin: 0 0 14px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .follow-form { display: grid; gap: 10px; }
+    .follow-form label { color: var(--accent); font: 11px Consolas, monospace; text-transform: uppercase; letter-spacing: .08em; }
+    .follow-form input, .follow-form textarea {
+      width: 100%;
+      border: 1px solid rgba(184,165,143,.48);
+      border-radius: 14px;
+      padding: 10px 12px;
+      color: var(--ink);
+      background: rgba(255, 250, 245, 0.76);
+      font: 12px Consolas, "Microsoft YaHei", monospace;
+      outline: none;
+    }
+    .follow-form textarea { min-height: 112px; resize: vertical; line-height: 1.45; }
+    .follow-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px; }
+    .follow-output { margin-top: 12px; }
+    .follow-output pre { max-height: 180px; }
+    .copy-status { color: var(--green); font: 11px Consolas, monospace; }
+
     .status-pill {
       border: 1px solid rgba(61, 143, 96, 0.32);
       color: var(--green);
@@ -116,6 +152,22 @@
       grid-template-columns: minmax(250px, 320px) minmax(620px, 1fr) minmax(330px, 420px);
       gap: 14px;
       padding: 14px;
+    }
+
+    .app.inspector-expanded .shell {
+      grid-template-columns: minmax(250px, 320px) minmax(720px, 1fr);
+    }
+
+    .app.inspector-expanded .center { display: none; }
+
+    .app.inspector-expanded [data-testid="inspector-panel"] { min-width: 0; }
+
+    .inspector-toggle {
+      border-radius: 10px;
+      padding: 6px 9px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .panel {
@@ -183,8 +235,11 @@
       overflow: auto;
       padding: 18px;
       background:
-        linear-gradient(90deg, rgba(217,119,69,.055) 0 128px, transparent 128px calc(100% - 128px), rgba(217,119,69,.055) calc(100% - 128px)),
-        rgba(255,255,255,.34);
+        radial-gradient(circle at 18% 12%, rgba(217, 119, 69, 0.06), transparent 24rem),
+        radial-gradient(circle at 82% 18%, rgba(255, 248, 241, 0.92), transparent 28rem),
+        linear-gradient(135deg, rgba(217,119,69,.035) 1px, transparent 1px),
+        #fffaf5;
+      background-size: auto, auto, 28px 28px, auto;
     }
     .graph-toolbar { display: flex; gap: 8px; align-items: center; color: var(--muted); font: 11px Consolas, monospace; }
     .graph-toolbar button { padding: 6px 9px; border-radius: 10px; }
@@ -239,25 +294,18 @@
       stroke-linejoin: round;
     }
 
-    .report-insight {
-      margin-top: 10px;
-      border-top: 1px dashed rgba(217, 119, 69, 0.27);
-      padding-top: 8px;
-      color: #6a4b37;
-      font: 11px/1.42 Consolas, "Microsoft YaHei", monospace;
-    }
-
-    .insight-chip {
-      display: inline-block;
-      margin: 5px 5px 0 0;
-      padding: 5px 7px;
-      border-radius: 999px;
-      background: rgba(217, 119, 69, 0.08);
-      border: 1px solid rgba(217, 119, 69, 0.16);
-      color: #7c5137;
-    }
-
     .inspector-body { height: calc(100% - 48px); overflow: auto; padding: 16px; }
+    .chart-host {
+      width: 100%;
+      height: 360px;
+      min-height: 320px;
+      border: 1px solid rgba(184,165,143,.42);
+      border-radius: 14px;
+      background: rgba(255,255,255,.78);
+      margin-top: 10px;
+    }
+    .app.inspector-expanded .chart-host { height: 520px; }
+    .chart-note { color: var(--muted); font-size: 12px; line-height: 1.55; }
     .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
     .tab { border: 1px solid rgba(184,165,143,.58); color: var(--muted); padding: 8px 10px; border-radius: 999px; font: 11px Consolas, monospace; cursor: pointer; background: #fff; }
     .tab.active { color: var(--accent); border-color: rgba(37,118,184,.55); }
@@ -267,7 +315,19 @@
     .kv b { display: block; color: var(--accent); font: 11px Consolas, monospace; margin-bottom: 8px; }
     .kv span, .kv code { color: var(--ink); overflow-wrap: anywhere; }
     code, pre { font-family: Consolas, "Cascadia Mono", monospace; }
-    pre { background: rgba(255,255,255,.72); border: 1px solid rgba(184,165,143,.42); border-radius: 14px; padding: 12px; overflow: auto; color: #34444e; }
+    pre {
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(184,165,143,.42);
+      border-radius: 14px;
+      padding: 12px;
+      overflow: auto;
+      max-height: 360px;
+      color: #34444e;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .app.inspector-expanded pre { max-height: 560px; }
     .empty { height: 100%; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 30px; }
 
     @media (max-width: 1100px) {
@@ -296,6 +356,7 @@
           Choose session folder
           <input id="fileInput" type="file" webkitdirectory directory multiple />
         </label>
+        <button id="followButton">Ask follow-up</button>
         <button id="clearButton">Clear</button>
       </div>
     </header>
@@ -313,7 +374,7 @@
           <div class="metric"><div class="value" id="metricSteps">0</div><div class="label">analysis steps</div></div>
           <div class="metric"><div class="value" id="metricEntities">0</div><div class="label">PROV entities</div></div>
           <div class="metric"><div class="value" id="metricActivities">0</div><div class="label">PROV activities</div></div>
-          <div class="metric"><div class="value" id="metricArtifacts">0</div><div class="label">report insights</div></div>
+          <div class="metric"><div class="value" id="metricArtifacts">0</div><div class="label">analysis artifacts</div></div>
         </div>
 
         <div class="panel graph-wrap" data-testid="trace-graph">
@@ -333,12 +394,43 @@
     </section>
   </main>
 
+  <section class="follow-panel hidden" id="followPanel" aria-label="Ask Claude follow-up">
+    <h3>Ask Claude follow-up</h3>
+    <p>填写问题、工作空间和历史 Claude session id。页面会生成可复制命令，用于继承历史问答继续任务。</p>
+    <div class="follow-form">
+      <div>
+        <label for="followQuestion">Question</label>
+        <textarea id="followQuestion" placeholder="输入你希望继续追问的问题或任务..."></textarea>
+      </div>
+      <div>
+        <label for="followWorkspace">Workspace</label>
+        <input id="followWorkspace" placeholder="例如: C:\Users\83734\Desktop\opentrace\test-commit-repository" />
+      </div>
+      <div>
+        <label for="followSessionId">Inherited Claude session id</label>
+        <input id="followSessionId" placeholder="例如: 31671665-2cb5-4def-ab0a-dc0060d0c065" />
+      </div>
+      <div class="follow-actions">
+        <button id="buildFollowCommand">Build command</button>
+        <button id="copyFollowCommand">Copy command</button>
+        <button id="closeFollowPanel">Close</button>
+        <span class="copy-status" id="copyStatus"></span>
+      </div>
+    </div>
+    <div class="follow-output">
+      <pre id="followCommandPreview">填写后生成 claude -p --resume 命令。</pre>
+    </div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
   <script>
     const REQUIRED_FILES = ["step_details.json", "prov_nodes.json", "prov_edges.json", "prov_dag.json"];
-    const state = { files: {}, trace: null, selectedStepId: null, selectedProvId: null, activeTab: "overview", graphScale: 1 };
+    const DEFAULT_WORKSPACE = "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository";
+    const state = { files: {}, trace: null, selectedStepId: null, selectedProvId: null, activeTab: "overview", graphScale: 1, inspectorExpanded: false };
 
     const $ = (id) => document.getElementById(id);
     const baseName = (path = "") => String(path).split(/[\\/]/).pop() || path || "unknown";
+    const shellQuote = (value = "") => `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
     const normalizeSessionFileName = (file) => baseName(file.webkitRelativePath || file.name);
     const shortValue = (value) => {
       if (Array.isArray(value)) return `${value.length} items`;
@@ -372,6 +464,59 @@
       render();
     });
 
+    function selectedContextText() {
+      const trace = state.trace;
+      if (!trace) return "";
+      const step = state.selectedStepId ? trace.steps.find(s => s.id === state.selectedStepId) : trace.steps[0];
+      const provNode = state.selectedProvId ? (trace.prov.nodes[state.selectedProvId] || findMergedNodeById(buildProvDAGFlow(trace).nodes, state.selectedProvId)) : null;
+      const artifact = findLlmArtifact(trace, { step, node: provNode });
+      const context = {
+        opentrace_session: trace.sessionId,
+        selected_step: step ? { id: step.id, name: step.name, input_files: step.inputFiles, output_files: step.outputFiles, code_files: step.codeFiles } : null,
+        selected_node: provNode ? { id: provNode.id, type: provNode.type, location: provNode.location, name: provNode.name, description: provNode.description } : null,
+        analysis_artifact: artifact || null,
+      };
+      return JSON.stringify(context, null, 2);
+    }
+
+    function buildFollowPrompt() {
+      const question = $("followQuestion").value.trim();
+      const context = selectedContextText();
+      return `${question}\n\n当前前端选择上下文如下，如相关请结合它继续分析：\n${context}`.trim();
+    }
+
+    function buildFollowCommand() {
+      const workspace = $("followWorkspace").value.trim() || DEFAULT_WORKSPACE;
+      const sessionId = $("followSessionId").value.trim();
+      const prompt = buildFollowPrompt();
+      const resumePart = sessionId ? ` --resume ${shellQuote(sessionId)}` : "";
+      return `cd ${shellQuote(workspace)} && claude -p ${shellQuote(prompt)}${resumePart}`;
+    }
+
+    function updateFollowCommandPreview() {
+      $("followCommandPreview").textContent = buildFollowCommand();
+      $("copyStatus").textContent = "";
+    }
+
+    $("followButton").addEventListener("click", () => {
+      $("followWorkspace").value = $("followWorkspace").value || DEFAULT_WORKSPACE;
+      $("followPanel").classList.toggle("hidden");
+      if (!$("followPanel").classList.contains("hidden")) updateFollowCommandPreview();
+    });
+    $("closeFollowPanel").addEventListener("click", () => $("followPanel").classList.add("hidden"));
+    $("buildFollowCommand").addEventListener("click", updateFollowCommandPreview);
+    $("copyFollowCommand").addEventListener("click", async () => {
+      updateFollowCommandPreview();
+      const command = $("followCommandPreview").textContent;
+      try {
+        await navigator.clipboard.writeText(command);
+        $("copyStatus").textContent = "Copied";
+      } catch (error) {
+        $("copyStatus").textContent = "Copy failed; please select manually";
+      }
+    });
+    ["followQuestion", "followWorkspace", "followSessionId"].forEach(id => $(id).addEventListener("input", updateFollowCommandPreview));
+
     function adaptSession(files) {
       const stepDetails = files["step_details.json"] || { steps: [] };
       const provNodes = files["prov_nodes.json"]?.nodes || {};
@@ -382,7 +527,7 @@
       const entities = nodes.filter(n => n.type === "entity");
       const activities = nodes.filter(n => n.type === "activity");
       const agents = nodes.filter(n => n.type === "agent");
-      const insights = extractFinalReportInsights(files, stepDetails);
+      const llmArtifacts = collectLlmArtifacts(files);
 
       const steps = (stepDetails.steps || []).map((step, index) => ({
         id: step.step_id || `step_${String(index + 1).padStart(3, "0")}`,
@@ -405,13 +550,13 @@
         steps,
         prov: { nodes: provNodes, edges: provEdges },
         raw: { meta, stepDetails, provNodes, provEdges, dag },
-        insights,
+        llmArtifacts,
         counts: {
           entities: entities.length,
           activities: activities.length,
           agents: agents.length,
           edges: provEdges.length,
-          insights: insights.length,
+          artifacts: Object.keys(llmArtifacts).length,
         },
         consistency: checkConsistency(files, steps, meta),
       };
@@ -425,34 +570,101 @@
       return "analysis_node";
     }
 
-    function extractFinalReportInsights(files, stepDetails) {
-      const insights = [];
-      for (const [name, data] of Object.entries(files)) {
-        if (!/report|final|result/i.test(name) || !data || typeof data !== "object") continue;
-        collectInsightValues(data, insights, name, 0);
-      }
-      for (const step of stepDetails.steps || []) {
-        const params = step.parameters || {};
-        for (const [key, value] of Object.entries(params)) {
-          if (typeof value === "number" || typeof value === "boolean" || /result|count|total|match|event|source|target|validation|summary|conclusion|finding/i.test(key)) {
-            insights.push({ source: step.step_id || step.step_name || "step", key, value: shortValue(value) });
-          }
-        }
-      }
-      return insights.slice(0, 36);
+    function artifactBaseName(name = "") {
+      return baseName(name)
+        .replace(/\.analysis\.json$/i, "")
+        .replace(/\.(py|json|txt)$/i, "")
+        .toLowerCase();
     }
 
-    function collectInsightValues(obj, insights, source, depth) {
-      if (depth > 3 || !obj || typeof obj !== "object") return;
-      if (Array.isArray(obj)) {
-        if (obj.length && typeof obj[0] !== "object") insights.push({ source, key: "list", value: obj.slice(0, 3).join(", ") });
+    function collectLlmArtifacts(files) {
+      const artifacts = {};
+      for (const [name, data] of Object.entries(files)) {
+        if (!/\.analysis\.json$/i.test(name) || !data || typeof data !== "object") continue;
+        artifacts[artifactBaseName(name)] = data;
+      }
+      return artifacts;
+    }
+
+    function getArtifactKind(artifact) {
+      if (!artifact || typeof artifact !== "object") return null;
+      if ("algorithm_purpose" in artifact || "algorithm_logic" in artifact || "data_flow" in artifact) return "script";
+      if ("sample_data" in artifact || "echarts_chart" in artifact) return "dataset";
+      if ("key_findings" in artifact || "answers" in artifact) return "report";
+      return null;
+    }
+
+    function findLlmArtifact(trace, { step, node } = {}) {
+      const artifacts = trace.llmArtifacts || {};
+      const candidates = [];
+      const pushCandidate = (value) => {
+        if (!value) return;
+        candidates.push(artifactBaseName(value));
+      };
+
+      pushCandidate(node?.location);
+      pushCandidate(node?.name);
+      pushCandidate(node?.description);
+      for (const file of step?.codeFiles || []) pushCandidate(file);
+      for (const file of step?.outputFiles || []) pushCandidate(file);
+      for (const file of step?.inputFiles || []) pushCandidate(file);
+      pushCandidate(step?.name);
+      pushCandidate(step?.id);
+
+      for (const key of candidates) {
+        if (artifacts[key]) return artifacts[key];
+      }
+      for (const key of candidates) {
+        const foundKey = Object.keys(artifacts).find(artifactKey => key && (artifactKey.includes(key) || key.includes(artifactKey)));
+        if (foundKey) return artifacts[foundKey];
+      }
+      return null;
+    }
+
+    function formatArtifactOverview(artifact, kind) {
+      if (!artifact) return "";
+      if (kind === "script") {
+        return `${artifact.algorithm_purpose ? `<div class="kv"><b>algorithm_purpose</b><span>${escapeHtml(artifact.algorithm_purpose)}</span></div>` : ""}
+          ${artifact.data_flow ? `<div class="kv"><b>data_flow</b><span>${escapeHtml(artifact.data_flow)}</span></div>` : ""}`;
+      }
+      if (kind === "dataset") {
+        return `${artifact.description ? `<div class="kv"><b>description</b><span>${escapeHtml(artifact.description)}</span></div>` : ""}
+          <div class="kv"><b>sample_data</b><pre>${escapeHtml(JSON.stringify(artifact.sample_data ?? "—", null, 2))}</pre></div>`;
+      }
+      if (kind === "report") {
+        return `${artifact.key_findings ? `<div class="kv"><b>key_findings</b><pre>${escapeHtml(JSON.stringify(artifact.key_findings, null, 2))}</pre></div>` : ""}
+          ${artifact.answers ? `<div class="kv"><b>answers</b><pre>${escapeHtml(JSON.stringify(artifact.answers, null, 2))}</pre></div>` : ""}`;
+      }
+      return `<pre>${escapeHtml(JSON.stringify(artifact, null, 2))}</pre>`;
+    }
+
+    function formatAlgorithmLogic(artifact) {
+      const logic = artifact?.algorithm_logic;
+      if (!logic) return "—";
+      if (Array.isArray(logic)) return `<ol>${logic.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`;
+      return `<pre>${escapeHtml(JSON.stringify(logic, null, 2))}</pre>`;
+    }
+
+    function formatDatasetChart(artifact) {
+      if (!artifact?.echarts_chart) {
+        return `<div class="kv"><b>chart</b><p class="chart-note">大数据集或不适合可视化，已跳过图表配置。</p></div>`;
+      }
+      return `<div class="kv"><b>chart</b><div id="artifactChart" class="chart-host"></div></div>`;
+    }
+
+    function renderDatasetChart(artifact) {
+      const container = $("artifactChart");
+      if (!container || !artifact?.echarts_chart) return;
+      if (!window.echarts) {
+        container.innerHTML = '<div class="empty">ECharts 加载失败，无法渲染图表。</div>';
         return;
       }
-      for (const [key, value] of Object.entries(obj)) {
-        if (insights.length > 32) return;
-        if (typeof value === "string" && value.length > 0 && value.length < 180) insights.push({ source, key, value });
-        else if (typeof value === "number" || typeof value === "boolean") insights.push({ source, key, value: String(value) });
-        else collectInsightValues(value, insights, source, depth + 1);
+      try {
+        const chart = echarts.init(container);
+        chart.setOption(artifact.echarts_chart, true);
+        setTimeout(() => chart.resize(), 0);
+      } catch (error) {
+        container.innerHTML = `<pre>${escapeHtml(String(error))}</pre>`;
       }
     }
 
@@ -581,6 +793,7 @@
     }
 
     function render() {
+      document.querySelector(".app")?.classList.toggle("inspector-expanded", state.inspectorExpanded);
       if (!state.trace) {
         $("sessionSubtitle").textContent = "加载任意 OpenTrace session 文件夹，按 PROV DAG 展示流程并融合分析结果";
         $("validationBadge").textContent = "WAITING FOR SESSION";
@@ -602,7 +815,7 @@
       $("metricSteps").textContent = String(trace.steps.length);
       $("metricEntities").textContent = String(trace.counts.entities);
       $("metricActivities").textContent = String(trace.counts.activities);
-      $("metricArtifacts").textContent = String(trace.counts.insights);
+      $("metricArtifacts").textContent = String(trace.counts.artifacts);
       renderTimeline(trace);
       renderGraph(trace);
       renderInspector(trace);
@@ -627,76 +840,259 @@
     function verticalLayout(flow, stageWidth) {
       const NODE_W = 220;
       const NODE_H = 96;
-      const ROW_GAP = 84;
+      const GROUP_GAP = 140;
       const COL_GAP = 96;
       const SIDE_LANE_W = 84;
       const PADDING_X = 32;
       const PADDING_Y = 36;
 
-      const incoming = new Map(flow.nodes.map(n => [n.id, 0]));
-      const outgoing = new Map(flow.nodes.map(n => [n.id, []]));
-      for (const edge of flow.edges) {
-        incoming.set(edge.to, (incoming.get(edge.to) || 0) + 1);
-        if (!outgoing.has(edge.from)) outgoing.set(edge.from, []);
-        outgoing.get(edge.from).push(edge.to);
-      }
-
-      const remainingIncoming = new Map(incoming);
-      const layer = new Map(flow.nodes.map(n => [n.id, 0]));
-      const queue = flow.nodes.filter(n => !remainingIncoming.get(n.id)).map(n => n.id);
-      const visited = new Set();
-
-      while (queue.length) {
-        const id = queue.shift();
-        visited.add(id);
-        const nextLayer = (layer.get(id) || 0) + 1;
-        for (const to of outgoing.get(id) || []) {
-          if ((layer.get(to) || 0) < nextLayer) layer.set(to, nextLayer);
-          remainingIncoming.set(to, remainingIncoming.get(to) - 1);
-          if (remainingIncoming.get(to) === 0) queue.push(to);
+      const getNodeKey = (node) => {
+        // 优先检查 location 中的文件名
+        let name = "";
+        if (node.location) {
+          name = baseName(node.location).toLowerCase();
+        } else if (node.name) {
+          name = node.name.toLowerCase();
+        } else {
+          name = node.id.toLowerCase();
         }
-      }
 
-      for (const node of flow.nodes) {
-        if (!visited.has(node.id)) {
-          const fallbackLayer = Math.max(0, ...[...layer.values()]) + 1;
-          layer.set(node.id, fallbackLayer);
+        // 匹配多种模式：n01., n1., node_01, node_1, _n01.
+        const match = name.match(/^n0*(\d+)\./) ||
+                     name.match(/^node_0*(\d+)/) ||
+                     name.match(/_n0*(\d+)\./) ||
+                     name.match(/_n0*(\d+)_/) ||
+                     name.match(/^artifact_0*(\d+)/);
+
+        if (match) {
+          const num = parseInt(match[1]);
+          return `node_${String(num).padStart(2, '0')}`;
         }
-      }
 
-      const rows = new Map();
-      for (const node of flow.nodes) {
-        const row = layer.get(node.id) || 0;
-        if (!rows.has(row)) rows.set(row, []);
-        rows.get(row).push(node);
-      }
+        // 检查 merged 节点的 original_ids
+        if (node.merged && node.original_ids && node.original_ids.length > 0) {
+          for (const origId of node.original_ids) {
+            const origName = origId.toLowerCase();
+            const origMatch = origName.match(/n0*(\d+)/) || origName.match(/node_0*(\d+)/);
+            if (origMatch) {
+              const num = parseInt(origMatch[1]);
+              return `node_${String(num).padStart(2, '0')}`;
+            }
+          }
+        }
+
+        return null;
+      };
+
+      const isTrueRawData = (node) => {
+        const name = (node.location ? baseName(node.location) : (node.name || node.id)).toLowerCase();
+        // 真正的原始数据：包含mc2/vast，且不含node编号模式
+        const hasNodePattern = /^n0*\d+[\._]/.test(name) ||
+                               /^node_0*\d+/.test(name) ||
+                               /_n0*\d+[\._]/.test(name);
+        // 只有不含node编号的mc2/vast数据才算原始数据
+        return !hasNodePattern && (name.includes("mc2") || name.includes("vast") ||
+                                   name.includes("saidit") || name.includes("parler") ||
+                                   name.includes("vastchallenge"));
+      };
+
+      const isProcessingNode = (node) => {
+        return node.type === "agent" || node.type === "activity";
+      };
+
+      // 分组节点：按node_XX模式分组
+      const grouped = new Map();
+      const rawDataNodes = [];
+      const debugInfo = { grouped: {}, raw: [] }; // 调试信息
+
+      flow.nodes.forEach(node => {
+        const key = getNodeKey(node);
+        if (key) {
+          if (!grouped.has(key)) grouped.set(key, []);
+          grouped.get(key).push(node);
+          if (!debugInfo.grouped[key]) debugInfo.grouped[key] = [];
+          debugInfo.grouped[key].push({
+            id: node.id,
+            location: node.location ? baseName(node.location) : node.name || node.id,
+            type: node.type
+          });
+        } else if (isTrueRawData(node)) {
+          rawDataNodes.push(node);
+          debugInfo.raw.push({
+            id: node.id,
+            location: node.location ? baseName(node.location) : node.name || node.id,
+            type: node.type,
+            why: "true_raw"
+          });
+        } else {
+          // 其他节点归入原始数据行（如最终报告）
+          rawDataNodes.push(node);
+          debugInfo.raw.push({
+            id: node.id,
+            location: node.location ? baseName(node.location) : node.name || node.id,
+            type: node.type,
+            why: "fallback"
+          });
+        }
+      });
+
+      const sortedGroups = [...grouped.keys()].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+
+      // 调试输出
+      console.log("Layout Debug Info:", {
+        totalNodes: flow.nodes.length,
+        groupedGroups: Object.keys(debugInfo.grouped).length,
+        groupedDetail: debugInfo.grouped,
+        rawDataCount: rawDataNodes.length,
+        rawDetail: debugInfo.raw,
+        sortedGroups
+      });
 
       const positions = {};
-      const sortedRows = [...rows.keys()].sort((a, b) => a - b);
-      let maxRowWidth = 0;
+      const nodeGroups = [];
+      let maxGroupWidth = 0;
+      let currentY = PADDING_Y;
+      let currentLayer = 0;
 
-      sortedRows.forEach(rowNo => {
-        const rowNodes = rows.get(rowNo);
-        const rowWidth = rowNodes.length * NODE_W + Math.max(0, rowNodes.length - 1) * COL_GAP;
-        maxRowWidth = Math.max(maxRowWidth, rowWidth);
-        const mainAreaWidth = Math.max(rowWidth, (stageWidth || 900) - SIDE_LANE_W * 2 - PADDING_X * 2);
-        const startX = SIDE_LANE_W + PADDING_X + Math.max(0, (mainAreaWidth - rowWidth) / 2);
-        rowNodes.forEach((node, col) => {
+      // 第一行：真正的原始数据
+      if (rawDataNodes.length) {
+        rawDataNodes.sort((a, b) => {
+          const aIsProc = isProcessingNode(a);
+          const bIsProc = isProcessingNode(b);
+          if (aIsProc && !bIsProc) return -1;
+          if (!aIsProc && bIsProc) return 1;
+          return 0;
+        });
+
+        const rowWidth = rawDataNodes.length * NODE_W + Math.max(0, rawDataNodes.length - 1) * COL_GAP;
+        maxGroupWidth = Math.max(maxGroupWidth, rowWidth);
+        const startX = SIDE_LANE_W + PADDING_X + Math.max(0, ((stageWidth || 900) - SIDE_LANE_W * 2 - PADDING_X * 2 - rowWidth) / 2);
+
+        rawDataNodes.forEach((node, col) => {
           positions[node.id] = {
             x: startX + col * (NODE_W + COL_GAP),
-            y: PADDING_Y + rowNo * (NODE_H + ROW_GAP),
-            layer: rowNo,
+            y: currentY,
+            layer: currentLayer,
           };
         });
+
+        nodeGroups.push({
+          key: "raw_data",
+          nodes: rawDataNodes,
+          y: currentY,
+          box: { x: startX, y: currentY, width: rowWidth, height: NODE_H },
+        });
+
+        currentY += NODE_H + GROUP_GAP;
+        currentLayer++;
+      }
+
+      // 处理节点组（node_01, node_02...）
+      sortedGroups.forEach((groupKey) => {
+        const groupNodes = grouped.get(groupKey);
+        groupNodes.sort((a, b) => {
+          const aIsProc = isProcessingNode(a);
+          const bIsProc = isProcessingNode(b);
+          if (aIsProc && !bIsProc) return -1;
+          if (!aIsProc && bIsProc) return 1;
+          return 0;
+        });
+
+        const rowWidth = groupNodes.length * NODE_W + Math.max(0, groupNodes.length - 1) * COL_GAP;
+        maxGroupWidth = Math.max(maxGroupWidth, rowWidth);
+        const startX = SIDE_LANE_W + PADDING_X + Math.max(0, ((stageWidth || 900) - SIDE_LANE_W * 2 - PADDING_X * 2 - rowWidth) / 2);
+
+        groupNodes.forEach((node, col) => {
+          positions[node.id] = {
+            x: startX + col * (NODE_W + COL_GAP),
+            y: currentY,
+            layer: currentLayer,
+          };
+        });
+
+        nodeGroups.push({
+          key: groupKey,
+          nodes: groupNodes,
+          y: currentY,
+          box: { x: startX, y: currentY, width: rowWidth, height: NODE_H },
+        });
+
+        currentY += NODE_H + GROUP_GAP;
+        currentLayer++;
       });
+
+      // 分析边：区分组内的边和跨组的边
+      const intraGroupEdges = [];
+      const interGroupEdges = [];
+
+      for (const edge of flow.edges) {
+        if (edge.relation === "wasDerivedFrom") continue;
+
+        const fromPos = positions[edge.from];
+        const toPos = positions[edge.to];
+        if (!fromPos || !toPos) continue;
+
+        if (fromPos.layer === toPos.layer) {
+          intraGroupEdges.push({ ...edge, kind: "intra-group" });
+        } else {
+          interGroupEdges.push({ ...edge, kind: "inter-group", layerDiff: toPos.layer - fromPos.layer });
+        }
+      }
+
+      // 跨组边路由：根据涉及的节点类型决定左右侧
+      // 如果edge涉及代码节点（agent/activity），从左侧连接
+      // 如果edge只涉及数据节点，从右侧连接
+      const routedInterGroupEdges = [];
+      const leftLaneUsage = new Map();
+      const rightLaneUsage = new Map();
+
+      for (const edge of interGroupEdges) {
+        const fromNode = flow.nodes.find(n => n.id === edge.from);
+        const toNode = flow.nodes.find(n => n.id === edge.to);
+
+        // 判断是否涉及代码节点
+        const involvesProcessing = fromNode && (isProcessingNode(fromNode)) ||
+                                    toNode && (isProcessingNode(toNode));
+
+        const side = involvesProcessing ? "left" : "right";
+        const layerDiff = Math.abs(edge.layerDiff);
+
+        const laneUsage = side === "left" ? leftLaneUsage : rightLaneUsage;
+        const usageCount = laneUsage.get(layerDiff) || 0;
+        laneUsage.set(layerDiff, usageCount + 1);
+
+        routedInterGroupEdges.push({
+          ...edge,
+          side,
+          laneOffset: 10 + layerDiff * 16 + usageCount * 12,
+        });
+      }
+
+      // 组间连接：从上一个组的最后一个节点到下一个组的第一个节点
+      const groupConnectors = [];
+      for (let i = 0; i < nodeGroups.length - 1; i++) {
+        const fromGroup = nodeGroups[i];
+        const toGroup = nodeGroups[i + 1];
+        if (fromGroup.nodes.length > 0 && toGroup.nodes.length > 0) {
+          groupConnectors.push({
+            from: fromGroup.nodes[fromGroup.nodes.length - 1].id,
+            to: toGroup.nodes[0].id,
+            kind: "group-to-group"
+          });
+        }
+      }
 
       return {
         positions,
-        width: Math.max((stageWidth || 900), maxRowWidth + SIDE_LANE_W * 2 + PADDING_X * 2),
-        height: Math.max(sortedRows.length * (NODE_H + ROW_GAP) + PADDING_Y * 2, 720),
+        nodeGroups,
+        intraGroupEdges,
+        interGroupEdges: routedInterGroupEdges,
+        groupConnectors,
+        width: Math.max((stageWidth || 900), maxGroupWidth + SIDE_LANE_W * 2 + PADDING_X * 2),
+        height: Math.max(currentY + PADDING_Y, 720),
         nodeWidth: NODE_W,
         nodeHeight: NODE_H,
-        rowGap: ROW_GAP,
+        groupGap: GROUP_GAP,
         colGap: COL_GAP,
         sideLaneWidth: SIDE_LANE_W,
       };
@@ -791,22 +1187,49 @@
       const labelY = (y1 + y2) / 2 - 6;
       const bend = Math.max(44, Math.abs(y2 - y1) / 2);
       const path = `M ${x1} ${y1} C ${x1} ${y1 + bend}, ${x2} ${y2 - bend}, ${x2} ${y2}`;
-      return `<path class="dag-edge ${edge.relation === "output" ? "generated" : ""}" d="${path}" /><text class="edge-label" x="${labelX}" y="${labelY}">${escapeHtml(edge.relation)}</text>`;
+      return `<path class="dag-edge ${edge.relation === "output" ? "generated" : ""}" d="${path}" marker-end="url(#arrow)" /><text class="edge-label" x="${labelX}" y="${labelY}">${escapeHtml(edge.relation)}</text>`;
     }
 
-    function renderSideLaneEdge(edge, positions, layout) {
+    function renderIntraGroupEdge(edge, positions, layout) {
       const a = positions[edge.from], b = positions[edge.to];
       if (!a || !b) return "";
-      const laneOffset = 10 + (edge.laneIndex % 4) * 12;
+      const x1 = a.x + layout.nodeWidth;
+      const y1 = a.y + layout.nodeHeight / 2;
+      const x2 = b.x;
+      const y2 = b.y + layout.nodeHeight / 2;
+      const path = `M ${x1} ${y1} L ${x2} ${y2}`;
+      const labelX = (x1 + x2) / 2;
+      const labelY = y1 - 8;
+      return `<path class="dag-edge" d="${path}" marker-end="url(#arrow)" /><text class="edge-label" x="${labelX}" y="${labelY}">${escapeHtml(edge.relation)}</text>`;
+    }
+
+    function renderGroupConnector(connector, positions, layout) {
+      const a = positions[connector.from], b = positions[connector.to];
+      if (!a || !b) return "";
+      const x1 = a.x + layout.nodeWidth / 2;
+      const y1 = a.y + layout.nodeHeight;
+      const x2 = b.x + layout.nodeWidth / 2;
+      const y2 = b.y;
+      const path = `M ${x1} ${y1} L ${x2} ${y2}`;
+      return `<path class="dag-edge generated" d="${path}" marker-end="url(#arrow)" />`;
+    }
+
+    function renderInterGroupEdge(edge, positions, layout) {
+      const a = positions[edge.from], b = positions[edge.to];
+      if (!a || !b) return "";
+
+      // 根据side选择左侧或右侧通道
       const laneX = edge.side === "left"
-        ? layout.sideLaneWidth - laneOffset
-        : layout.width - layout.sideLaneWidth + laneOffset;
+        ? layout.sideLaneWidth - edge.laneOffset
+        : layout.width - layout.sideLaneWidth + edge.laneOffset;
+
       const x1 = edge.side === "left" ? a.x : a.x + layout.nodeWidth;
       const y1 = a.y + layout.nodeHeight / 2;
       const x2 = edge.side === "left" ? b.x : b.x + layout.nodeWidth;
       const y2 = b.y + layout.nodeHeight / 2;
       const labelX = laneX + (edge.side === "left" ? -6 : 6);
       const labelY = (y1 + y2) / 2;
+
       const path = `M ${x1} ${y1} C ${laneX} ${y1}, ${laneX} ${y1}, ${laneX} ${(y1 + y2) / 2} C ${laneX} ${y2}, ${laneX} ${y2}, ${x2} ${y2}`;
       return `<path class="dag-edge long-edge" d="${path}" /><text class="edge-label" x="${labelX}" y="${labelY}">${escapeHtml(edge.relation)}</text>`;
     }
@@ -818,20 +1241,24 @@
       const GRAPH_SCALE = state.graphScale;
       const layout = verticalLayout(flow, $("graphStage").clientWidth);
       const pos = layout.positions;
-      const routedEdges = routeGraphEdges(flow.edges.filter(edge => edge.relation !== "wasDerivedFrom"), pos);
-      const svgEdges = routedEdges.map(edge => {
-        return edge.kind === "long"
-          ? renderSideLaneEdge(edge, pos, layout)
-          : renderShortEdge(edge, pos, layout);
-      }).join("");
+
+      // 渲染组内边
+      const intraGroupEdgesHtml = (layout.intraGroupEdges || []).map(edge => renderIntraGroupEdge(edge, pos, layout)).join("");
+
+      // 渲染组间连接
+      const groupConnectorHtml = (layout.groupConnectors || []).map(conn => renderGroupConnector(conn, pos, layout)).join("");
+
+      // 渲染跨组边
+      const interGroupEdgesHtml = (layout.interGroupEdges || []).map(edge => renderInterGroupEdge(edge, pos, layout)).join("");
+
+      const svgEdges = intraGroupEdgesHtml + groupConnectorHtml + interGroupEdgesHtml;
+
       const nodeHtml = flow.nodes.map(node => renderDAGNode(node, pos[node.id], trace)).join("");
       $("graphStage").innerHTML = `<div class="flow-grid" style="width:${layout.width * GRAPH_SCALE}px;height:${layout.height * GRAPH_SCALE}px"><div style="position:relative;width:${layout.width}px;height:${layout.height}px;transform:scale(${GRAPH_SCALE});transform-origin:top left;">
         <svg class="dag-svg" width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}">
           <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="rgba(217, 119, 69, 0.55)" /></marker></defs>
           ${svgEdges}
         </svg>${nodeHtml}
-          <div class="side-lane-label left">long dependencies</div>
-          <div class="side-lane-label right">long dependencies</div>
         </div></div>`;
       document.querySelectorAll("[data-prov-id]").forEach(el => el.addEventListener("click", () => {
         state.selectedProvId = el.getAttribute("data-prov-id");
@@ -876,11 +1303,6 @@
       </article>`;
     }
 
-    function matchInsightsForNode(node, insights) {
-      const text = `${node.id} ${node.location || ""} ${node.description || ""} ${node.name || ""}`.toLowerCase();
-      return insights.filter(i => text.includes(String(i.source).toLowerCase()) || /report|final|result/.test(text) || text.includes(String(i.key).toLowerCase()));
-    }
-
     function findStepForProvNode(trace, provId) {
       const node = trace.prov.nodes[provId] || findMergedNodeById(buildProvDAGFlow(trace).nodes, provId);
       if (!node) return null;
@@ -895,30 +1317,37 @@
     function renderInspector(trace) {
       const provNode = state.selectedProvId ? (trace.prov.nodes[state.selectedProvId] || findMergedNodeById(buildProvDAGFlow(trace).nodes, state.selectedProvId)) : null;
       const step = state.selectedStepId ? trace.steps.find(s => s.id === state.selectedStepId) : trace.steps[0];
+      const artifact = findLlmArtifact(trace, { step, node: provNode });
+      const artifactKind = getArtifactKind(artifact);
       $("selectedLabel").textContent = provNode?.id || step?.id || "none";
-      const tabs = ["overview", "files", "code", "parameters", "prov", "insights"];
+      const tabs = artifactKind === "dataset" ? ["overview", "files", "chart", "parameters"] : ["overview", "files", "code", "parameters"];
+      if (!tabs.includes(state.activeTab)) state.activeTab = "overview";
       const tabHtml = tabs.map(tab => `<span class="tab ${state.activeTab === tab ? "active" : ""}" data-tab="${tab}">${tab}</span>`).join("");
       let body = "";
       if (state.activeTab === "overview") {
-        body = `<div class="detail"><h2>${escapeHtml(provNode?.description || provNode?.name || step?.name || "Selection")}</h2><p>${escapeHtml(step?.description || provNode?.location || "")}</p>
-          <div class="kv"><b>type</b><span>${escapeHtml(provNode ? `${provNode.type} / ${provNode.entity_type || provNode.activity_type || provNode.agent_type || ""}` : step?.operation)}</span></div>
-          <div class="kv"><b>timestamp</b><span>${escapeHtml(provNode?.timestamp || step?.timestamp || "unknown")}</span></div></div>`;
+        const title = provNode?.description || provNode?.name || step?.name || "Selection";
+        const summary = step?.description || provNode?.location || "";
+        const artifactOverview = formatArtifactOverview(artifact, artifactKind);
+        body = `<div class="detail"><h2>${escapeHtml(title)}</h2><p>${escapeHtml(summary)}</p>
+          ${artifactOverview || `<div class="kv"><b>type</b><span>${escapeHtml(provNode ? `${provNode.type} / ${provNode.entity_type || provNode.activity_type || provNode.agent_type || ""}` : step?.operation)}</span></div>
+          <div class="kv"><b>timestamp</b><span>${escapeHtml(provNode?.timestamp || step?.timestamp || "unknown")}</span></div>`}</div>`;
       } else if (state.activeTab === "files") {
         body = `<div class="kv"><b>input files</b>${(step?.inputFiles || []).map(f => `<span>${escapeHtml(baseName(f))}</span><br>`).join("") || "—"}</div>
           <div class="kv"><b>output files</b>${(step?.outputFiles || []).map(f => `<span>${escapeHtml(baseName(f))}</span><br>`).join("") || "—"}</div>`;
       } else if (state.activeTab === "code") {
         body = `<div class="kv"><b>code files</b>${(step?.codeFiles || []).map(f => `<span>${escapeHtml(f)}</span><br>`).join("") || "—"}</div>
+          <div class="kv"><b>algorithm_logic</b>${artifactKind === "script" ? formatAlgorithmLogic(artifact) : "—"}</div>
           <div class="kv"><b>commands</b>${(step?.commands || []).map(c => `<span>${escapeHtml(c)}</span><br>`).join("") || "—"}</div>
           <div class="kv"><b>generated snippets</b><pre>${escapeHtml((step?.codeGenerated || []).join("\n")) || "—"}</pre></div>`;
-      } else if (state.activeTab === "parameters") {
-        body = Object.entries(step?.parameters || {}).map(([key, value]) => `<div class="kv"><b>${escapeHtml(key)}</b><span>${escapeHtml(shortValue(value))}</span></div>`).join("") || "<p>No parameters recorded.</p>";
-      } else if (state.activeTab === "prov") {
-        const related = (trace.prov.edges || []).filter(e => e.from === provNode?.id || e.to === provNode?.id);
-        body = `<pre>${escapeHtml(JSON.stringify({ node: provNode, related_edges: related }, null, 2))}</pre>`;
+      } else if (state.activeTab === "chart") {
+        body = formatDatasetChart(artifact);
       } else {
-        body = trace.insights.map(i => `<div class="kv"><b>${escapeHtml(i.source)} · ${escapeHtml(i.key)}</b><span>${escapeHtml(i.value)}</span></div>`).join("") || "<p>No final report insights found.</p>";
+        body = Object.entries(step?.parameters || {}).map(([key, value]) => `<div class="kv"><b>${escapeHtml(key)}</b><span>${escapeHtml(shortValue(value))}</span></div>`).join("") || "<p>No parameters recorded.</p>";
       }
-      $("inspector").innerHTML = `<div class="tabs">${tabHtml}</div>${body}`;
+      $("inspector").innerHTML = `<div class="tabs">${tabHtml}<button class="inspector-toggle" id="inspectorToggle">${state.inspectorExpanded ? "Collapse" : "Expand"}</button></div>${body}`;
+      const toggle = $("inspectorToggle");
+      if (toggle) toggle.onclick = () => { state.inspectorExpanded = !state.inspectorExpanded; render(); };
+      if (state.activeTab === "chart" && artifactKind === "dataset") renderDatasetChart(artifact);
       document.querySelectorAll("[data-tab]").forEach(el => el.addEventListener("click", () => { state.activeTab = el.getAttribute("data-tab"); renderInspector(trace); }));
     }
 

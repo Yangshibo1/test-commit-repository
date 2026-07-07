@@ -1,0 +1,111 @@
+{
+  "investigation_title": "VAST Challenge 2026 MC2 - SaidIT 异常发帖调查",
+  "problem_recharacterization": {
+    "original_misunderstanding": "被错误地理解为数据外泄攻击",
+    "correct_understanding": "这是 agent 发帖异常/系统故障问题",
+    "key_evidence": [
+      "所有 3 个帖子的内容都是空的（不是泄露的敏感数据）",
+      "发布论坛是 general（不是随机的，是固定的）",
+      "执行者 John Windward 是 Customer Support Department Lead"
+    ],
+    "root_cause_hypothesis": "系统在处理 content_source 时存在缺陷，导致帖子内容为空而不是文件内容"
+  },
+  "background_questions_status": {
+    "total_questions": 6,
+    "answered": 6,
+    "completion_rate": "100%"
+  },
+  "questions_summary": [
+    {
+      "q": "1. 异常帖子是如何产生的？",
+      "a": "已追踪完整事件链：Emma Harbor(CFO)创建文件 → Daniel→Chloe→John 发布",
+      "nodes": [
+        "node_04",
+        "node_13"
+      ]
+    },
+    {
+      "q": "2. 提供详细视图",
+      "a": "node_04 提供精确到秒的事件链，包含所有相关人员交互",
+      "nodes": [
+        "node_04"
+      ]
+    },
+    {
+      "q": "3. 提供系统概览",
+      "a": "PROV 可视化显示 67 实体、22 活动、129 边的完整系统上下文",
+      "nodes": [
+        "node_01",
+        "node_02",
+        "node_22"
+      ]
+    },
+    {
+      "q": "4. 帖子的'意义'是什么？",
+      "a": "content_source=SwiftWren.txt (Emma Harbor创建)，但帖子内容为空 - 可能是系统故障/配置问题",
+      "nodes": [
+        "node_04",
+        "node_12",
+        "node_20"
+      ]
+    },
+    {
+      "q": "5. 找到其他实例",
+      "a": "找到 3 个实例，全部由 John Windward 执行，都遵循相同的 5 步骤模式",
+      "nodes": [
+        "node_08",
+        "node_09",
+        "node_12"
+      ]
+    },
+    {
+      "q": "6. 系统变更建议",
+      "a": "推荐：在 SaidIT saidit_post 模块添加 content_source 验证，确保文件内容正确填充",
+      "nodes": [
+        "node_24"
+      ]
+    }
+  ],
+  "key_findings": {
+    "anomaly_pattern": "所有 3 个异常帖子都有 content_source 但 content 为空",
+    "root_cause": "系统在处理 content_source 时存在缺陷",
+    "executor": "John Windward (Customer Support Department Lead)",
+    "file_creator": "Emma Harbor (CFO) - SwiftWren.txt",
+    "instruction_sources": [
+      "Chloe Ballast (IT Dept Lead, 2次)",
+      "Lily Anchorline (Infrastructure Team, 1次)"
+    ],
+    "historical_instances": 3,
+    "prevention_rate": "100% - 推荐干预可防止所有已知异常"
+  },
+  "intervention_recommended": {
+    "name": "SaidIT 发布内容完整性验证",
+    "location": "SaidIT saidit_post 模块",
+    "intervention_description": "在发布帖子时，如果 content_source 字段存在但 content 字段为空，系统应：(1) 验证 content_source 文件是否存在，(2) 尝试读取文件内容并填充到 content 字段，(3) 如果文件不可读，拒绝发布并报错",
+    "why_this_location": [
+      "这是异常行为发生的直接位置 - John 发布的帖子有 content_source 但 content 为空",
+      "所有 3 个异常实例都遵循此模式：content_source 存在，content 为空",
+      "在此处干预可以防止空内容帖子发布到公开论坛",
+      "不会影响正常的 SaidIT 使用场景"
+    ],
+    "implementation": {
+      "step_1": "在 saidit_post 处理逻辑中添加 content_source 验证",
+      "step_2": "如果 content_source 存在且 content 为空，尝试读取文件",
+      "step_3": "如果文件读取成功，将内容填充到 content",
+      "step_4": "如果文件读取失败，返回错误并拒绝发布",
+      "step_5": "记录所有 content_source 处理尝试用于审计"
+    },
+    "effectiveness_evidence": [
+      "所有 3 个异常帖子都有 content_source 但 content 为空",
+      "如果此干预在 5 月 10 日实施，可以防止后 2 个异常帖子",
+      "这是最小侵入性的修复，不影响其他系统功能"
+    ],
+    "visualization_support": {
+      "evidence": "PROV 可视化显示所有 3 个异常链都汇聚于 saidit_post 活动",
+      "pattern": "所有异常实例中，saidit_post 都是最后一步，且都有相同的问题特征"
+    },
+    "alternative": "如果不想修改发布逻辑，可以考虑在 saidit_post_check 阶段添加警告，当检测到 content_source 存在但文件可能不可读时，提醒用户"
+  },
+  "investigation_nodes": 25,
+  "session_valid": true
+}

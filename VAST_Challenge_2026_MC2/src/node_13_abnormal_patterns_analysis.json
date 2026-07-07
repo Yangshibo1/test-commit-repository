@@ -1,0 +1,210 @@
+{
+  "node_id": "node_13",
+  "operation": "analyze_three_abnormal_posting_patterns",
+  "generated_at": "2026-07-07 09:52:17.601423",
+  "session_id": "session_20260630_172421",
+  "three_abnormal_posts": [
+    {
+      "content_source": "HiddenOrca.txt",
+      "datetime": "2046-05-10 20:45:42",
+      "file_creator": null,
+      "related_instruction_count": 39
+    },
+    {
+      "content_source": "MellowOtter.txt",
+      "datetime": "2046-05-11 08:56:04",
+      "file_creator": null,
+      "related_instruction_count": 10
+    },
+    {
+      "content_source": "SwiftWren.txt",
+      "datetime": "2046-05-17 19:21:15",
+      "file_creator": null,
+      "related_instruction_count": 186
+    }
+  ],
+  "pattern_analysis": {
+    "commonalities": [
+      "所有异常帖子都发布在 general 论坛"
+    ],
+    "unique_creators": [],
+    "all_in_general_forum": true
+  },
+  "detailed_patterns": [
+    {
+      "post": {
+        "id": 27290,
+        "short_name": "saidit_post",
+        "when": 2409569142.0,
+        "datetime": "2046-05-10 20:45:42",
+        "parties": [
+          "Agent/person:john_windward",
+          "system:saidit"
+        ],
+        "details": {
+          "forum": "general",
+          "content_source": "HiddenOrca.txt"
+        },
+        "content_source": "HiddenOrca.txt",
+        "forum": "general",
+        "is_abnormal": true
+      },
+      "content_source": "HiddenOrca.txt",
+      "post_datetime": "2046-05-10 20:45:42",
+      "window_event_count": 5,
+      "window_events_summary": [
+        {
+          "id": 27280,
+          "short_name": "queue_subordinate_task",
+          "datetime": "2046-05-10 20:45:40"
+        },
+        {
+          "id": 27283,
+          "short_name": "saidit_post_check",
+          "datetime": "2046-05-10 20:45:41"
+        },
+        {
+          "id": 27290,
+          "short_name": "saidit_post",
+          "datetime": "2046-05-10 20:45:42"
+        },
+        {
+          "id": 27296,
+          "short_name": "delete_file",
+          "datetime": "2046-05-10 20:45:43"
+        },
+        {
+          "id": 27302,
+          "short_name": "delete_file",
+          "datetime": "2046-05-10 20:45:44"
+        }
+      ],
+      "source_create_event": null,
+      "instruction_chain_length": 40,
+      "related_instruction_events": 39,
+      "file_creator": null,
+      "key_parties_in_window": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:john_windward"
+      ]
+    },
+    {
+      "post": {
+        "id": 98591,
+        "short_name": "saidit_post",
+        "when": 2409612964.0,
+        "datetime": "2046-05-11 08:56:04",
+        "parties": [
+          "Agent/person:john_windward",
+          "system:saidit"
+        ],
+        "details": {
+          "forum": "general",
+          "content_source": "MellowOtter.txt"
+        },
+        "content_source": "MellowOtter.txt",
+        "forum": "general",
+        "is_abnormal": true
+      },
+      "content_source": "MellowOtter.txt",
+      "post_datetime": "2046-05-11 08:56:04",
+      "window_event_count": 5,
+      "window_events_summary": [
+        {
+          "id": 98577,
+          "short_name": "queue_subordinate_task",
+          "datetime": "2046-05-11 08:56:02"
+        },
+        {
+          "id": 98582,
+          "short_name": "saidit_post_check",
+          "datetime": "2046-05-11 08:56:03"
+        },
+        {
+          "id": 98591,
+          "short_name": "saidit_post",
+          "datetime": "2046-05-11 08:56:04"
+        },
+        {
+          "id": 98602,
+          "short_name": "delete_file",
+          "datetime": "2046-05-11 08:56:05"
+        },
+        {
+          "id": 98613,
+          "short_name": "delete_file",
+          "datetime": "2046-05-11 08:56:06"
+        }
+      ],
+      "source_create_event": null,
+      "instruction_chain_length": 13,
+      "related_instruction_events": 10,
+      "file_creator": null,
+      "key_parties_in_window": [
+        "Agent/person:john_windward",
+        "Agent/person:lily_anchorline"
+      ]
+    },
+    {
+      "post": {
+        "id": 373902,
+        "short_name": "saidit_post",
+        "when": 2410168875.0,
+        "datetime": "2046-05-17 19:21:15",
+        "parties": [
+          "Agent/person:john_windward",
+          "system:saidit"
+        ],
+        "details": {
+          "forum": "general",
+          "content_source": "SwiftWren.txt"
+        },
+        "content_source": "SwiftWren.txt",
+        "forum": "general",
+        "is_abnormal": true
+      },
+      "content_source": "SwiftWren.txt",
+      "post_datetime": "2046-05-17 19:21:15",
+      "window_event_count": 5,
+      "window_events_summary": [
+        {
+          "id": 373893,
+          "short_name": "queue_subordinate_task",
+          "datetime": "2046-05-17 19:21:13"
+        },
+        {
+          "id": 373899,
+          "short_name": "saidit_post_check",
+          "datetime": "2046-05-17 19:21:14"
+        },
+        {
+          "id": 373902,
+          "short_name": "saidit_post",
+          "datetime": "2046-05-17 19:21:15"
+        },
+        {
+          "id": 373909,
+          "short_name": "delete_file",
+          "datetime": "2046-05-17 19:21:16"
+        },
+        {
+          "id": 373913,
+          "short_name": "delete_file",
+          "datetime": "2046-05-17 19:21:17"
+        }
+      ],
+      "source_create_event": null,
+      "instruction_chain_length": 189,
+      "related_instruction_events": 186,
+      "file_creator": null,
+      "key_parties_in_window": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:john_windward"
+      ]
+    }
+  ],
+  "observation": {
+    "summary": "已分析 John Windward 三次异常发帖的模式和上下文",
+    "next_decision": "需要进一步分析每次发帖的传播路径差异"
+  }
+}

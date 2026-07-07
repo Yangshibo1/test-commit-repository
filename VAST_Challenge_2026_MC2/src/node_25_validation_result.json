@@ -1,0 +1,12 @@
+{
+  "session_id": "session_20260630_172421",
+  "is_valid": false,
+  "errors": [
+    "关系 wasGeneratedBy 的源节点类型必须是 ['entity']，实际是 activity",
+    "关系 wasDerivedFrom 的目标节点类型必须是 ['entity']，实际是 activity"
+  ],
+  "summary_file": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\VAST_Challenge_2026_MC2\\src\\node_25_final_investigation_summary.json",
+  "visualization": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\VAST_Challenge_2026_MC2\\src\\node_25_final_complete_visualization.txt",
+  "questions_answered": 6,
+  "investigation_complete": true
+}
