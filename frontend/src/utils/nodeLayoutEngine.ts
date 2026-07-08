@@ -261,7 +261,7 @@ export function createDAGPages(
   const {
     nodeWidth = 220,
     rowHeight = 140,
-    nodeGap = 96,
+    nodeGap: _nodeGap = 96,  // Passed to createNodeLayout
     rowGap = 40,
   } = options;
 
@@ -424,7 +424,7 @@ export function createDAGPages(
   // but is not in the current split itself
   const nodesToCopyForSplit: Set<string>[] = [];
 
-  splitRanges.forEach((range, splitIndex) => {
+  splitRanges.forEach((range, _splitIndex) => {
     const nodesInCurrentSplit = new Set(
       allNodes.slice(range.start, range.end).map(n => n.node.id)
     );
@@ -473,7 +473,7 @@ export function createDAGPages(
     const nodesForPage: ProvNode[] = [];
     const nodeIdToIndex = new Map<string, number>();
 
-    allNodes.forEach((item, index) => {
+    allNodes.forEach((item, _index) => {
       if (allNodeIdsForPage.has(item.node.id)) {
         nodesForPage.push(item.node);
         nodeIdToIndex.set(item.node.id, nodesForPage.length - 1);

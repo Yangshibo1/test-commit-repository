@@ -13,14 +13,12 @@ const CustomEdge = ({
   id,
   label,
   data,
-  selected,
   markerEnd,
   sourceX,
   sourceY,
   targetX,
   targetY,
   sourcePosition,
-  targetPosition,
   style,
 }: EdgeProps<CustomEdgeData>) => {
   const edgeData = data as CustomEdgeData;
