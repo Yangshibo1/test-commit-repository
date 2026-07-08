@@ -16,11 +16,44 @@ const CustomNode = ({ data, selected }: NodeProps<CustomNodeData>) => {
   const provNode = nodeData.provNode as ProvNode;
   const nodeType = provNode?.type || 'default';
 
+  // 获取更细粒度的节点分类用于颜色区分
+  const getNodeCategory = (): string => {
+    // 检查是否为 Code 节点（Python 脚本 - Agent 节点）
+    if (nodeType === 'agent') {
+      return 'code';
+    }
+
+    // 检查是否为 Report 节点（报告或可视化）
+    const location = provNode?.location || '';
+    if (nodeType === 'entity') {
+      // 扩展 report 匹配模式，包含更多 report 相关关键词
+      if (location.match(/(final_report|visualization|validation_result|analysis_report|investigation_report|\.txt$|report\.json)/i)) {
+        return 'report';
+      }
+    }
+
+    // 其他 Entity 都是 Dataset
+    if (nodeType === 'entity') {
+      return 'dataset';
+    }
+
+    return 'other';
+  };
+
   const getBorderColor = () => {
-    if (nodeType === 'entity') return 'border-l-4 border-green-600';
-    if (nodeType === 'activity') return 'border-l-4 border-amber-600';
-    if (nodeType === 'agent') return 'border-l-4 border-violet-600';
-    return 'border-l-4 border-gray-400';
+    const category = getNodeCategory();
+
+    // Code: 蓝紫色边框
+    if (category === 'code') return 'border-l-4 border-[#8b5cf6] border-2 border-[#8b5cf6]';
+
+    // Dataset: 绿色边框
+    if (category === 'dataset') return 'border-l-4 border-[#10b981] border-2 border-[#10b981]';
+
+    // Report: 橙红色边框
+    if (category === 'report') return 'border-l-4 border-[#f97316] border-2 border-[#f97316]';
+
+    // Other: 灰色边框
+    return 'border-l-4 border-gray-400 border-2 border-gray-400';
   };
 
   const getSubtype = () => {

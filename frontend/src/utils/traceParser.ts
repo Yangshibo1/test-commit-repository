@@ -1,4 +1,4 @@
-import { ProvNode, ProvEdge, SessionFiles, TraceData, LlmArtifact, StepDetail } from '../types';
+import { ProvNode, ProvEdge, SessionFiles, TraceData, LlmArtifact, StepDetail, ArtifactMatchResult } from '../types';
 
 const REQUIRED_FILES = ['step_details.json', 'prov_nodes.json', 'prov_edges.json', 'prov_dag.json'];
 
@@ -72,10 +72,21 @@ function collectLlmArtifacts(files: SessionFiles): Record<string, LlmArtifact> {
 }
 
 function artifactBaseName(name: string): string {
-  return (name || '')
+  if (!name) return '';
+
+  // Step 1: 提取文件名（去除路径）
+  const fileName = name.split(/[\\/]/).pop() || name;
+
+  // Step 2: 去除已知的扩展名
+  let result = fileName
     .replace(/\.analysis\.json$/i, '')
-    .replace(/\.(py|json|txt)$/i, '')
+    .replace(/\.json$/i, '')
+    .replace(/\.py$/i, '')
+    .replace(/\.txt$/i, '')
     .toLowerCase();
+
+  console.log(`[artifactBaseName] Input: "${name}" -> FileName: "${fileName}" -> Result: "${result}"`);
+  return result;
 }
 
 function checkConsistency(files: SessionFiles, steps: StepDetail[], meta: Record<string, unknown>): { ok: boolean; warnings: string[] } {
@@ -89,36 +100,148 @@ function checkConsistency(files: SessionFiles, steps: StepDetail[], meta: Record
 }
 
 export function findLlmArtifact(trace: TraceData, options: { step?: StepDetail; node?: ProvNode }): LlmArtifact | null {
+  const result = findLlmArtifactWithDiagnostics(trace, options);
+  return result.artifact;
+}
+
+export function findLlmArtifactWithDiagnostics(trace: TraceData, options: { step?: StepDetail; node?: ProvNode }): ArtifactMatchResult {
   const artifacts = trace.llmArtifacts || {};
-  const candidates: string[] = [];
+  const artifactKeys = Object.keys(artifacts);
 
-  const pushCandidate = (value: string | undefined) => {
-    if (!value) return;
-    const key = artifactBaseName(value);
-    if (key) candidates.push(key);
+  // 简化匹配逻辑：只使用节点的 location 或 name 字段进行精确匹配
+  // 不使用 step_id 或其他字段，避免误匹配
+  let matchKey: string | null = null;
+
+  if (options.node) {
+    // 优先使用 location（Entity 节点的文件路径）
+    if (options.node.location) {
+      matchKey = artifactBaseName(options.node.location);
+      console.log(`[ArtifactMatch] Trying location: "${options.node.location}" -> "${matchKey}"`);
+    }
+    // 如果没有 location，使用 name（Agent 节点的名称）
+    if (!matchKey && options.node.name) {
+      matchKey = artifactBaseName(options.node.name);
+      console.log(`[ArtifactMatch] Trying name: "${options.node.name}" -> "${matchKey}"`);
+    }
+  }
+
+  if (matchKey && artifacts[matchKey]) {
+    console.log(`[ArtifactMatch] Exact match: "${matchKey}" -> artifact`);
+    return {
+      artifact: artifacts[matchKey],
+      matchedKey: matchKey,
+      candidates: [matchKey],
+      matchType: 'exact',
+      similarityScore: 1.0
+    };
+  }
+
+  console.log(`[ArtifactMatch] No match found. Tried: "${matchKey}"`);
+  console.log(`[ArtifactMatch] Available artifacts:`, artifactKeys);
+
+  return {
+    artifact: null,
+    matchedKey: null,
+    candidates: matchKey ? [matchKey] : [],
+    matchType: 'none'
   };
+}
 
-  pushCandidate(options.node?.location);
-  pushCandidate(options.node?.name);
-  pushCandidate(options.node?.description);
-  for (const file of options.step?.code_files || []) pushCandidate(file);
-  for (const file of options.step?.output_files || []) pushCandidate(file);
-  for (const file of options.step?.input_files || []) pushCandidate(file);
-  pushCandidate(options.step?.name);
-  pushCandidate(options.step?.step_id);
+/**
+ * 计算两个字符串的相似度
+ * 返回 0-1 之间的值，1 表示完全匹配
+ */
+function calculateSimilarity(a: string, b: string): number {
+  // 精确匹配
+  if (a === b) return 1.0;
 
-  for (const key of candidates) {
-    if (artifacts[key]) return artifacts[key];
+  // 前缀匹配 (node_01 匹配 node_01_load_data)
+  const [shorter, longer] = a.length < b.length ? [a, b] : [b, a];
+  if (longer.startsWith(shorter) && shorter.length > 3) {
+    // 短字符串至少有 3 个字符且是长字符串的前缀
+    const lengthRatio = shorter.length / longer.length;
+    // 只有当短字符串长度超过长字符串的 40% 时才匹配
+    // 避免 "node_12" 匹配 "node_12_analyze_john_all_posts" (7/27 ≈ 26%)
+    if (lengthRatio >= 0.4) {
+      return 0.85 + lengthRatio * 0.15; // 0.91-1.0
+    }
   }
 
-  for (const key of candidates) {
-    const foundKey = Object.keys(artifacts).find((artifactKey) =>
-      key && (artifactKey.includes(key) || key.includes(artifactKey))
-    );
-    if (foundKey) return artifacts[foundKey];
+  // 后缀匹配
+  if (longer.endsWith(shorter) && shorter.length > 3) {
+    const lengthRatio = shorter.length / longer.length;
+    // 同样需要长度比例 >= 40%
+    if (lengthRatio >= 0.4) {
+      return 0.85 + lengthRatio * 0.15;
+    }
   }
 
-  return null;
+  // 包含匹配 (更严格的条件)
+  if (longer.includes(shorter) && shorter.length > 4) {
+    // 只有当短字符串长度合理且不是单个词时才匹配
+    const lengthRatio = shorter.length / longer.length;
+    if (lengthRatio > 0.2) { // 至少占长字符串的 20%
+      return 0.7 + lengthRatio * 0.1; // 0.72-0.8
+    }
+  }
+
+  // 词重叠匹配 (node_01_xxx 和 node_01_yyy 应该有较高相似度)
+  const aWords = a.split(/[_-]/).filter(w => w.length > 1);
+  const bWords = b.split(/[_-]/).filter(w => w.length > 1);
+
+  if (aWords.length > 0 && bWords.length > 0) {
+    const commonWords = aWords.filter(w => bWords.includes(w));
+    const overlapRatio = commonWords.length / Math.max(aWords.length, bWords.length);
+
+    if (overlapRatio > 0) {
+      // 需要至少有 30% 的词重叠才匹配
+      if (overlapRatio >= 0.3) {
+        return 0.5 + overlapRatio * 0.3; // 0.59-0.8
+      }
+    }
+  }
+
+  // 编辑距离匹配 (对于非常相似但有拼写错误的情况)
+  const maxLen = Math.max(a.length, b.length);
+  if (maxLen > 0) {
+    const editDist = levenshteinDistance(a, b);
+    const editSimilarity = 1 - editDist / maxLen;
+    // 更严格的编辑距离阈值：需要 > 75% 相似度
+    if (editSimilarity > 0.75) return editSimilarity * 0.5; // 0.375-0.5
+  }
+
+  return 0;
+}
+
+/**
+ * 计算 Levenshtein 编辑距离
+ */
+function levenshteinDistance(a: string, b: string): number {
+  const matrix: number[][] = [];
+
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1      // deletion
+        );
+      }
+    }
+  }
+
+  return matrix[b.length][a.length];
 }
 
 export function baseName(path: string): string {

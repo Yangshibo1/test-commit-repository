@@ -54,11 +54,9 @@ const TraceGraph = forwardRef<TraceGraphRef, TraceGraphProps>(({ provNodes, prov
   // Page and fullscreen state
   const [currentPage, setCurrentPage] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null);
 
-  // Track if mouse was dragged (to distinguish from click)
-  const isDraggingRef = useRef(false);
-  const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
+  // Highlight state tracking (using ref to avoid unused variable warning)
+  const highlightedNodeIdRef = useRef<string | null>(null);
 
   // Refs for state values to access in useImperativeHandle
   const currentPageRef = useRef(currentPage);
@@ -109,63 +107,61 @@ const TraceGraph = forwardRef<TraceGraphRef, TraceGraphProps>(({ provNodes, prov
     const currentEdges = edgesRef.current;
 
     // Toggle highlight state
-    setHighlightedNodeId(prev => {
-      const newId = prev === nodeId ? null : nodeId;
+    const prevId = highlightedNodeIdRef.current;
+    const newId = prevId === nodeId ? null : nodeId;
+    highlightedNodeIdRef.current = newId;
 
-      // Update node and edge styles immediately
-      if (newId) {
-        const relatedNodeIds = new Set([newId]);
-        currentEdges.forEach(edge => {
-          if (edge.source === newId) relatedNodeIds.add(edge.target);
-          if (edge.target === newId) relatedNodeIds.add(edge.source);
-        });
+    // Update node and edge styles immediately
+    if (newId) {
+      const relatedNodeIds = new Set([newId]);
+      currentEdges.forEach(edge => {
+        if (edge.source === newId) relatedNodeIds.add(edge.target);
+        if (edge.target === newId) relatedNodeIds.add(edge.source);
+      });
 
-        setNodes(currentNodes =>
-          currentNodes.map(n => ({
-            ...n,
-            style: {
-              ...n.style,
-              opacity: relatedNodeIds.has(n.id) ? 1 : 0.3,
-            },
-          }))
-        );
+      setNodes(currentNodes =>
+        currentNodes.map(n => ({
+          ...n,
+          style: {
+            ...n.style,
+            opacity: relatedNodeIds.has(n.id) ? 1 : 0.3,
+          },
+        }))
+      );
 
-        setEdges(currentEdges =>
-          currentEdges.map(edge => {
-            const isRelated = edge.source === newId || edge.target === newId;
-            return {
-              ...edge,
-              style: {
-                ...edge.style,
-                opacity: isRelated ? 1 : 0.15,
-                stroke: isRelated ? '#d97745' : '#a8a29e',
-                strokeWidth: isRelated ? 2.5 : 1.5,
-              },
-            };
-          })
-        );
-      } else {
-        setNodes(currentNodes =>
-          currentNodes.map(n => ({
-            ...n,
-            style: { ...n.style, opacity: 1 },
-          }))
-        );
-        setEdges(currentEdges =>
-          currentEdges.map(edge => ({
+      setEdges(currentEdges =>
+        currentEdges.map(edge => {
+          const isRelated = edge.source === newId || edge.target === newId;
+          return {
             ...edge,
             style: {
               ...edge.style,
-              opacity: 1,
-              stroke: '#a8a29e',
-              strokeWidth: 1.5,
+              opacity: isRelated ? 1 : 0.15,
+              stroke: isRelated ? '#d97745' : '#a8a29e',
+              strokeWidth: isRelated ? 2.5 : 1.5,
             },
-          }))
-        );
-      }
-
-      return newId;
-    });
+          };
+        })
+      );
+    } else {
+      setNodes(currentNodes =>
+        currentNodes.map(n => ({
+          ...n,
+          style: { ...n.style, opacity: 1 },
+        }))
+      );
+      setEdges(currentEdges =>
+        currentEdges.map(edge => ({
+          ...edge,
+          style: {
+            ...edge.style,
+            opacity: 1,
+            stroke: '#a8a29e',
+            strokeWidth: 1.5,
+          },
+        }))
+      );
+    }
 
     // Update Inspector immediately
     if (onNodeClickRef.current) {
@@ -190,20 +186,8 @@ const TraceGraph = forwardRef<TraceGraphRef, TraceGraphProps>(({ provNodes, prov
     nodesRef.current = nodesWithCallback;
     edgesRef.current = currentPageData.edges;
 
-    setHighlightedNodeId(null); // Reset highlight when page changes
+    highlightedNodeIdRef.current = null; // Reset highlight when page changes
   }, [currentPage, currentPageData, setNodes, setEdges, handleNodeDirectClick]);
-
-  const handleZoomIn = useCallback(() => {
-    if (reactFlowInstance.current) {
-      reactFlowInstance.current.zoomIn();
-    }
-  }, []);
-
-  const handleZoomOut = useCallback(() => {
-    if (reactFlowInstance.current) {
-      reactFlowInstance.current.zoomOut();
-    }
-  }, []);
 
   const goToPage = useCallback((page: number) => {
     const newPage = Math.max(0, Math.min(totalPages - 1, page));
@@ -247,8 +231,8 @@ const TraceGraph = forwardRef<TraceGraphRef, TraceGraphProps>(({ provNodes, prov
   }), []);
 
   const containerClass = isFullscreen
-    ? 'fixed inset-0 z-50 bg-[#fffaf5]'
-    : 'w-full h-full bg-[#fffaf5]';
+    ? 'fixed inset-0 z-50 bg-[#fffaf5] overflow-y-auto'
+    : 'w-full h-full bg-[#fffaf5] overflow-y-auto';
 
   return (
     <div className={containerClass}>
@@ -323,26 +307,10 @@ const TraceGraph = forwardRef<TraceGraphRef, TraceGraphProps>(({ provNodes, prov
           className="!bg-[rgba(255,255,255,0.8)]"
           nodeColor="#d97745"
           maskColor="rgba(217,119,69,0.1)"
+          pannable
+          zoomable
         />
       </ReactFlow>
-
-      {/* Custom Zoom Controls (hidden in fullscreen) */}
-      {!isFullscreen && (
-        <div className="absolute bottom-4 right-4 flex gap-2 z-10">
-          <button
-            onClick={handleZoomOut}
-            className="px-3 py-1 rounded-lg border border-[rgba(184,165,143,0.58)] bg-[rgba(255,255,255,0.9)] text-sm font-mono hover:border-accent transition-colors"
-          >
-            −
-          </button>
-          <button
-            onClick={handleZoomIn}
-            className="px-3 py-1 rounded-lg border border-[rgba(184,165,143,0.58)] bg-[rgba(255,255,255,0.9)] text-sm font-mono hover:border-accent transition-colors"
-          >
-            +
-          </button>
-        </div>
-      )}
     </div>
   );
 });

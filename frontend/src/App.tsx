@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import TraceGraph, { TraceGraphRef } from './components/TraceGraph';
 import Timeline from './components/Timeline';
 import Inspector from './components/Inspector';
@@ -16,38 +16,59 @@ function App() {
   const traceGraphRef = useRef<TraceGraphRef>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [inspectorExpanded, setInspectorExpanded] = useState(false);
 
   const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
-    const loaded: SessionFiles = {};
+    setIsLoading(true);
+    setLoadError(null);
 
-    for (const file of files) {
-      // 使用文件名（不含路径）作为键名
-      const name = file.name;
-      if (!name.endsWith('.json')) continue;
-      if (name === 'working_data.json') continue;
+    try {
+      const loaded: SessionFiles = {};
+      let fileCount = 0;
 
-      try {
-        const text = await file.text();
-        loaded[name] = JSON.parse(text);
-        console.log(`Loaded file: ${name}`);
-      } catch (error) {
-        console.error(`Failed to parse ${name}:`, error);
+      for (const file of files) {
+        // 使用文件名（不含路径）作为键名
+        const name = file.name;
+        if (!name.endsWith('.json')) continue;
+        if (name === 'working_data.json') continue;
+
+        try {
+          const text = await file.text();
+          loaded[name] = JSON.parse(text);
+          fileCount++;
+          console.log(`Loaded file: ${name}`);
+        } catch (error) {
+          console.error(`Failed to parse ${name}:`, error);
+        }
       }
-    }
 
-    console.log('Total files loaded:', Object.keys(loaded).length);
-    console.log('File keys:', Object.keys(loaded));
+      console.log('Total files loaded:', fileCount);
+      console.log('File keys:', Object.keys(loaded));
 
-    const parsed = parseSessionFiles(loaded);
-    if (parsed) {
-      setTrace(parsed);
-      setSelectedStepId(parsed.steps[0]?.step_id || null);
-      setSelectedProvId(null);
-    } else {
-      console.error('Failed to parse session files');
+      if (fileCount === 0) {
+        setLoadError('No valid JSON files found. Please select a session folder with JSON files.');
+        setIsLoading(false);
+        return;
+      }
+
+      const parsed = parseSessionFiles(loaded);
+      if (parsed) {
+        setTrace(parsed);
+        setSelectedStepId(parsed.steps[0]?.step_id || null);
+        setSelectedProvId(null);
+      } else {
+        setLoadError('Failed to parse session files. Please check the file format.');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      setLoadError(`Error loading files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -93,7 +114,15 @@ function App() {
   const selectedStep = trace?.steps.find((s) => s.step_id === selectedStepId);
   const selectedProvNode = trace?.prov.nodes[selectedProvId || ''];
 
-  const flow = trace ? buildProvDAGFlow(trace) : { nodes: [], edges: [] };
+  const flow = useMemo(() => {
+    if (!trace) return { nodes: [], edges: [] };
+    try {
+      return buildProvDAGFlow(trace);
+    } catch (error) {
+      console.error('buildProvDAGFlow error:', error);
+      return { nodes: [], edges: [] };
+    }
+  }, [trace]);
 
   const selectedContext = trace ? {
     opentrace_session: trace.sessionId,
@@ -146,9 +175,10 @@ function App() {
               const input = document.getElementById('fileInput') as HTMLInputElement;
               input?.click();
             }}
-            className="px-3.5 py-2.5 rounded-full border border-[rgba(217,119,69,0.28)] text-ink bg-[rgba(255,255,255,0.9)] text-xs font-mono cursor-pointer hover:border-accent transition-all shadow-[0_8px_20px_rgba(76,55,32,0.06)] hover:-translate-y-px"
+            disabled={isLoading}
+            className="px-3.5 py-2.5 rounded-full border border-[rgba(217,119,69,0.28)] text-ink bg-[rgba(255,255,255,0.9)] text-xs font-mono cursor-pointer hover:border-accent transition-all shadow-[0_8px_20px_rgba(76,55,32,0.06)] hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Load session folder
+            {isLoading ? 'Loading...' : 'Load session folder'}
           </button>
           <input
             id="fileInput"
@@ -176,7 +206,10 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <section className="flex-1 grid grid-cols-[320px_minmax(620px,1fr)_400px] gap-3.5 p-3.5 min-h-0">
+      <section className={inspectorExpanded
+        ? "flex-1 grid grid-cols-[320px_1fr] gap-3.5 p-3.5 min-h-0"
+        : "flex-1 grid grid-cols-[320px_minmax(620px,1fr)_400px] gap-3.5 p-3.5 min-h-0"
+      }>
         {/* Timeline */}
         <aside className="min-h-0 border border-[rgba(184,165,143,0.48)] rounded-3xl bg-panel shadow-lg overflow-hidden backdrop-blur-2xl">
           <div className="h-12 flex items-center px-4 border-b border-[rgba(184,165,143,0.38)] text-accent font-mono text-xs uppercase tracking-wider bg-[rgba(255,255,255,0.42)]">
@@ -188,6 +221,15 @@ function App() {
               selectedStepId={selectedStepId || undefined}
               onStepSelect={handleStepSelect}
             />
+          ) : loadError ? (
+            <div className="h-full flex flex-col items-center justify-center text-red-600 text-sm p-8 text-center">
+              <p className="mb-2">Error loading session:</p>
+              <p className="text-muted">{loadError}</p>
+            </div>
+          ) : isLoading ? (
+            <div className="h-full flex items-center justify-center text-accent text-sm p-8 text-center">
+              Loading session files...
+            </div>
           ) : (
             <div className="h-full flex items-center justify-center text-muted text-sm p-8 text-center">
               Select a complete OpenTrace session folder, the page will automatically read the required JSON files.
@@ -196,6 +238,7 @@ function App() {
         </aside>
 
         {/* Graph + Funnel */}
+        {!inspectorExpanded && (
         <section className="min-h-0 grid grid-rows-[124px_1fr] gap-3.5">
           {/* Funnel */}
           <div className="grid grid-cols-4 gap-2.5 p-3.5 border border-[rgba(184,165,143,0.42)] rounded-3xl bg-[rgba(255,255,255,0.7)]">
@@ -281,13 +324,19 @@ function App() {
             )}
           </div>
         </section>
+        )}
 
         {/* Inspector */}
-        <aside className="min-h-0 border border-[rgba(184,165,143,0.48)] rounded-3xl bg-panel shadow-lg overflow-hidden backdrop-blur-2xl">
+        <aside className={inspectorExpanded
+          ? "min-h-0 border border-[rgba(184,165,143,0.48)] rounded-3xl bg-panel shadow-lg overflow-hidden backdrop-blur-2xl col-span-1"
+          : "min-h-0 border border-[rgba(184,165,143,0.48)] rounded-3xl bg-panel shadow-lg overflow-hidden backdrop-blur-2xl"
+        }>
           <Inspector
             selectedProvNode={selectedProvNode}
             selectedStep={selectedStep}
             trace={trace || undefined}
+            isExpanded={inspectorExpanded}
+            onToggleExpand={() => setInspectorExpanded(prev => !prev)}
           />
         </aside>
       </section>

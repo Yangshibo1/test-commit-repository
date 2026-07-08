@@ -1,4 +1,12 @@
 // OpenTrace PROV Types
+export interface ArtifactMatchResult {
+  artifact: LlmArtifact | null;
+  matchedKey: string | null;
+  candidates: string[];
+  matchType: 'exact' | 'fuzzy' | 'none';
+  similarityScore?: number;
+}
+
 export interface ProvNode {
   id: string;
   type: 'entity' | 'activity' | 'agent';
@@ -124,7 +132,12 @@ export interface FlowEdge {
   type?: string;
   animated?: boolean;
   style?: React.CSSProperties;
+  sourceHandle?: string;
+  targetHandle?: string;
   data?: {
     relation: string;
+    isSequential?: boolean;
+    sourceRow?: number;
+    targetRow?: number;
   };
 }
