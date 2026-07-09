@@ -1,0 +1,19 @@
+{
+  "algorithm_purpose": "比较多次 SwiftWren 指令任务后的短时间行为结果，判断为什么只有 John Windward 最终发出了异常 SaidIT 帖子。",
+  "algorithm_logic": [
+    "将相似实例定义为与 `SwiftWren_further_instructions.md` 指令传播相关的 `queue_subordinate_task` 任务，并以这些任务作为比较对象。",
+    "对每条指令任务，以任务发生时间为起点，分别建立两个观察窗口：后续 2 分钟用于判断是否出现直接响应行为，后续 30 分钟用于判断是否存在较晚的 SaidIT 发帖行为。",
+    "目标人员匹配采用文本包含规则：将事件内容整体转为文本后，与标准化后的目标人员名称进行不区分大小写的包含匹配，用于判断某个事件是否与该目标人员相关。",
+    "SaidIT 发布检查行为的判定条件是：事件发生在指令任务后 2 分钟内、与目标人员相关，并且 `short_name` 等于 `saidit_post_check`。",
+    "SwiftWren 异常发帖的判定条件是：事件发生在指令任务后 2 分钟内、与目标人员相关，`short_name` 为 `saidit_post` 或 `post_saidit`，并且事件详情中包含 `content_source`，即 `SwiftWren.txt`。",
+    "其他 SaidIT 发帖行为的判定条件是：事件发生在指令任务后 30 分钟内、与目标人员相关，并且 `short_name` 为 `saidit_post` 或 `post_saidit`，不要求内容来源为 `SwiftWren.txt`。",
+    "指令读取证据的判定条件是：事件发生在指令任务后 2 分钟内、与目标人员相关，`short_name` 等于 `read_file`，并且事件详情中包含指令文件名 `SwiftWren_further_instructions.md`。",
+    "源文件删除证据的判定条件是：事件发生在指令任务后 2 分钟内、与目标人员相关，`short_name` 等于 `delete_file`，并且事件详情中包含 `SwiftWren.txt` 或 `SwiftWren_further_instructions.md`。",
+    "每条指令任务按优先级归类结果：若 2 分钟内出现 SwiftWren 异常发帖，则标记为 `swiftwren_posted`；否则若 2 分钟内出现 SaidIT 发布检查，则标记为 `checked_saidit_but_no_swiftwren_post`；否则若 30 分钟内出现其他 SaidIT 发帖，则标记为 `posted_other_saidit_content_within_30m`；否则标记为 `no_saidit_post_attempt_observed`。",
+    "按目标人员聚合统计每个人收到的指令次数、各类结果数量、来源 agent 分布、成功任务 ID、出现发布检查的任务 ID，以及首次和末次指令时间。",
+    "以目标异常帖子的时间为基准，计算每条指令任务与目标帖子的时间差，并区分目标帖子之前和之后发生的指令任务，用于判断哪些实例可能是异常发布前的相关尝试。",
+    "对成功发出 SwiftWren 帖子的任务，按事件时间排序整理关键证据链，只保留指令读取、SaidIT 发布检查、SwiftWren 发帖和源文件删除这些与结论直接相关的事件。",
+    "最终结论依据是：只有 John Windward 对应的指令任务在 2 分钟窗口内形成了 `读取指令 -> SaidIT 发布检查 -> 发布 SwiftWren.txt 内容 -> 删除相关文件` 的完整链条；其他目标人员虽然存在相似指令传播，但没有形成相同的异常发帖结果。"
+  ],
+  "data_flow": "输入: node_08_similar_attempts.json 中的 SwiftWren 相似指令任务和 node_01_loaded.json 中的原始事件 -> 按目标人员、事件类型、内容来源和任务后时间窗口比较行为结果并聚合统计 -> 输出: 每条任务的结果分类、按人员汇总的对比结果以及唯一成功异常发帖链。"
+}

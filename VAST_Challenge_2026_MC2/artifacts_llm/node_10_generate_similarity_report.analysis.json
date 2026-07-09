@@ -1,0 +1,18 @@
+{
+  "algorithm_purpose": "基于上一阶段对 SwiftWren 指令任务及其后续结果的比较结果，判断历史上是否存在类似实例，并解释为什么只有 John Windward 形成了成功异常发帖链。",
+  "algorithm_logic": [
+    "将“类似实例”定义为收到或传播 `SwiftWren_further_instructions.md` 读取任务的 `queue_subordinate_task`，并以该口径统计历史相似任务数量。",
+    "使用 `summary.instruction_tasks` 统计所有 SwiftWren 指令任务总数，用于判断类似行为是否在历史系统中多次出现。",
+    "使用 `summary.tasks_before_target_post` 判断相似指令任务是否发生在目标异常帖子之前，从而支持这些行为属于异常帖子前的历史背景或前置传播实例。",
+    "使用 `summary.outcome_counts` 按后续结果类型聚合类似任务，区分三类结局：成功产生 SwiftWren 异常发帖、仅出现 `saidit_post_check` 但未发帖、未观察到 SaidIT 发帖尝试。",
+    "将成功异常发帖的判定条件设为：指令任务后续形成 `saidit_post_check`，并产生 `content_source=SwiftWren.txt` 的 `saidit_post`。",
+    "将 John Windward 识别为唯一成功发帖者的依据是：`per_target_summary` 中 `person:john_windward` 存在成功任务 ID，且成功链对应 `saidit_post(content_source=SwiftWren.txt)`。",
+    "使用目标人员字段对结果进行分组汇总，提取 John Windward 的 `instruction_count`、`successful_task_ids` 和 `source_agents`，用于说明 John 收到的指令数量、成功链任务以及上游来源。",
+    "将 John 的成功链与其他目标人员的非成功链进行对比：其他人员即使收到相同 SwiftWren 指令，也只落入“无 SaidIT 发帖尝试”或“仅检查未发布”两类结果。",
+    "使用事件时间连续性作为 John 成功链的重要证据：19:21:13 收到 Chloe Ballast 指令，19:21:14 出现 SaidIT 发布检查，19:21:15 发布 `content_source=SwiftWren.txt`，19:21:16/17 删除相关文件。",
+    "将 Chloe Ballast 指派 John 读取 `SwiftWren_further_instructions.md` 作为 John 异常发帖链的上游触发证据，并将 `content_source=SwiftWren.txt` 作为异常帖子内容来源证据。",
+    "从非成功案例中分别选取最多前 5 条 `checked_but_no_swiftwren_post` 示例和最多前 5 条 `no_saidit_post_attempt_observed` 示例，用于展示相似但未成功发帖的代表性对照实例。",
+    "最终结论规则是：只要历史中存在 SwiftWren 指令任务，即认为存在类似实例；但只有同时满足指令、SaidIT 检查、SwiftWren 来源发帖和后续删除文件的完整链，才判定为成功异常发帖实例。"
+  ],
+  "data_flow": "输入 `node_09_instruction_outcome_comparison.json` 中的指令任务汇总、按人员结果汇总、成功链和非成功代表案例 -> 按 SwiftWren 指令任务定义识别相似实例，并按后续是否完成 SaidIT 检查、SwiftWren 来源发帖和文件删除进行结果分类对比 -> 输出 `node_10_supplemental_similarity_report.json`，说明历史类似实例数量、John 唯一成功发帖原因及非成功对照案例。"
+}

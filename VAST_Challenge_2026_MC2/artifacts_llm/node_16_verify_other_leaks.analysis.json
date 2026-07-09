@@ -1,0 +1,15 @@
+{
+  "algorithm_purpose": "验证已识别的多次异常发帖是否构成成功的数据外泄，并评估源文件删除、帖子留存、后续访问和浏览情况。",
+  "algorithm_logic": [
+    "以已识别的异常发帖列表作为分析对象，每条异常记录使用 `post.id`、`post.when`、`content_source` 和 `post_datetime` 作为关联判断依据。",
+    "将原始事件按 `when` 时间字段升序排序，使后续访问、浏览和删除证据按时间先后呈现。",
+    "使用 `content_source` 作为源文件关联关键词，在 `short_name` 等于 `delete_file` 的事件中检查 `details.filename` 是否包含该关键词；若存在匹配事件，则判定该外泄的源文件已被删除，即存在证据清理行为。",
+    "使用异常帖子的发布时间 `post.when` 作为时间边界，只检查发布时间之后的事件；若后续事件的 `details` 内容中包含 `content_source`，则记为该外泄内容在发帖后的后续访问或传播证据。",
+    "使用异常帖子的 `post.id` 作为帖子关联键，在 `short_name` 为 `view_post`、`read_post` 或 `access_post` 的事件中，检查 `details.post_id` 或 `details.event_id` 是否等于该帖子 ID；匹配到的事件计为该帖子的浏览或读取记录。",
+    "使用异常帖子的 `post.id` 作为帖子关联键，在 `short_name` 为 `delete_post` 或 `remove_post` 的事件中，检查 `details.post_id` 或 `details.event_id` 是否等于该帖子 ID；匹配到的事件表示该帖子已被删除或移除。",
+    "外泄成功的核心判定规则是：只要异常帖子已经发布到公开论坛，就默认 `leak_successful` 为 true；文件是否删除、帖子是否仍存在、是否有后续访问只作为成功状态的补充证据，不改变该成功判定。",
+    "每次外泄分别统计后续访问事件数量、帖子浏览事件数量、源文件删除状态和帖子删除状态；其中后续访问和浏览事件在结果中最多保留前 10 条明细。",
+    "对全部异常外泄进行汇总比较：使用所有单次外泄的 `leak_successful` 判断是否全部成功，使用所有 `evidence_cleanup` 判断是否全部完成证据清理，累加 `post_viewers_count` 得到总浏览记录数，并分别统计仍存在和已删除的帖子数量。"
+  ],
+  "data_flow": "输入: 原始事件记录 node_01_loaded.json 和异常发帖模式 node_13_abnormal_patterns_analysis.json -> 基于帖子 ID、发布时间和 content_source 关联删除、访问、浏览与移除事件并进行汇总判断 -> 输出: 每次外泄的成功验证结果及整体对比统计 node_16_other_leaks_verification.json"
+}

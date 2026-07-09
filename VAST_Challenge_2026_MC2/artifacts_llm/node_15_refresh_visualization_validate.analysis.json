@@ -1,0 +1,13 @@
+{
+  "algorithm_purpose": "在 John Windward 完整分析完成后，基于已有分析成果刷新最终关系视图，并检查当前分析会话结果是否完整一致。",
+  "algorithm_logic": [
+    "使用 `node_14_final_john_analysis_report.json` 作为最终 John Windward 分析结论的来源，其中脚本将异常帖子数量标记为 3，用于说明本次最终视图基于已确认的 3 个异常帖子分析结果。",
+    "使用 `node_11_final_similarity_data_flow_visualization.txt` 作为此前相似性与数据流分析视图的参考输入，用于将早期分析关系纳入最终视图背景。",
+    "最终关系视图不是重新筛选原始事件，而是基于当前会话目录中已经记录的全部分析实体、活动和关联关系生成，因此结果反映的是前序各节点累计形成的完整分析上下文。",
+    "脚本明确建立最终分析报告与最终可视化结果之间的派生关系，表示最终视图的主要依据来自 John Windward 最终分析报告。",
+    "脚本明确建立最终分析报告与验证结果之间的派生关系，表示验证结果用于确认基于该报告形成的最终分析会话是否可用。",
+    "会话验证以当前会话目录为检查对象，输出 `is_valid` 布尔结果和 `errors` 错误列表；当 `is_valid` 为真且 `errors` 为空时，表示当前分析成果结构完整、可作为最终展示依据。",
+    "该脚本不包含针对帖子内容、发布时间、用户、相似度或历史案例的新增筛选、匹配、排序或统计规则；相关分析判断已由前序报告提供，本节点只负责最终整合和一致性确认。"
+  ],
+  "data_flow": "输入: `node_14_final_john_analysis_report.json` 和 `node_11_final_similarity_data_flow_visualization.txt` -> 基于已累计的分析关系生成最终关系视图并进行完整性验证 -> 输出: `node_15_final_john_analysis_visualization.txt` 和 `node_15_validation_result.json`"
+}

@@ -1,0 +1,24 @@
+{
+  "algorithm_purpose": "识别所有与 SwiftWren 指令相关的历史或并发任务实例，并比较不同目标人员在收到指令后的 SaidIT 检查、发帖和删除行为，以判断为什么只有 John Windward 产生了异常帖子。",
+  "algorithm_logic": [
+    "使用上一阶段确认的异常内容来源文件 `content_source` 作为核心关联线索，并将其转换为对应的指令文件名：把 `.txt` 后缀替换为 `_further_instructions.md`，例如由 `SwiftWren.txt` 得到 `SwiftWren_further_instructions.md`。",
+    "将事件的完整 JSON 文本作为匹配范围，只要事件中包含 `content_source` 或对应的指令文件名，就判定为 SwiftWren 相关事件。",
+    "在 SwiftWren 相关事件中，只保留 `short_name` 等于 `queue_subordinate_task` 的事件作为“收到类似指令任务”的候选事件。",
+    "对指令任务的识别要求任务参数中的 `path` 等于指令文件名，或任务详情文本中包含该指令文件名；该规则用于确认任务确实要求读取或处理 `SwiftWren_further_instructions.md`。",
+    "每条指令任务的目标人员优先从 `details.target_agent` 提取；若不存在，则从嵌套详情中的 `person` 提取；若仍不存在，则使用事件参与方列表中的第二个参与者作为目标人员。",
+    "人员名称在匹配前会去除 `Agent/`、`agent:`、`Agent:` 等前缀，以统一不同字段中的人员表示方式。",
+    "对每个收到 SwiftWren 指令的目标人员，以其第一次收到该类指令的时间作为起点，只分析之后 2 小时内的相关行为。",
+    "目标人员后续行为的归属判断采用文本包含匹配：事件完整 JSON 文本中包含该人员名称，即视为该事件与该人员有关。",
+    "在目标人员收到指令后的 2 小时窗口内，使用 `short_name = saidit_post_check` 识别其是否检查过 SaidIT 发帖条件或状态。",
+    "在目标人员收到指令后的 2 小时窗口内，使用 `short_name` 属于 `saidit_post` 或 `post_saidit` 识别其是否发生过 SaidIT 发帖行为。",
+    "在目标人员的 SaidIT 发帖事件中，只有当事件详情包含 `content_source` 时，才判定为与 SwiftWren 内容来源直接相关的异常发帖。",
+    "在目标人员收到指令后的 2 小时窗口内，使用 `short_name = read_file` 且事件详情包含指令文件名，识别其是否读取过 SwiftWren 指令文件。",
+    "在目标人员收到指令后的 2 小时窗口内，使用 `short_name = delete_file` 且事件详情包含 `content_source` 或指令文件名，识别其是否删除过 SwiftWren 源文件或指令文件。",
+    "每个目标人员的结果按是否存在 SwiftWren 相关 SaidIT 发帖分为两类：存在则标记为 `posted_swiftwren_to_saidit`，不存在则标记为 `no_swiftwren_saidit_post_found`。",
+    "通过比较所有目标人员的发帖结果，识别实际发布 SwiftWren 内容到 SaidIT 的人员列表，以及收到类似指令但未发布的人员数量。",
+    "按指令任务的来源人员统计任务发起次数，并按目标人员统计任务接收次数，用于判断 SwiftWren 指令是否存在广泛传播以及传播集中度。",
+    "脚本将 John Windward 是否为唯一发布者作为关键判断依据：若只有 John 的后续窗口中出现包含 `content_source` 的 SaidIT 发帖事件，而其他目标人员没有，则支持“类似指令存在但只有 John 完成异常发帖”的结论。",
+    "脚本进一步将 John 的行为链概括为：收到 Chloe Ballast 的读取指令后，紧接着发生 SaidIT 检查、SaidIT 发布以及源文件和指令文件删除，用于解释其异常发帖与其他未发帖实例的差异。"
+  ],
+  "data_flow": "输入: `node_04_source_trace.json` 中的目标异常帖子与内容来源、`node_01_loaded.json` 中的全量事件 -> 按 SwiftWren 源文件和指令文件关联事件，筛选相关任务并比较各目标人员在收到指令后 2 小时内的读取、检查、发帖和删除行为 -> 输出: 每个目标人员的后续结果、实际发帖者列表、未发帖者数量以及指令来源/目标分布统计。"
+}

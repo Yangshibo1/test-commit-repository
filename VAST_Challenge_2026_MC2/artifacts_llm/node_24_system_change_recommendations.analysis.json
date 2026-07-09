@@ -1,0 +1,62 @@
+{
+  "description": "包含1条系统变更建议分析结果，围绕异常 SaidIT 帖子的根因、推荐干预点、备选干预点、预期效果和附加收益展开。核心结论是建议在 SaidIT 的 saidit_post 模块增加 content_source 与 content 字段的一致性和可读性验证，以防止 content_source 存在但 content 为空的异常帖子发布。",
+  "sample_data": {
+    "node_id": "node_24",
+    "operation": "system_change_recommendations",
+    "question": "背景问题 6：说明可能的系统变更（干预点）",
+    "recommended_intervention": {
+      "name": "SaidIT 发布内容完整性验证",
+      "location": "SaidIT saidit_post 模块",
+      "root_cause_addressed": "系统在处理 content_source 时存在缺陷，导致帖子内容为空而不是文件内容",
+      "expected_outcome": "所有 3 个异常帖子都会被阻止或正确填充内容",
+      "prevention_rate": "100% - 基于历史模式，此干预可防止所有已知的异常实例"
+    }
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "候选干预点有效性分布",
+      "subtext": "基于 node_24 系统变更建议数据"
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "axisPointer": {
+        "type": "shadow"
+      }
+    },
+    "legend": {
+      "data": [
+        "干预点数量"
+      ]
+    },
+    "xAxis": {
+      "type": "category",
+      "name": "有效性等级",
+      "data": [
+        "高",
+        "中"
+      ]
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "数量",
+      "minInterval": 1
+    },
+    "series": [
+      {
+        "name": "干预点数量",
+        "type": "bar",
+        "data": [
+          2,
+          2
+        ],
+        "itemStyle": {
+          "color": "#5470C6"
+        },
+        "label": {
+          "show": true,
+          "position": "top"
+        }
+      }
+    ]
+  }
+}

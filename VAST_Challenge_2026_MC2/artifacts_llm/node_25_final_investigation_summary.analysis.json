@@ -1,0 +1,78 @@
+{
+  "description": "该数据集是 VAST Challenge 2026 MC2 中 SaidIT 异常发帖调查的最终汇总结果，包含问题重定义、6个核心问题的回答状态、关键发现、3次历史异常实例的共性模式，以及推荐的系统干预方案。数据表明异常并非数据外泄，而是 SaidIT 发帖模块在处理 content_source 时未正确填充 content 字段导致的空内容发帖故障。",
+  "sample_data": {
+    "investigation_title": "VAST Challenge 2026 MC2 - SaidIT 异常发帖调查",
+    "anomaly_pattern": "所有 3 个异常帖子都有 content_source 但 content 为空",
+    "root_cause": "系统在处理 content_source 时存在缺陷",
+    "executor": "John Windward (Customer Support Department Lead)",
+    "file_creator": "Emma Harbor (CFO) - SwiftWren.txt",
+    "historical_instances": 3,
+    "intervention": "在 SaidIT saidit_post 模块添加 content_source 验证"
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "SaidIT 异常发帖调查关键统计",
+      "subtext": "基于最终调查汇总数据"
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "axisPointer": {
+        "type": "shadow"
+      }
+    },
+    "legend": {
+      "data": [
+        "数量"
+      ],
+      "top": 50
+    },
+    "grid": {
+      "left": "3%",
+      "right": "4%",
+      "bottom": "10%",
+      "top": "22%",
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "data": [
+        "核心问题总数",
+        "已回答问题",
+        "异常历史实例",
+        "调查节点数",
+        "PROV实体数",
+        "PROV活动数",
+        "PROV边数"
+      ],
+      "axisLabel": {
+        "rotate": 30
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "数量"
+    },
+    "series": [
+      {
+        "name": "数量",
+        "type": "bar",
+        "data": [
+          6,
+          6,
+          3,
+          25,
+          67,
+          22,
+          129
+        ],
+        "itemStyle": {
+          "color": "#5470C6"
+        },
+        "label": {
+          "show": true,
+          "position": "top"
+        }
+      }
+    ]
+  }
+}

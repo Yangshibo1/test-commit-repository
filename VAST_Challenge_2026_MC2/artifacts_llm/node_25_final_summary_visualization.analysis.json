@@ -1,0 +1,15 @@
+{
+  "algorithm_purpose": "汇总前序调查结论，形成对 6 个核心问题的最终回答，并确认推荐的系统干预方案。",
+  "algorithm_logic": [
+    "将调查问题固定为 6 个核心问题，并将回答状态统一判定为全部完成，完成率设为 100%。",
+    "将异常帖子的产生链路概括为“Emma Harbor 创建 SwiftWren.txt 文件 → Daniel → Chloe → John Windward 发布”，以此作为异常帖子来源与传播路径的最终事件链结论。",
+    "将系统概览规模概括为 67 个实体、22 个活动、129 条关系，用于说明该异常链路在整体系统中的上下文位置。",
+    "将帖子内容来源判定为 SwiftWren.txt，依据是异常帖子存在 content_source 指向该文件；同时将帖子内容为空作为异常特征，用于推断问题更可能来自系统处理或配置缺陷。",
+    "将历史复现情况归纳为 3 个异常实例，并以“均由 John Windward 执行、均遵循相同 5 步骤模式”作为重复行为模式的判断依据。",
+    "将异常模式总结为“所有 3 个异常帖子都有 content_source 但 content 为空”，并据此将根因归纳为系统处理 content_source 时未能正确填充帖子内容。",
+    "将关键参与者按角色归纳：执行者为 John Windward，源文件创建者为 Emma Harbor，指令来源包括 Chloe Ballast 和 Lily Anchorline。",
+    "将推荐干预点确定为 SaidIT 发帖模块中的 content_source 验证，判断依据是该验证可覆盖所有已知异常实例，因此预期预防率标记为 100%。",
+    "最终结论依赖前序问题评估结果和系统变更建议结果，其中推荐干预方案直接采用前序变更建议中的 recommended_intervention 字段。"
+  ],
+  "data_flow": "输入: node_23_background_qa_assessment.json 和 node_24_system_change_recommendations.json -> 汇总 6 个问题回答、异常链路、历史实例、根因和干预建议 -> 输出: node_25_final_investigation_summary.json"
+}

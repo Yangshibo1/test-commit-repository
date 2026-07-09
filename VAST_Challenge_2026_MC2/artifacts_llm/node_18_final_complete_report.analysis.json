@@ -1,0 +1,17 @@
+{
+  "algorithm_purpose": "汇总三次数据外泄验证结果与相关人员调查结果，判断外泄是否成功并评估关键人员的参与程度和风险等级。",
+  "algorithm_logic": [
+    "将三次外泄事件作为统一分析对象，分别对应内容源文件 HiddenOrca.txt、MellowOtter.txt 和 SwiftWren.txt，并以每个源文件对应的公开发帖时间作为事件标识。",
+    "外泄成功的判断规则由三个核心证据共同构成：敏感内容已发布到 general 公开论坛、对应源文件在发帖后被删除、公开帖子仍然存在。",
+    "浏览量不作为外泄是否成功的否定条件；脚本将“0 次记录的浏览事件”解释为系统未记录到浏览，而不是证明无人看到。",
+    "按内容源文件分别给出外泄状态：HiddenOrca.txt、MellowOtter.txt、SwiftWren.txt 均被标记为 successful=true、file_deleted=true、post_still_exists=true，因此汇总结论为三次外泄全部成功。",
+    "使用外泄参与次数评估人员关联强度：John Windward 执行全部 3 次外泄，被定义为执行者；Chloe Ballast 关联 2/3 次外泄；Lily Anchorline 关联 1/3 次外泄。",
+    "结合组织角色评估人员风险：Chloe Ballast 是 IT Department Lead，具备较高系统权限，因此其 2/3 次外泄参与被解释为高风险；Lily Anchorline 是 Infrastructure Team 成员，具备文件系统相关接触可能，因此其 1/3 次参与被解释为中等风险。",
+    "结合敏感文件访问次数作为辅助风险指标：Chloe Ballast 有 161 次敏感文件访问记录，Lily Anchorline 有 61 次敏感文件访问记录，访问频次越高越支持其具备接触或操作敏感文件的可能性。",
+    "使用固定指令模式识别外泄行为的一致性：三次事件都符合 queue_subordinate_task(target=John Windward, task=read_file, args=[XXX_further_instructions.md]) 的结构，即由上游人员向 John Windward 下发读取进一步指令文件的任务。",
+    "使用时间间隔评估自动化或预谋特征：指令下达到发帖之间仅间隔 2-3 秒，脚本据此认为该模式高度一致，可能是预先策划或自动化执行。",
+    "根据三次事件均呈现“指令 → 检查 → 发布 → 删除”的相同链条，并且均在 2-4 秒内完成，将整体事件定性为跨部门、有组织的数据外泄，而非单次偶然故障。",
+    "综合人员参与次数、组织角色、敏感文件访问量和指令模式一致性，将 Chloe Ballast 标记为 HIGH 可疑等级，将 Lily Anchorline 标记为 MEDIUM 可疑等级，将 John Windward 标记为 EXTREME 可疑等级。"
+  ],
+  "data_flow": "输入: node_16_other_leaks_verification.json、node_17_it_personnel_investigation.json 和 node_14_final_john_analysis_report.json -> 按外泄成功证据、人员参与次数、敏感文件访问量和指令模式一致性进行汇总判断 -> 输出: John Windward 数据外泄事件完整调查报告"
+}

@@ -1,0 +1,19 @@
+{
+  "algorithm_purpose": "分析 John Windward 的 SaidIT 发帖行为，识别其使用 content_source 的异常帖子，并与全系统其他异常发帖人进行组织身份和行为频次对比。",
+  "algorithm_logic": [
+    "将事件按时间字段 `when` 升序排列，作为后续发帖行为和异常行为统计的统一时间基准。",
+    "使用组织结构中的人员节点 `person:john_windward` 作为 John Windward 的身份匹配键，并依据组织关系中的 `led_by` 和 `contains` 关系识别其职位、所属部门、负责团队和直接下属。",
+    "John 相关事件的筛选条件为：事件参与者 `parties` 中包含 `person:john_windward` 或 `Agent/person:john_windward`，且事件名称 `short_name` 包含 `saidit`，或事件类型为 `ask_agent`、`give_advice`。",
+    "John 的 SaidIT 发帖仅统计事件类型 `short_name` 等于 `saidit_post` 或 `post_saidit` 的事件。",
+    "异常帖子判定规则为：SaidIT 发帖事件的 `details.content_source` 字段存在且非空；该字段被视为帖子内容来自外部来源或被引用生成的关键异常证据。",
+    "John 的异常发帖统计口径为：在 John 的所有 SaidIT 发帖中，统计带有 `content_source` 的帖子数量，并保留对应的发帖时间、论坛 `forum` 和 `content_source` 来源信息。",
+    "全系统异常帖子统计口径为：在所有 `saidit_post` 和 `post_saidit` 事件中筛选 `details.content_source` 非空的帖子，并从 `parties` 中匹配包含 `person:` 的参与者作为发帖人。",
+    "异常发帖人的身份补全规则为：使用发帖人 ID 与组织结构人员节点匹配，提取发帖人姓名和职位；再通过 `contains` 关系识别其所属部门，若发帖人属于团队，则继续向上匹配团队所属部门。",
+    "按发帖人 ID 对全系统异常帖子进行分组聚合，统计每个异常发帖人的异常发帖数量，并保存其异常帖子明细、职位和部门信息。",
+    "对全系统所有 SaidIT 发帖人进行汇总统计，按发帖人 ID 计算总发帖数，并计算其中带有 `content_source` 的异常发帖数。",
+    "生成活跃发帖人排序时，以每个发帖人的总发帖数 `post_count` 为排序指标，按降序排列并保留前 10 名。",
+    "对比分析以 John Windward 为基准，将其异常发帖数量、总发帖数量、组织身份和下属信息，与其他所有使用 `content_source` 的异常发帖人进行横向比较。",
+    "其他异常发帖人的定义为：全系统异常发帖人中排除 `person:john_windward` 后的人员集合，并统计其姓名、职位、部门和异常发帖数量。"
+  ],
+  "data_flow": "输入: 全量事件数据 node_01_loaded.json 和组织结构 org_chart.json -> 按参与者、SaidIT 发帖类型和 content_source 异常标记进行筛选、分组统计与组织身份关联 -> 输出: John Windward 发帖分析、全系统异常发帖人汇总和对比发现。"
+}

@@ -1,0 +1,19 @@
+{
+  "algorithm_purpose": "评估 Chloe Ballast 和 Lily Anchorline 在三次数据外泄事件中的指令来源角色、敏感文件相关行为和相互关联程度。",
+  "algorithm_logic": [
+    "以组织架构中的人员 ID `person:chloe_ballast` 和 `person:lily_anchorline` 作为目标对象，并通过组织关系识别 Chloe 的部门、Lily 所属团队及其上级部门，用于解释两人的岗位权限背景。",
+    "人员相关事件采用文本包含匹配规则识别：将事件整体内容转为小写文本后，判断其中是否包含目标人员 ID 去除 `person:`、`Agent/`、`agent:` 等前缀后的名称关键词。",
+    "针对每一次已验证的数据外泄，将外泄分析结果中的 `content_source` 作为内容来源线索，并结合异常模式分析中的对应发帖时间作为该次外泄的基准时间。",
+    "每次外泄的指令事件通过 `window_events_summary` 中 `short_name` 等于 `queue_subordinate_task` 的事件识别，并用事件 ID 回连到原始事件详情。",
+    "指令来源判断基于指令事件的 `parties` 字段：如果参与者文本中包含 `person:chloe`，则判定指令来源为 Chloe Ballast；如果包含 `person:lily`，则判定指令来源为 Lily Anchorline。",
+    "对每次外泄的指令来源人员，统计其在外泄发帖时间前后各 1 小时内的相关事件，时间窗口为 `post_when - 3600` 到 `post_when + 3600` 秒，用于衡量该人员在外泄附近的活跃程度。",
+    "分别统计 Chloe 和 Lily 在全部事件中的出现次数，作为两人的总体活动量指标。",
+    "按事件 `short_name` 对 Chloe 和 Lily 的全部相关事件进行分组计数，用于概括两人的主要活动类型分布。",
+    "敏感文件相关行为通过关键词包含规则识别：如果人员相关事件文本中包含 `hiddenorca`、`mellowotter`、`swiftwren`、`.txt`、`confidential`、`secret` 中任一关键词，则计入该人员的敏感文件访问或敏感内容相关事件。",
+    "Chloe 与 Lily 的直接交互通过事件 `parties` 字段判断：同一事件参与者中同时出现包含 `chloe` 和包含 `lily` 的文本，即计为两人之间一次记录交互。",
+    "行为模式结论中，将 Chloe 的外泄参与数固定标注为 2 次、Lily 的外泄参与数固定标注为 1 次，并将两人的角色归类为“指令来源”。",
+    "敏感访问模式根据敏感关键词命中数量判断：若某人存在至少 1 条敏感文件相关事件，则标记为 `access_sensitive_files_before_leaks`，否则标记为 `unknown`。",
+    "风险等级采用规则化描述：Chloe 被标记为 HIGH，理由是 IT Department Lead、涉及 2/3 次外泄且具备访问敏感文件的权限背景；Lily 被标记为 MEDIUM，理由是 Infrastructure Team 成员、涉及 1/3 次外泄且可能被利用或知情。"
+  ],
+  "data_flow": "输入: 原始事件、组织架构、已验证外泄结果和异常模式结果 -> 按人员 ID、指令事件类型、外泄时间窗口、敏感关键词和参与者关系进行关联统计 -> 输出: Chloe 与 Lily 的人员画像、逐次外泄角色分析、行为模式、怀疑等级和后续调查建议"
+}

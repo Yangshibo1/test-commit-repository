@@ -1,0 +1,94 @@
+{
+  "description": "包含对 IT 人员 Chloe Ballast 与 Lily Anchorline 的调查分析结果，涵盖两人的人员画像、活动类型统计、敏感文件访问次数、三次疑似外泄事件的指令来源与内容来源、行为模式、怀疑等级和后续调查建议。该数据集是小型中间分析结果，用于识别 John Windward 异常发帖链路中的潜在指令来源。",
+  "sample_data": {
+    "leak_number": 1,
+    "content_source": "HiddenOrca.txt",
+    "instruction_source": "Chloe Ballast",
+    "instruction_event": {
+      "id": 27280,
+      "short_name": "queue_subordinate_task",
+      "datetime": "2046-05-10 20:45:40",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:john_windward"
+      ],
+      "details": {
+        "target_agent": "Agent/person:john_windward",
+        "task": "read_file",
+        "args": {
+          "path": "HiddenOrca_further_instructions.md"
+        }
+      }
+    },
+    "source_events_around_leak": 12
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "IT人员外泄关联与敏感文件访问对比",
+      "left": "center"
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "axisPointer": {
+        "type": "shadow"
+      }
+    },
+    "legend": {
+      "top": 30,
+      "data": [
+        "涉及外泄次数",
+        "敏感文件访问次数"
+      ]
+    },
+    "grid": {
+      "left": "8%",
+      "right": "8%",
+      "bottom": "10%",
+      "top": "18%",
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "data": [
+        "Chloe Ballast",
+        "Lily Anchorline"
+      ]
+    },
+    "yAxis": [
+      {
+        "type": "value",
+        "name": "外泄次数",
+        "minInterval": 1
+      },
+      {
+        "type": "value",
+        "name": "敏感文件访问次数"
+      }
+    ],
+    "series": [
+      {
+        "name": "涉及外泄次数",
+        "type": "bar",
+        "data": [
+          2,
+          1
+        ],
+        "itemStyle": {
+          "color": "#d94e5d"
+        }
+      },
+      {
+        "name": "敏感文件访问次数",
+        "type": "bar",
+        "yAxisIndex": 1,
+        "data": [
+          161,
+          61
+        ],
+        "itemStyle": {
+          "color": "#5470c6"
+        }
+      }
+    ]
+  }
+}

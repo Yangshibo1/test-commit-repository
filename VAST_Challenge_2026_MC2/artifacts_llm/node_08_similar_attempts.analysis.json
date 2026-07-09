@@ -1,0 +1,119 @@
+{
+  "description": "该数据集是针对异常 SaidIt 帖子相关历史相似行为的中间分析结果，聚焦 SwiftWren_further_instructions.md 指令文件在多 agent 之间被排队读取和传播的情况。数据包含目标异常帖子、内容来源 SwiftWren.txt、186 条指令任务事件、17 个唯一目标 agent，以及各 agent 作为任务源和任务目标的次数统计。分析结果显示没有发现其他 agent 成功发布使用 SwiftWren.txt 作为内容来源的 SaidIt 帖子，但存在大量读取同一指令文件的传播链路。",
+  "sample_data": {
+    "event_id": 21209,
+    "event_type": "queue_subordinate_task",
+    "datetime": "2046-05-09 23:02:03",
+    "source_agent": "person:emma_harbor",
+    "target_agent": "person:evelyn_dock",
+    "task": "read_file",
+    "path": "SwiftWren_further_instructions.md",
+    "seconds_before_target_post": -677952
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "SwiftWren 指令任务传播中的 Agent 活跃度",
+      "subtext": "按 source_agent 与 target_agent 计数统计"
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "axisPointer": {
+        "type": "shadow"
+      }
+    },
+    "legend": {
+      "data": [
+        "作为任务源次数",
+        "作为任务目标次数"
+      ],
+      "top": 50
+    },
+    "grid": {
+      "left": "3%",
+      "right": "4%",
+      "bottom": "18%",
+      "top": 100,
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "axisLabel": {
+        "rotate": 45
+      },
+      "data": [
+        "evelyn_dock",
+        "gabriel_sonar",
+        "levi_signal",
+        "zoey_drydock",
+        "chloe_ballast",
+        "owen_hatch",
+        "victoria_rigging",
+        "mia_fender",
+        "daniel_gangway",
+        "liam_anchor",
+        "henry_sail",
+        "olivia_keel",
+        "lily_anchorline",
+        "james_stern",
+        "michael_capstan",
+        "john_windward",
+        "david_breakwater",
+        "emma_harbor"
+      ]
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "事件次数"
+    },
+    "series": [
+      {
+        "name": "作为任务源次数",
+        "type": "bar",
+        "data": [
+          17,
+          16,
+          15,
+          14,
+          13,
+          13,
+          13,
+          12,
+          11,
+          11,
+          10,
+          10,
+          9,
+          7,
+          6,
+          4,
+          4,
+          1
+        ]
+      },
+      {
+        "name": "作为任务目标次数",
+        "type": "bar",
+        "data": [
+          17,
+          16,
+          15,
+          14,
+          13,
+          13,
+          13,
+          12,
+          11,
+          11,
+          10,
+          10,
+          9,
+          7,
+          6,
+          5,
+          4,
+          0
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "algorithm_purpose": "验证三次已识别异常发帖的内容是否为空或乱码，并确认 SwiftWren.txt 文件是否由姓名或标识以 e 开头的人员创建。",
+  "algorithm_logic": [
+    "将事件按 `when` 时间戳升序排列，用于在原始事件中进行时间顺序一致的事件定位。",
+    "使用固定异常帖子 ID `27290`、`98591`、`373902` 作为筛选条件，分别对应 HiddenOrca、MellowOtter、SwiftWren 三次异常发帖，只分析这些已知异常帖子。",
+    "对每个异常帖子提取 `details.content` 作为帖子正文，并提取 `details.content_source` 作为正文来源，用于判断异常内容与来源文件之间的关系。",
+    "使用正文长度判断空内容：当 `content` 为空字符串或长度为 0 时，将该帖子归类为“内容为空”。",
+    "使用字符规则判断乱码：当 `content` 非空，且其中不存在任何小写英文字母时，将该帖子归类为“内容为乱码”。",
+    "不满足空内容和乱码规则的帖子被归类为“内容正常”。",
+    "按帖子级别统计三类内容状态的数量，包括空内容数量、乱码内容数量和正常内容数量，并以异常帖子总数作为统计分母。",
+    "查找 SwiftWren.txt 的创建事件时，优先使用前序追踪结果中的 `file_lifecycle`，并筛选 `short_name` 等于 `create_file` 且 `details.filename` 包含 `SwiftWren.txt` 的事件。",
+    "如果前序追踪结果中没有找到 SwiftWren.txt 创建事件，则在原始事件中筛选 `short_name` 等于 `create_file` 且 `details.filename` 包含 `SwiftWren` 的事件作为补充匹配。",
+    "将创建事件中的 `parties` 字段作为创建者证据，优先识别包含 `person:` 的参与者；在前序追踪结果中进一步要求参与者以 `person:e` 开头。",
+    "使用创建者标识前缀判断是否为 E 开头人员：当创建者以 `person:e` 或 `Agent/person:e` 开头时，确认 SwiftWren.txt 由 E 开头人员创建；否则判定创建者不符合该条件。",
+    "从全部事件的 `parties` 字段中汇总所有以 `person:e` 或 `Agent/person:e` 开头的人员标识，作为与 SwiftWren.txt 创建者判断相关的候选 E 开头人员集合。",
+    "当三次异常帖子中至少存在一个空内容或乱码内容时，形成结论：异常发帖存在内容质量问题，说明技术上的发布不一定等同于有效信息泄露。",
+    "当 SwiftWren.txt 创建者被确认以 `person:e` 开头时，形成进一步结论：异常链条可能涉及“文件创建者 → IT人员 → John Windward”的传递关系。"
+  ],
+  "data_flow": "输入: 原始事件记录 node_01_loaded.json 和前序来源追踪 node_04_source_trace.json -> 按异常帖子 ID 验证正文状态，并按文件名、创建事件类型和参与者前缀确认 SwiftWren.txt 创建者 -> 输出: 三次异常帖子内容分类统计、SwiftWren.txt 创建者确认结果和修正结论。"
+}

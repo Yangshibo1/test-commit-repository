@@ -1,0 +1,99 @@
+{
+  "description": "包含 node_23 对 VAST Challenge 2026 MC2 异常发帖问题的背景问答评估结果，涵盖6个核心问题的回答状态、证据节点、事件链摘要、问题重构、根因假设以及后续分析缺口与建议。该数据集是小型中间分析结果，用于评估异常帖子事件链追踪、系统概览、内容来源、历史重复实例和干预建议的完成情况。",
+  "sample_data": {
+    "question": "1. 异常帖子是如何产生的？",
+    "answered": true,
+    "evidence_nodes": [
+      "node_04",
+      "node_13"
+    ],
+    "summary": "已追踪完整事件链：Emma Harbor 创建文件 → Daniel Gangway → Chloe Ballast → John Windward 执行发布",
+    "event_chain": [
+      "2046-05-09 23:02:01 - Emma Harbor 创建 SwiftWren.txt",
+      "2046-05-17 19:12:24 - Daniel Gangway 指派 Chloe Ballast 读取文件",
+      "2046-05-17 19:21:13 - Chloe Ballast 指派 John Windward 读取文件",
+      "2046-05-17 19:21:14 - John Windward saidit_post_check",
+      "2046-05-17 19:21:15 - John Windward saidit_post (content_source=SwiftWren.txt)",
+      "2046-05-17 19:21:16/17 - John Windward 删除指令和源文件"
+    ],
+    "quality": "完整"
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "核心问题回答状态与质量分布",
+      "left": "center"
+    },
+    "tooltip": {
+      "trigger": "item"
+    },
+    "legend": {
+      "top": "8%",
+      "left": "center"
+    },
+    "grid": {
+      "left": "8%",
+      "right": "8%",
+      "bottom": "10%",
+      "top": "55%"
+    },
+    "xAxis": {
+      "type": "category",
+      "data": [
+        "完整",
+        "部分",
+        "未回答"
+      ],
+      "axisLabel": {
+        "interval": 0
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "minInterval": 1,
+      "name": "问题数量"
+    },
+    "series": [
+      {
+        "name": "回答状态",
+        "type": "pie",
+        "radius": [
+          "25%",
+          "40%"
+        ],
+        "center": [
+          "50%",
+          "32%"
+        ],
+        "data": [
+          {
+            "name": "已回答",
+            "value": 5
+          },
+          {
+            "name": "未回答",
+            "value": 1
+          }
+        ],
+        "label": {
+          "formatter": "{b}: {c}"
+        }
+      },
+      {
+        "name": "质量分布",
+        "type": "bar",
+        "data": [
+          4,
+          1,
+          1
+        ],
+        "itemStyle": {
+          "color": "#5470C6"
+        },
+        "label": {
+          "show": true,
+          "position": "top"
+        }
+      }
+    ]
+  }
+}

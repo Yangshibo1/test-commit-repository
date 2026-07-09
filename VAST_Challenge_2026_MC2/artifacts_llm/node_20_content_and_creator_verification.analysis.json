@@ -1,0 +1,74 @@
+{
+  "description": "该数据集是节点 node_20 的内容与创建者核验结果，包含对 3 个疑似外泄帖子内容来源文件的检查，以及对 SwiftWren.txt 创建者是否为 E 开头人员的核验。结果显示 3 个帖子内容均为空，未发现乱码内容，也未找到 SwiftWren.txt 的创建事件。",
+  "sample_data": {
+    "node_id": "node_20",
+    "operation": "verify_post_content_and_file_creator",
+    "post_id": 373902,
+    "content_source": "SwiftWren.txt",
+    "content": "",
+    "content_length": 0,
+    "is_gibberish": false,
+    "swiftwren_create_event": null,
+    "swiftwren_creator": null,
+    "swiftwren_creator_confirmed_as_e_person": false
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "帖子内容核验结果统计",
+      "left": "center"
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "axisPointer": {
+        "type": "shadow"
+      }
+    },
+    "legend": {
+      "top": 30,
+      "data": [
+        "帖子数量"
+      ]
+    },
+    "grid": {
+      "left": "8%",
+      "right": "8%",
+      "bottom": "12%",
+      "top": "20%",
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "data": [
+        "内容为空",
+        "乱码内容",
+        "有效内容"
+      ],
+      "axisLabel": {
+        "interval": 0
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "name": "数量",
+      "minInterval": 1
+    },
+    "series": [
+      {
+        "name": "帖子数量",
+        "type": "bar",
+        "data": [
+          3,
+          0,
+          0
+        ],
+        "itemStyle": {
+          "color": "#5470C6"
+        },
+        "label": {
+          "show": true,
+          "position": "top"
+        }
+      }
+    ]
+  }
+}

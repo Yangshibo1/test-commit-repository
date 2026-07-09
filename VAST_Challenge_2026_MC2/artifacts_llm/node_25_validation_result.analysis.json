@@ -1,0 +1,91 @@
+{
+  "description": "包含1条调查结果验证记录，记录了会话ID、验证状态、验证错误、摘要文件路径、可视化文件路径、已回答问题数量以及调查是否完成。该结果显示调查已完成并回答6个问题，但验证未通过，存在2类关系类型约束错误。",
+  "sample_data": {
+    "session_id": "session_20260630_172421",
+    "is_valid": false,
+    "errors": [
+      "关系 wasGeneratedBy 的源节点类型必须是 ['entity']，实际是 activity",
+      "关系 wasDerivedFrom 的目标节点类型必须是 ['entity']，实际是 activity"
+    ],
+    "summary_file": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\VAST_Challenge_2026_MC2\\src\\node_25_final_investigation_summary.json",
+    "visualization": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\VAST_Challenge_2026_MC2\\src\\node_25_final_complete_visualization.txt",
+    "questions_answered": 6,
+    "investigation_complete": true
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "调查验证结果概览",
+      "left": "center"
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "axisPointer": {
+        "type": "shadow"
+      }
+    },
+    "legend": {
+      "top": 30,
+      "data": [
+        "数量"
+      ]
+    },
+    "grid": {
+      "left": "8%",
+      "right": "8%",
+      "bottom": "12%",
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "data": [
+        "验证通过",
+        "验证错误数",
+        "已回答问题数",
+        "调查完成"
+      ],
+      "axisLabel": {
+        "interval": 0
+      }
+    },
+    "yAxis": {
+      "type": "value",
+      "minInterval": 1
+    },
+    "series": [
+      {
+        "name": "数量",
+        "type": "bar",
+        "data": [
+          {
+            "value": 0,
+            "itemStyle": {
+              "color": "#d94e5d"
+            }
+          },
+          {
+            "value": 2,
+            "itemStyle": {
+              "color": "#eac736"
+            }
+          },
+          {
+            "value": 6,
+            "itemStyle": {
+              "color": "#50a3ba"
+            }
+          },
+          {
+            "value": 1,
+            "itemStyle": {
+              "color": "#91cc75"
+            }
+          }
+        ],
+        "label": {
+          "show": true,
+          "position": "top"
+        }
+      }
+    ]
+  }
+}

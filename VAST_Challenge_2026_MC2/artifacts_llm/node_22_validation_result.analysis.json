@@ -1,0 +1,69 @@
+{
+  "description": "包含1条可视化验证结果记录，记录了会话ID、验证是否通过、错误列表、可视化文件路径、会话文件路径以及修订报告路径；当前结果显示验证通过且错误数量为0。",
+  "sample_data": {
+    "session_id": "session_20260630_172421",
+    "is_valid": true,
+    "errors": {
+      "total_items": 0,
+      "sample_items": 0
+    },
+    "visualization_src": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\VAST_Challenge_2026_MC2\\src\\node_22_final_revised_visualization.txt",
+    "visualization_session": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\.opentrace\\session_20260630_172421\\node_22_final_revised_visualization.txt",
+    "revised_report": "C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository\\VAST_Challenge_2026_MC2\\src\\node_21_revised_final_report.json"
+  },
+  "echarts_chart": {
+    "title": {
+      "text": "验证结果概览",
+      "left": "center"
+    },
+    "tooltip": {
+      "trigger": "axis",
+      "axisPointer": {
+        "type": "shadow"
+      }
+    },
+    "legend": {
+      "top": 30,
+      "data": [
+        "数量"
+      ]
+    },
+    "grid": {
+      "left": "3%",
+      "right": "4%",
+      "bottom": "3%",
+      "top": 80,
+      "containLabel": true
+    },
+    "xAxis": {
+      "type": "category",
+      "data": [
+        "验证通过",
+        "错误数量",
+        "文件路径数量"
+      ]
+    },
+    "yAxis": {
+      "type": "value",
+      "minInterval": 1
+    },
+    "series": [
+      {
+        "name": "数量",
+        "type": "bar",
+        "data": [
+          1,
+          0,
+          3
+        ],
+        "itemStyle": {
+          "color": "#5470C6"
+        },
+        "label": {
+          "show": true,
+          "position": "top"
+        }
+      }
+    ]
+  }
+}
