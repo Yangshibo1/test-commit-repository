@@ -1,11 +1,11 @@
 """
-生成最终报告和可视化
+生成最终报告
 
 这是VAST Challenge 2026 MC2分析的最终步骤。
-汇总所有中间结果，生成最终报告和可视化图表。
+汇总所有中间结果，生成最终报告。
 
 输入: step3_chain_analysis.json
-预期输出: final_report.json, visualization.txt
+预期输出: final_report.json
 """
 
 import json
@@ -16,12 +16,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from opentrace.mcp_server import get_server
-from opentrace.prov_visualizer import visualize_prov_dag
 
 
 def main():
     print("=" * 60)
-    print("生成最终报告和可视化")
+    print("生成最终报告")
     print("=" * 60)
 
     # 获取服务器实例
@@ -107,7 +106,7 @@ def main():
         session_id=session_id,
         step_id="step_final",
         step_name="generate_final_report",
-        description="汇总所有中间结果，生成最终报告和可视化",
+        description="汇总所有中间结果，生成最终报告",
         code_files=[__file__],
         commands_run=[f"python {__file__}"],
         input_files=[str(step3_file)],
@@ -115,17 +114,11 @@ def main():
         parameters={"final_step": True}
     )
 
-    # 生成可视化
-    print("\n生成数据流可视化...")
-    viz_file = work_dir / "visualization.txt"
-    visualize_prov_dag(str(work_dir), str(viz_file))
-
     print("\n" + "=" * 60)
     print("分析完成！")
     print("=" * 60)
     print(f"会话ID: {session_id}")
     print(f"最终报告: {report_file}")
-    print(f"可视化文件: {viz_file}")
 
 
 if __name__ == "__main__":

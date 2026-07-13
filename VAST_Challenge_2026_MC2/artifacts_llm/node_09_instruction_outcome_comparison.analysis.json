@@ -1,77 +1,10 @@
 {
-  "description": "该数据集是 node_09 的指令结果对比分析结果，用于比较与 SwiftWren.txt / SwiftWren_further_instructions.md 相关的 186 个指令任务在 SaidIt 上的后续行为。数据按目标人员汇总了指令数量、来源 agent、是否检查 SaidIt、是否发布 SwiftWren 内容以及成功任务 ID。总体显示只有 John Windward 的任务 373893 最终产生了目标异常帖子 373902，其余任务多为未观察到发帖尝试或检查 SaidIt 但未发布 SwiftWren 内容。",
-  "sample_data": {
-    "target": "person:john_windward",
-    "instruction_count": 5,
-    "outcomes": {
-      "no_saidit_post_attempt_observed": 4,
-      "swiftwren_posted": 1
-    },
-    "source_agents": {
-      "person:olivia_keel": 2,
-      "person:liam_anchor": 1,
-      "person:john_windward": 1,
-      "person:chloe_ballast": 1
-    },
-    "successful_task_ids": [
-      373893
-    ],
-    "check_task_ids": [
-      373893
-    ],
-    "first_instruction_time": "2046-05-11 05:22:27",
-    "last_instruction_time": "2046-05-17 19:21:13"
-  },
-  "echarts_chart": {
-    "title": {
-      "text": "SwiftWren 指令任务结果分布",
-      "subtext": "共 186 个任务，目标帖子 ID: 373902",
-      "left": "center"
-    },
-    "tooltip": {
-      "trigger": "item",
-      "formatter": "{b}: {c} ({d}%)"
-    },
-    "legend": {
-      "orient": "vertical",
-      "left": "left",
-      "top": "middle"
-    },
-    "series": [
-      {
-        "name": "任务结果",
-        "type": "pie",
-        "radius": [
-          "40%",
-          "70%"
-        ],
-        "avoidLabelOverlap": true,
-        "label": {
-          "show": true,
-          "formatter": "{b}\n{c} ({d}%)"
-        },
-        "emphasis": {
-          "label": {
-            "show": true,
-            "fontSize": 16,
-            "fontWeight": "bold"
-          }
-        },
-        "data": [
-          {
-            "name": "未观察到 SaidIt 发帖尝试",
-            "value": 131
-          },
-          {
-            "name": "检查 SaidIt 但未发布 SwiftWren",
-            "value": 54
-          },
-          {
-            "name": "成功发布 SwiftWren",
-            "value": 1
-          }
-        ]
-      }
-    ]
-  }
+  "description": "Contrasts prior anomalous posts with the most recent SwiftWren post.",
+  "visualization_title": "Historical Recurrence Matrix",
+  "visualization_summary": "Contrasts prior anomalous posts with the most recent SwiftWren post.",
+  "visualization_type": "html",
+  "visualization": "\n<div class=\"vast-viz vast-cartography\">\n  <style>\n    .vast-cartography {\n      --paper:#fffaf3; --panel:#fffdf8; --ink:#30251d; --muted:#7a6859;\n      --line:#dcc8b5; --orange:#d97745; --blue:#2f80c1; --green:#3c9d70;\n      --red:#d84a3a; --slate:#64748b; --gold:#b98225;\n      color:var(--ink); font-family: ui-serif, Georgia, \"Times New Roman\", serif;\n      background: radial-gradient(circle at 14% 6%, rgba(217,119,69,.10), transparent 22rem),\n                  linear-gradient(135deg, #fffaf3, #fffdf8 48%, #f8efe4);\n      border:1px solid var(--line); border-radius:22px; padding:20px; min-width:760px;\n      box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 18px 45px rgba(70,48,30,.10);\n    }\n    .vast-cartography * { box-sizing:border-box; }\n    .vast-title { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:16px; }\n    .vast-title h3 { margin:0; font-size:24px; letter-spacing:-.02em; }\n    .vast-kicker { font-family:ui-monospace, SFMono-Regular, Consolas, monospace; color:var(--orange); font-size:11px; text-transform:uppercase; letter-spacing:.14em; font-weight:800; }\n    .vast-subtitle { color:var(--muted); line-height:1.45; font-size:13px; max-width:680px; margin-top:4px; }\n    .vast-grid { display:grid; gap:12px; }\n    .vast-card { background:rgba(255,255,255,.72); border:1px solid rgba(220,200,181,.82); border-radius:16px; padding:12px; }\n    .vast-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:999px; border:1px solid var(--line); background:#fff; font-family:ui-monospace, SFMono-Regular, Consolas, monospace; font-size:11px; color:var(--muted); }\n    .vast-node { border:1.5px solid var(--line); background:#fff; border-radius:15px; padding:10px 12px; min-height:54px; box-shadow:0 8px 22px rgba(70,48,30,.06); }\n    .vast-node strong { display:block; font-size:14px; }\n    .vast-node span { display:block; margin-top:3px; color:var(--muted); font:11px ui-monospace, SFMono-Regular, Consolas, monospace; }\n    .person { border-color:rgba(217,119,69,.55); background:#fff7ed; }\n    .file { border-color:rgba(47,128,193,.45); background:#eff8ff; }\n    .task { border-color:rgba(60,157,112,.45); background:#effaf3; }\n    .system { border-color:rgba(100,116,139,.42); background:#f8fafc; }\n    .anomaly { border-color:rgba(216,74,58,.65); background:#fff1ef; }\n    .arrow { color:var(--slate); font:700 22px ui-monospace, SFMono-Regular, Consolas, monospace; align-self:center; justify-self:center; }\n    .fault { border:2px solid rgba(216,74,58,.68); background:linear-gradient(135deg,#fff1ef,#fff); color:#992b21; border-radius:16px; padding:12px; }\n    .metric { text-align:center; padding:12px; border-radius:16px; background:#fff; border:1px solid var(--line); }\n    .metric b { display:block; font-size:28px; color:var(--orange); line-height:1; }\n    .metric span { color:var(--muted); font:11px ui-monospace, SFMono-Regular, Consolas, monospace; }\n    .matrix { width:100%; border-collapse:separate; border-spacing:0 8px; font-family:ui-monospace, SFMono-Regular, Consolas, monospace; font-size:12px; }\n    .matrix th { color:var(--muted); text-align:left; padding:4px 8px; font-size:10px; text-transform:uppercase; letter-spacing:.1em; }\n    .matrix td { background:#fff; border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:10px 8px; }\n    .matrix td:first-child { border-left:1px solid var(--line); border-radius:12px 0 0 12px; font-weight:800; }\n    .matrix td:last-child { border-right:1px solid var(--line); border-radius:0 12px 12px 0; }\n    .empty { color:var(--red); font-weight:900; }\n    .ok { color:var(--green); font-weight:900; }\n    \n  </style>\n  <div class=\"vast-title\">\n    <div>\n      <div class=\"vast-kicker\">VAST Challenge 2026 MC2</div>\n      <h3>Historical Recurrence Matrix</h3>\n    </div>\n  </div>\n  \n    <p class=\"vast-subtitle\">Historical behavior shows the same failure mode recurring across three content_source posts. The newest SwiftWren case is one instance of a repeated pattern.</p>\n    <div class=\"vast-grid\" style=\"grid-template-columns:repeat(4,1fr); margin:14px 0;\">\n      <div class=\"metric\"><b>3</b><span>anomalous posts</span></div>\n      <div class=\"metric\"><b>1</b><span>executor</span></div>\n      <div class=\"metric\"><b>186</b><span>related instruction tasks</span></div>\n      <div class=\"metric\"><b>3/3</b><span>empty content</span></div>\n    </div>\n    <table class=\"matrix\"><thead><tr><th>Instance</th><th>Instruction source</th><th>File</th><th>Executor</th><th>Module</th><th>Result</th><th>Aftermath</th></tr></thead><tbody><tr><td>HiddenOrca</td><td>Chloe Ballast</td><td>HiddenOrca.txt</td><td>John Windward</td><td>saidit_post</td><td class='empty'>EMPTY (0 chars)</td><td>source deleted / cleanup observed</td></tr><tr><td>MellowOtter</td><td>Lily Anchorline</td><td>MellowOtter.txt</td><td>John Windward</td><td>saidit_post</td><td class='empty'>EMPTY (0 chars)</td><td>source deleted / cleanup observed</td></tr><tr><td>SwiftWren <span class=\"vast-chip\">latest</span></td><td>Chloe Ballast</td><td>SwiftWren.txt</td><td>John Windward</td><td>saidit_post</td><td class='empty'>EMPTY (0 chars)</td><td>source deleted / cleanup observed</td></tr></tbody></table>\n    <div class=\"fault\"><strong>Contrast:</strong> file names and instruction sources vary, but John Windward, saidit_post, general forum, and empty content are invariant.</div>\n    \n</div>\n",
+  "key_findings": [
+    "Contrasts prior anomalous posts with the most recent SwiftWren post."
+  ]
 }

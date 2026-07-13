@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ProvNode, StepDetail, LlmArtifact, TraceData, ArtifactMatchResult } from '../types';
-import { findLlmArtifact, baseName, findLlmArtifactWithDiagnostics } from '../utils/traceParser';
+import { findLlmArtifactWithDiagnostics, baseName } from '../utils/traceParser';
 import * as echarts from 'echarts';
 
 interface InspectorProps {
@@ -12,7 +12,7 @@ interface InspectorProps {
 }
 
 export default function Inspector({ selectedProvNode, selectedStep, trace, isExpanded = false, onToggleExpand }: InspectorProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'files' | 'code' | 'echart' | 'report' | 'parameters'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'files' | 'code' | 'visualization' | 'report' | 'parameters'>('overview');
   const [chartRef, setChartRef] = useState<HTMLDivElement | null>(null);
 
   const matchResult: ArtifactMatchResult | null = trace ? findLlmArtifactWithDiagnostics(trace, { step: selectedStep, node: selectedProvNode }) : null;
@@ -44,30 +44,28 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
   };
 
   // 根据是否有 artifact 和 step 来决定显示哪些 tabs
-  const getAvailableTabs = (): Array<'overview' | 'files' | 'code' | 'echart' | 'report' | 'parameters'> => {
-    const hasArtifact = !!artifact;
-
-    // 优先使用 artifactKind，如果没有 artifact 则使用节点类型
-    const effectiveKind = artifactKind || (hasArtifact ? null : getNodeType());
+  const getAvailableTabs = (): Array<'overview' | 'files' | 'code' | 'visualization' | 'report' | 'parameters'> => {
+    // 优先使用 artifactKind，如果没有则回退到节点类型
+    const effectiveKind = artifactKind || getNodeType();
 
     if (effectiveKind === 'dataset') {
-      return ['overview', 'files', 'echart', 'parameters'];
+      return ['overview', 'files', 'visualization', 'parameters'];
     }
     if (effectiveKind === 'report') {
-      return ['overview', 'files', 'report', 'parameters'];
+      return ['overview', 'files', 'visualization', 'report', 'parameters'];
     }
     if (effectiveKind === 'code') {
       return ['overview', 'files', 'code', 'parameters'];
     }
 
-    // 默认 tabs（没有 artifact 且无法判断节点类型）
+    // 默认 tabs（无法判断节点类型）
     return ['overview', 'files', 'parameters'];
   };
 
   const tabs = getAvailableTabs();
 
   useEffect(() => {
-    if (activeTab === 'echart' && artifactKind === 'dataset' && chartRef && artifact?.echarts_chart) {
+    if (activeTab === 'visualization' && artifactKind === 'dataset' && chartRef && artifact?.echarts_chart) {
       const chart = echarts.init(chartRef);
       chart.setOption(artifact.echarts_chart as any, true);
       const resizeHandler = () => chart.resize();
@@ -196,7 +194,7 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
               </>
             )}
 
-            {artifact && artifactKind === 'script' && (
+            {artifact && artifactKind === 'code' && (
               <>
                 {artifact.algorithm_purpose && (
                   <div className="border-t border-[rgba(184,165,143,0.36)] py-3">
@@ -397,7 +395,13 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
                 </span>
               )) || <span className="text-muted">—</span>}
             </div>
-            {artifactKind === 'script' && artifact?.algorithm_logic && (
+            {artifactKind === 'code' && artifact?.algorithm_purpose && (
+              <div className="border-t border-[rgba(184,165,143,0.36)] py-3">
+                <b className="block text-accent font-mono text-xs mb-2">algorithm_purpose</b>
+                <span className="text-ink">{artifact.algorithm_purpose}</span>
+              </div>
+            )}
+            {artifactKind === 'code' && artifact?.algorithm_logic && (
               <div className="border-t border-[rgba(184,165,143,0.36)] py-3">
                 <b className="block text-accent font-mono text-xs mb-2">algorithm_logic</b>
                 {Array.isArray(artifact.algorithm_logic) ? (
@@ -411,6 +415,12 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
                     {JSON.stringify(artifact.algorithm_logic, null, 2)}
                   </pre>
                 )}
+              </div>
+            )}
+            {artifactKind === 'code' && artifact?.data_flow && (
+              <div className="border-t border-[rgba(184,165,143,0.36)] py-3">
+                <b className="block text-accent font-mono text-xs mb-2">data_flow</b>
+                <span className="text-ink">{artifact.data_flow}</span>
               </div>
             )}
             <div className="border-t border-[rgba(184,165,143,0.36)] py-3">
@@ -488,20 +498,40 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
           </div>
         )}
 
-        {activeTab === 'echart' && (artifactKind === 'dataset' || getNodeType() === 'dataset') && (
+        {activeTab === 'visualization' && (artifactKind === 'dataset' || artifactKind === 'report' || getNodeType() === 'dataset' || getNodeType() === 'report') && (
           <div>
-            {artifact?.echarts_chart ? (
+            {/* HTML 可视化 */}
+            {artifact?.visualization && artifact.visualization_type === 'html' && (
+              <div
+                className="w-full border border-[rgba(184,165,143,0.42)] rounded-xl bg-white overflow-auto"
+                style={{ maxHeight: '500px' }}
+                dangerouslySetInnerHTML={{ __html: artifact.visualization }}
+              />
+            )}
+
+            {/* 图片可视化 */}
+            {artifact?.visualization && artifact.visualization_type === 'image' && (
+              <div className="w-full border border-[rgba(184,165,143,0.42)] rounded-xl bg-white p-4">
+                <img
+                  src={artifact.visualization}
+                  alt="Visualization"
+                  className="w-full h-auto rounded-lg"
+                />
+              </div>
+            )}
+
+            {/* ECharts 可视化（原有支持） */}
+            {artifact?.echarts_chart && !artifact?.visualization && (
               <div
                 ref={setChartRef}
                 className="w-full h-80 border border-[rgba(184,165,143,0.42)] rounded-xl bg-[rgba(255,255,255,0.78)]"
               />
-            ) : artifact ? (
+            )}
+
+            {/* 无可视化内容 */}
+            {!artifact?.visualization && !artifact?.echarts_chart && (
               <p className="text-muted text-sm">
-                Large datasets or unsuitable for visualization, echart skipped.
-              </p>
-            ) : (
-              <p className="text-muted text-sm">
-                No artifact available for this dataset. Chart requires matching analysis artifact.
+                {artifact ? 'No visualization available for this artifact.' : 'No artifact available. Visualization requires matching analysis artifact.'}
               </p>
             )}
           </div>
@@ -528,11 +558,11 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
   );
 }
 
-function getArtifactKind(artifact: LlmArtifact): 'script' | 'dataset' | 'report' | null {
+function getArtifactKind(artifact: LlmArtifact): 'code' | 'dataset' | 'report' | null {
   if ('algorithm_purpose' in artifact || 'algorithm_logic' in artifact || 'data_flow' in artifact) {
-    return 'script';
+    return 'code';
   }
-  if ('sample_data' in artifact || 'echarts_echart' in artifact) {
+  if ('sample_data' in artifact || 'echarts_chart' in artifact) {
     return 'dataset';
   }
   if ('key_findings' in artifact || 'answers' in artifact) {

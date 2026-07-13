@@ -736,6 +736,128 @@ class OpenTraceServer:
         """获取会话追踪器"""
         return self.sessions.get(session_id)
 
+    def record_result(self,
+                      session_id: str,
+                      markdown_content: str,
+                      source: str = None) -> Dict[str, Any]:
+        """记录分析结果（Markdown 格式）
+
+        Args:
+            session_id: 会话ID
+            markdown_content: Markdown 格式的分析结果内容
+            source: 来源标识（如 "node_01_load_data"）
+
+        Returns:
+            记录结果
+        """
+        try:
+            # 获取会话目录
+            session_dir = None
+
+            # 先尝试从已加载的会话中获取
+            if session_id in self.sessions:
+                session_dir = self.sessions[session_id].session_dir
+            else:
+                # 会话未加载，尝试从文件系统获取
+                for path in self.base_dir.glob("session_*"):
+                    if path.name == session_id or session_id in path.name:
+                        session_dir = path
+                        break
+
+            if session_dir is None or not session_dir.exists():
+                return {"error": "会话目录不存在", "status": "failed"}
+
+            # analysis_result.json 文件路径
+            result_file = session_dir / "analysis_result.json"
+
+            # 读取现有数据
+            data = {
+                "session_id": session_id,
+                "entries": []
+            }
+
+            if result_file.exists():
+                try:
+                    data = json.loads(result_file.read_text(encoding='utf-8'))
+                except:
+                    pass  # 文件损坏，重新创建
+
+            # 添加新条目
+            entry = {
+                "timestamp": datetime.now().isoformat(),
+                "source": source or "unknown",
+                "content": markdown_content
+            }
+
+            data["entries"].append(entry)
+            data["updated_at"] = datetime.now().isoformat()
+
+            # 保存文件
+            result_file.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding='utf-8')
+
+            return {
+                "status": "success",
+                "entry_count": len(data["entries"]),
+                "source": source
+            }
+
+        except Exception as e:
+            return {"error": str(e), "status": "failed"}
+
+    def get_result(self, session_id: str) -> Dict[str, Any]:
+        """获取分析结果记录
+
+        Args:
+            session_id: 会话ID
+
+        Returns:
+            分析结果数据
+        """
+        try:
+            # 获取会话目录
+            session_dir = None
+
+            if session_id in self.sessions:
+                session_dir = self.sessions[session_id].session_dir
+            else:
+                for path in self.base_dir.glob("session_*"):
+                    if path.name == session_id or session_id in path.name:
+                        session_dir = path
+                        break
+
+            if session_dir is None or not session_dir.exists():
+                return {"error": "会话目录不存在", "status": "failed"}
+
+            result_file = session_dir / "analysis_result.json"
+
+            if not result_file.exists():
+                return {
+                    "status": "success",
+                    "session_id": session_id,
+                    "entries": [],
+                    "markdown": ""
+                }
+
+            data = json.loads(result_file.read_text(encoding='utf-8'))
+
+            # 合并所有条目的 Markdown 内容
+            combined_markdown = "\n\n---\n\n".join([
+                entry.get("content", "") for entry in data.get("entries", [])
+            ])
+
+            return {
+                "status": "success",
+                "session_id": session_id,
+                "entries": data.get("entries", []),
+                "entry_count": len(data.get("entries", [])),
+                "markdown": combined_markdown,
+                "created_at": data.get("timestamp", ""),
+                "updated_at": data.get("updated_at", "")
+            }
+
+        except Exception as e:
+            return {"error": str(e), "status": "failed"}
+
     def list_sessions(self) -> List[Dict[str, Any]]:
         """列出所有会话
 

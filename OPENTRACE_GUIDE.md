@@ -142,22 +142,7 @@ server.record_prov_relation(
 )
 ```
 
-### 4. 生成可视化
-
-```python
-from opentrace.prov_visualizer import visualize_prov_dag
-from pathlib import Path
-
-session_dir = Path(server.base_dir) / session_id
-visualize_prov_dag(str(session_dir), "data_flow.txt")
-```
-
-生成的 `data_flow.txt` 包含：
-- 文本格式数据流图
-- 节点和关系详情
-- Mermaid 渲染代码
-
-### 5. 查看现有会话
+### 4. 查看现有会话
 
 ```python
 # 列出所有会话
@@ -208,48 +193,6 @@ for session in sessions:
 | `wasStartedBy` | Activity → Activity | 活动由另一个启动 | step2 → step1 |
 | `wasInformedBy` | Activity → Activity | 活动使用了另一个的输出 | aggregate → filter |
 | `actedOnBehalfOf` | Agent → Agent | 代理代表另一个行动 | assistant → user |
-
-## 数据验证和保护
-
-### 使用受保护的 DAG
-
-```python
-from opentrace.prov_validation import ProtectedProvDAG
-
-# 创建受保护的 DAG（追加模式）
-protected_dag = ProtectedProvDAG(session_dir, append_only=True)
-
-# 所有操作自动验证
-try:
-    protected_dag.add_relation(from_id, to_id, relation)
-except ValueError as e:
-    print(f"验证失败: {e}")
-```
-
-### 验证现有会话
-
-```python
-from opentrace.prov_validation import validate_session
-
-is_valid, errors = validate_session(session_dir)
-if not is_valid:
-    for error in errors:
-        print(f"错误: {error}")
-```
-
-### 完整性检查
-
-```python
-from opentrace.prov_validation import ProvValidator
-
-validator = ProvValidator(session_dir)
-
-# 计算完整性哈希
-hash_value = validator.compute_integrity_hash()
-
-# 验证完整性
-is_valid, details = validator.verify_integrity()
-```
 
 ## API 参考
 

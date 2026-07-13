@@ -85,15 +85,14 @@ phases:
             - ("step_act", "step_agent", "wasAssociatedWith") # 活动→代理
             - ("step_output", "step_input", "wasDerivedFrom")  # 输出→输入
 
-  - title: "生成报告和可视化"
-    description: "只在迭代分析完成后，基于已经读取和记录过的中间结果生成最终报告和数据血缘可视化"
+  - title: "生成报告"
+    description: "只在迭代分析完成后，基于已经读取和记录过的中间结果生成最终报告"
     steps:
       - name: "汇总结果"
         action: |
           1. 收集所有中间文件的结果
           2. 生成最终分析报告: `final_report.json`
-          3. 调用 visualize_prov_dag() 生成可视化
-          4. 记录最终汇总的 PROV 关系
+          3. 记录最终汇总的 PROV 关系
         trace:
           entities:
             - id: "step1_out"

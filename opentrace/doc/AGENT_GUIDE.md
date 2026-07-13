@@ -63,7 +63,6 @@
 - [ ] 每个节点处理后调用 `record_prov_relation()`
 - [ ] 每个节点处理后调用 `record_step_details()` ← **⚠️ 必填；会自动生成/同步 `step_001.json` 等步骤主记录**
 - [ ] 确认每个节点都有三类产物：`step_XXX.json`、`step_details.json`、`prov_*.json`
-- [ ] 最后调用 `visualize_prov_dag()` 生成可视化
 
 **结果验证**：
 - [ ] 检查结果是否真实（基于实际数据处理）
@@ -150,14 +149,6 @@ with open(output_file) as f:
 # 基于result决定下一步
 ```
 
-### 模板3: 生成可视化
-
-```python
-from opentrace.prov_visualizer import visualize_prov_dag
-
-visualize_prov_dag(str(work_dir), "visualization.txt")
-```
-
 ---
 
 ## 速查表
@@ -188,21 +179,6 @@ visualize_prov_dag(str(work_dir), "visualization.txt")
 | `wasGeneratedBy` | Entity → Activity | `("output", "act", "wasGeneratedBy")` |
 | `wasAssociatedWith` | Activity → Agent | `("act", "agent", "wasAssociatedWith")` |
 | `wasDerivedFrom` | Entity → Entity | `("output", "input", "wasDerivedFrom")` |
-
----
-
-## 验证方法
-
-```python
-from opentrace.prov_validation import validate_session
-
-is_valid, errors = validate_session(str(work_dir))
-if not is_valid:
-    for error in errors:
-        print(f"❌ {error}")
-else:
-    print("✅ 会话验证通过")
-```
 
 ---
 

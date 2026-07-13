@@ -174,13 +174,7 @@ task_plan.append(next_node)
 
 ### 阶段4: 整合呈现
 
-```python
-from opentrace.prov_visualizer import visualize_prov_dag
-
-visualize_prov_dag(str(work_dir), "visualization.txt")
-
-# 呈现完整trace流程: 原始数据 → 所有处理程序 → 所有中间产物 → 最终结果
-```
+呈现完整trace流程: 原始数据 → 所有处理程序 → 所有中间产物 → 最终结果
 
 ## 禁止模式
 
@@ -197,14 +191,3 @@ visualize_prov_dag(str(work_dir), "visualization.txt")
 | `wasGeneratedBy` | Entity → Activity | `("output", "act", "wasGeneratedBy")` |
 | `wasAssociatedWith` | Activity → Agent | `("act", "agent", "wasAssociatedWith")` |
 | `wasDerivedFrom` | Entity → Entity | `("output", "input", "wasDerivedFrom")` |
-
-## 验证方法
-
-```python
-from opentrace.prov_validation import validate_session
-
-is_valid, errors = validate_session(str(work_dir))
-if not is_valid:
-    for error in errors:
-        print(f"验证失败: {error}")
-```

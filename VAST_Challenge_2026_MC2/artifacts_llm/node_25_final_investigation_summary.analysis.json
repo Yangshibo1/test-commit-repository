@@ -1,78 +1,10 @@
 {
-  "description": "该数据集是 VAST Challenge 2026 MC2 中 SaidIT 异常发帖调查的最终汇总结果，包含问题重定义、6个核心问题的回答状态、关键发现、3次历史异常实例的共性模式，以及推荐的系统干预方案。数据表明异常并非数据外泄，而是 SaidIT 发帖模块在处理 content_source 时未正确填充 content 字段导致的空内容发帖故障。",
-  "sample_data": {
-    "investigation_title": "VAST Challenge 2026 MC2 - SaidIT 异常发帖调查",
-    "anomaly_pattern": "所有 3 个异常帖子都有 content_source 但 content 为空",
-    "root_cause": "系统在处理 content_source 时存在缺陷",
-    "executor": "John Windward (Customer Support Department Lead)",
-    "file_creator": "Emma Harbor (CFO) - SwiftWren.txt",
-    "historical_instances": 3,
-    "intervention": "在 SaidIT saidit_post 模块添加 content_source 验证"
-  },
-  "echarts_chart": {
-    "title": {
-      "text": "SaidIT 异常发帖调查关键统计",
-      "subtext": "基于最终调查汇总数据"
-    },
-    "tooltip": {
-      "trigger": "axis",
-      "axisPointer": {
-        "type": "shadow"
-      }
-    },
-    "legend": {
-      "data": [
-        "数量"
-      ],
-      "top": 50
-    },
-    "grid": {
-      "left": "3%",
-      "right": "4%",
-      "bottom": "10%",
-      "top": "22%",
-      "containLabel": true
-    },
-    "xAxis": {
-      "type": "category",
-      "data": [
-        "核心问题总数",
-        "已回答问题",
-        "异常历史实例",
-        "调查节点数",
-        "PROV实体数",
-        "PROV活动数",
-        "PROV边数"
-      ],
-      "axisLabel": {
-        "rotate": 30
-      }
-    },
-    "yAxis": {
-      "type": "value",
-      "name": "数量"
-    },
-    "series": [
-      {
-        "name": "数量",
-        "type": "bar",
-        "data": [
-          6,
-          6,
-          3,
-          25,
-          67,
-          22,
-          129
-        ],
-        "itemStyle": {
-          "color": "#5470C6"
-        },
-        "label": {
-          "show": true,
-          "position": "top"
-        }
-      }
-    ]
-  }
+  "description": "Consolidates the challenge answers and the recommended intervention.",
+  "visualization_title": "Investigation Summary Dashboard",
+  "visualization_summary": "Consolidates the challenge answers and the recommended intervention.",
+  "visualization_type": "html",
+  "visualization": "\n<div class=\"vast-viz vast-cartography\">\n  <style>\n    .vast-cartography {\n      --paper:#fffaf3; --panel:#fffdf8; --ink:#30251d; --muted:#7a6859;\n      --line:#dcc8b5; --orange:#d97745; --blue:#2f80c1; --green:#3c9d70;\n      --red:#d84a3a; --slate:#64748b; --gold:#b98225;\n      color:var(--ink); font-family: ui-serif, Georgia, \"Times New Roman\", serif;\n      background: radial-gradient(circle at 14% 6%, rgba(217,119,69,.10), transparent 22rem),\n                  linear-gradient(135deg, #fffaf3, #fffdf8 48%, #f8efe4);\n      border:1px solid var(--line); border-radius:22px; padding:20px; min-width:760px;\n      box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 18px 45px rgba(70,48,30,.10);\n    }\n    .vast-cartography * { box-sizing:border-box; }\n    .vast-title { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:16px; }\n    .vast-title h3 { margin:0; font-size:24px; letter-spacing:-.02em; }\n    .vast-kicker { font-family:ui-monospace, SFMono-Regular, Consolas, monospace; color:var(--orange); font-size:11px; text-transform:uppercase; letter-spacing:.14em; font-weight:800; }\n    .vast-subtitle { color:var(--muted); line-height:1.45; font-size:13px; max-width:680px; margin-top:4px; }\n    .vast-grid { display:grid; gap:12px; }\n    .vast-card { background:rgba(255,255,255,.72); border:1px solid rgba(220,200,181,.82); border-radius:16px; padding:12px; }\n    .vast-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:999px; border:1px solid var(--line); background:#fff; font-family:ui-monospace, SFMono-Regular, Consolas, monospace; font-size:11px; color:var(--muted); }\n    .vast-node { border:1.5px solid var(--line); background:#fff; border-radius:15px; padding:10px 12px; min-height:54px; box-shadow:0 8px 22px rgba(70,48,30,.06); }\n    .vast-node strong { display:block; font-size:14px; }\n    .vast-node span { display:block; margin-top:3px; color:var(--muted); font:11px ui-monospace, SFMono-Regular, Consolas, monospace; }\n    .person { border-color:rgba(217,119,69,.55); background:#fff7ed; }\n    .file { border-color:rgba(47,128,193,.45); background:#eff8ff; }\n    .task { border-color:rgba(60,157,112,.45); background:#effaf3; }\n    .system { border-color:rgba(100,116,139,.42); background:#f8fafc; }\n    .anomaly { border-color:rgba(216,74,58,.65); background:#fff1ef; }\n    .arrow { color:var(--slate); font:700 22px ui-monospace, SFMono-Regular, Consolas, monospace; align-self:center; justify-self:center; }\n    .fault { border:2px solid rgba(216,74,58,.68); background:linear-gradient(135deg,#fff1ef,#fff); color:#992b21; border-radius:16px; padding:12px; }\n    .metric { text-align:center; padding:12px; border-radius:16px; background:#fff; border:1px solid var(--line); }\n    .metric b { display:block; font-size:28px; color:var(--orange); line-height:1; }\n    .metric span { color:var(--muted); font:11px ui-monospace, SFMono-Regular, Consolas, monospace; }\n    .matrix { width:100%; border-collapse:separate; border-spacing:0 8px; font-family:ui-monospace, SFMono-Regular, Consolas, monospace; font-size:12px; }\n    .matrix th { color:var(--muted); text-align:left; padding:4px 8px; font-size:10px; text-transform:uppercase; letter-spacing:.1em; }\n    .matrix td { background:#fff; border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:10px 8px; }\n    .matrix td:first-child { border-left:1px solid var(--line); border-radius:12px 0 0 12px; font-weight:800; }\n    .matrix td:last-child { border-right:1px solid var(--line); border-radius:0 12px 12px 0; }\n    .empty { color:var(--red); font-weight:900; }\n    .ok { color:var(--green); font-weight:900; }\n    \n  </style>\n  <div class=\"vast-title\">\n    <div>\n      <div class=\"vast-kicker\">VAST Challenge 2026 MC2</div>\n      <h3>Investigation Summary Dashboard</h3>\n    </div>\n  </div>\n  \n    <p class=\"vast-subtitle\">Final visual summary: a repeated content_source posting malfunction, not a successful data leak.</p>\n    <div class=\"vast-grid\" style=\"grid-template-columns:repeat(4,1fr); margin:14px 0;\">\n      <div class=\"metric\"><b>3</b><span>historical instances</span></div>\n      <div class=\"metric\"><b>1</b><span>executor: John</span></div>\n      <div class=\"metric\"><b>6/6</b><span>questions answered</span></div>\n      <div class=\"metric\"><b>100%</b><span>known-case prevention</span></div>\n    </div>\n    <div class=\"vast-grid\" style=\"grid-template-columns:repeat(3,1fr);\"><div class='vast-card'><span class='vast-chip'>Q1</span><strong style='display:block;margin-top:8px'>1. 异常帖子是如何产生的？</strong><p style='color:var(--muted);font-size:12px'>已追踪完整事件链：Emma Harbor(CFO)创建文件 → Daniel→Chloe→John 发布</p></div><div class='vast-card'><span class='vast-chip'>Q2</span><strong style='display:block;margin-top:8px'>2. 提供详细视图</strong><p style='color:var(--muted);font-size:12px'>node_04 提供精确到秒的事件链，包含所有相关人员交互</p></div><div class='vast-card'><span class='vast-chip'>Q3</span><strong style='display:block;margin-top:8px'>3. 提供系统概览</strong><p style='color:var(--muted);font-size:12px'>PROV 可视化显示 67 实体、22 活动、129 边的完整系统上下文</p></div><div class='vast-card'><span class='vast-chip'>Q4</span><strong style='display:block;margin-top:8px'>4. 帖子的&#x27;意义&#x27;是什么？</strong><p style='color:var(--muted);font-size:12px'>content_source=SwiftWren.txt (Emma Harbor创建)，但帖子内容为空 - 可能是系统故障/配置问题</p></div><div class='vast-card'><span class='vast-chip'>Q5</span><strong style='display:block;margin-top:8px'>5. 找到其他实例</strong><p style='color:var(--muted);font-size:12px'>找到 3 个实例，全部由 John Windward 执行，都遵循相同的 5 步骤模式</p></div><div class='vast-card'><span class='vast-chip'>Q6</span><strong style='display:block;margin-top:8px'>6. 系统变更建议</strong><p style='color:var(--muted);font-size:12px'>推荐：在 SaidIT saidit_post 模块添加 content_source 验证，确保文件内容正确填充</p></div></div>\n    <div class=\"fault\" style=\"margin-top:14px\"><strong>Root cause hypothesis:</strong> 系统在处理 content_source 时存在缺陷，导致帖子内容为空而不是文件内容</div>\n    \n</div>\n",
+  "key_findings": [
+    "Consolidates the challenge answers and the recommended intervention."
+  ]
 }

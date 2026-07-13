@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Q4 · What do the posts mean? What is the origin of their contents?</title>
+  <style>
+    body { margin:0; padding:32px; background:#221a14; color:#fffaf3; }
+    .page { max-width:1280px; margin:0 auto; }
+    .masthead { margin:0 0 22px; font-family:Georgia, 'Times New Roman', serif; }
+    .masthead h1 { margin:0; font-size:34px; letter-spacing:-.03em; }
+    .masthead p { margin:8px 0 0; max-width:860px; color:#d8c4b0; line-height:1.5; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="masthead">
+      <h1>Q4 · What do the posts mean? What is the origin of their contents?</h1>
+      <p>Evidence autopsy showing content_source origin, empty published body, and the reasoning behind the malfunction interpretation.</p>
+    </header>
+    
+<div class="vast-viz vast-cartography">
+  <style>
+    .vast-cartography {
+      --paper:#fffaf3; --panel:#fffdf8; --ink:#30251d; --muted:#7a6859;
+      --line:#dcc8b5; --orange:#d97745; --blue:#2f80c1; --green:#3c9d70;
+      --red:#d84a3a; --slate:#64748b; --gold:#b98225;
+      color:var(--ink); font-family: ui-serif, Georgia, "Times New Roman", serif;
+      background: radial-gradient(circle at 14% 6%, rgba(217,119,69,.10), transparent 22rem),
+                  linear-gradient(135deg, #fffaf3, #fffdf8 48%, #f8efe4);
+      border:1px solid var(--line); border-radius:22px; padding:20px; min-width:760px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 18px 45px rgba(70,48,30,.10);
+    }
+    .vast-cartography * { box-sizing:border-box; }
+    .vast-title { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:16px; }
+    .vast-title h3 { margin:0; font-size:24px; letter-spacing:-.02em; }
+    .vast-kicker { font-family:ui-monospace, SFMono-Regular, Consolas, monospace; color:var(--orange); font-size:11px; text-transform:uppercase; letter-spacing:.14em; font-weight:800; }
+    .vast-subtitle { color:var(--muted); line-height:1.45; font-size:13px; max-width:680px; margin-top:4px; }
+    .vast-grid { display:grid; gap:12px; }
+    .vast-card { background:rgba(255,255,255,.72); border:1px solid rgba(220,200,181,.82); border-radius:16px; padding:12px; }
+    .vast-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 9px; border-radius:999px; border:1px solid var(--line); background:#fff; font-family:ui-monospace, SFMono-Regular, Consolas, monospace; font-size:11px; color:var(--muted); }
+    .vast-node { border:1.5px solid var(--line); background:#fff; border-radius:15px; padding:10px 12px; min-height:54px; box-shadow:0 8px 22px rgba(70,48,30,.06); }
+    .vast-node strong { display:block; font-size:14px; }
+    .vast-node span { display:block; margin-top:3px; color:var(--muted); font:11px ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .person { border-color:rgba(217,119,69,.55); background:#fff7ed; }
+    .file { border-color:rgba(47,128,193,.45); background:#eff8ff; }
+    .task { border-color:rgba(60,157,112,.45); background:#effaf3; }
+    .system { border-color:rgba(100,116,139,.42); background:#f8fafc; }
+    .anomaly { border-color:rgba(216,74,58,.65); background:#fff1ef; }
+    .arrow { color:var(--slate); font:700 22px ui-monospace, SFMono-Regular, Consolas, monospace; align-self:center; justify-self:center; }
+    .fault { border:2px solid rgba(216,74,58,.68); background:linear-gradient(135deg,#fff1ef,#fff); color:#992b21; border-radius:16px; padding:12px; }
+    .metric { text-align:center; padding:12px; border-radius:16px; background:#fff; border:1px solid var(--line); }
+    .metric b { display:block; font-size:28px; color:var(--orange); line-height:1; }
+    .metric span { color:var(--muted); font:11px ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .matrix { width:100%; border-collapse:separate; border-spacing:0 8px; font-family:ui-monospace, SFMono-Regular, Consolas, monospace; font-size:12px; }
+    .matrix th { color:var(--muted); text-align:left; padding:4px 8px; font-size:10px; text-transform:uppercase; letter-spacing:.1em; }
+    .matrix td { background:#fff; border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:10px 8px; }
+    .matrix td:first-child { border-left:1px solid var(--line); border-radius:12px 0 0 12px; font-weight:800; }
+    .matrix td:last-child { border-right:1px solid var(--line); border-radius:0 12px 12px 0; }
+    .empty { color:var(--red); font-weight:900; }
+    .ok { color:var(--green); font-weight:900; }
+    
+  </style>
+  <div class="vast-title">
+    <div>
+      <div class="vast-kicker">VAST Challenge 2026 MC2</div>
+      <h3>Q4 · What do the posts mean? What is the origin of their contents?</h3>
+    </div>
+  </div>
+  
+    <p class="vast-subtitle">The evidence points to a content-source handling fault: the post references a file, but the body is empty.</p>
+    <div class="vast-grid" style="grid-template-columns:1fr 70px 1fr 70px 1fr; align-items:center; margin:16px 0;">
+      <div class="vast-node file"><strong>SwiftWren.txt</strong><span>created by Emma Harbor · 30615 bytes</span></div>
+      <div class="arrow">→</div>
+      <div class="vast-node system"><strong>saidit_post parameters</strong><span>content_source=SwiftWren.txt · content=""</span></div>
+      <div class="arrow">⇥</div>
+      <div class="vast-node anomaly"><strong>Published post</strong><span>forum=general · body empty</span></div>
+    </div>
+    <div class="fault"><strong>Meaning:</strong> the probable intended content was the source file content, but the observed public post contains no transferred file text. This supports an agent/system malfunction rather than successful content publication.</div>
+    <table class="matrix"><thead><tr><th>Source</th><th>Post ID</th><th>Body length</th><th>Gibberish?</th></tr></thead><tbody><tr><td>HiddenOrca.txt</td><td>27290</td><td class='empty'>0 chars</td><td>no</td></tr><tr><td>MellowOtter.txt</td><td>98591</td><td class='empty'>0 chars</td><td>no</td></tr><tr><td>SwiftWren.txt</td><td>373902</td><td class='empty'>0 chars</td><td>no</td></tr></tbody></table>
+    
+</div>
+
+  </main>
+</body>
+</html>

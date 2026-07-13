@@ -28,7 +28,6 @@
 
 ```python
 from opentrace.mcp_server import get_server
-from opentrace.prov_visualizer import visualize_prov_dag
 import json
 from pathlib import Path
 

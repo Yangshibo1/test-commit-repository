@@ -14,14 +14,8 @@
 ### 2. PROV DAG (`prov_dag.py`)
 基于 W3C PROV 标准的文件级血缘图谱
 
-### 3. 可视化 (`prov_visualizer.py`)
-生成数据流图和 Mermaid 代码
-
-### 4. 服务接口 (`mcp_server.py`)
+### 3. 服务接口 (`mcp_server.py`)
 统一的调用接口（支持多实例管理）
-
-### 5. 验证保护 (`prov_validation.py`)
-数据完整性验证和保护机制
 
 ## 在数据分析中的使用
 
@@ -78,22 +72,6 @@ server.record_prov_relation(
 | `wasAssociatedWith` | Activity → Agent | filter → step1 |
 | `wasDerivedFrom` | Entity → Entity | output → input |
 
-### 可视化数据处理流程
-
-```python
-from opentrace.prov_visualizer import visualize_prov_dag
-from pathlib import Path
-
-# 生成可视化
-session_dir = Path(server.base_dir) / session_id
-visualize_prov_dag(str(session_dir), "data_flow.txt")
-
-# 输出包含：
-# - 文本格式数据流图
-# - 节点详情
-# - Mermaid 渲染代码
-```
-
 ## 重要原则
 
 1. **显式提供参数**: 所有关系由 Claude Code 明确提供，不解析代码
@@ -118,20 +96,6 @@ custom_server = get_server("/path/to/storage")
 
 # 列出所有活跃的服务器实例
 servers_info = list_all_servers()
-```
-
-## 数据验证和保护
-
-```python
-from opentrace.prov_validation import ProtectedProvDAG, validate_session
-
-# 使用受保护的 DAG（自动验证和完整性检查）
-protected_dag = ProtectedProvDAG(session_dir, append_only=True)
-
-# 验证现有会话
-is_valid, errors = validate_session(session_dir)
-if not is_valid:
-    print("验证失败:", errors)
 ```
 
 ## 数据分析工作流

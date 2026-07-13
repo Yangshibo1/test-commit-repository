@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VAST MC2 Core Visualizations</title>
+  <style>
+    body { margin:0; min-height:100vh; padding:36px; background:radial-gradient(circle at top left,#5c3524,#201812 42%,#120e0b); color:#fffaf3; font-family:Georgia,'Times New Roman',serif; }
+    main { max-width:1180px; margin:0 auto; }
+    h1 { font-size:42px; line-height:1; margin:0 0 8px; letter-spacing:-.04em; }
+    .subtitle { color:#dbc7b4; margin:0 0 28px; max-width:820px; line-height:1.5; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; }
+    .card { display:block; text-decoration:none; color:#30251d; background:#fffaf3; border:1px solid #dcc8b5; border-radius:22px; padding:18px; box-shadow:0 22px 55px rgba(0,0,0,.24); transition:transform .18s ease, box-shadow .18s ease; }
+    .card:hover { transform:translateY(-4px); box-shadow:0 28px 70px rgba(0,0,0,.34); }
+    .card span { display:block; color:#d97745; font:700 11px ui-monospace,Consolas,monospace; text-transform:uppercase; letter-spacing:.12em; margin-bottom:10px; }
+    .card strong { display:block; font-size:22px; }
+    .card p { color:#7a6859; line-height:1.45; margin:8px 0 0; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>VAST MC2 Core Visualizations</h1>
+    <p class="subtitle">Standalone HTML previews for the core challenge questions: route, timeline, system context, meaning, recurrence, and intervention.</p>
+    <section class="grid"><a class='card' href='q1_how_posts_made.html'><span>q1_how_posts_made</span><strong>Q1 · How was the anomalous SaidIT post made?</strong><p>A route map of the people, file, task delegation, and SaidIT system interactions that produced the anomalous post.</p></a><a class='card' href='q2_detailed_event_chain.html'><span>q2_detailed_event_chain</span><strong>Q2 · Exact chain of events</strong><p>A swimlane-style event timeline focused on the exact message chain.</p></a><a class='card' href='q3_system_overview.html'><span>q3_system_overview</span><strong>Q3 · System overview</strong><p>A clustered overview placing the target message chain in the larger system.</p></a><a class='card' href='q4_post_meaning_origin.html'><span>q4_post_meaning_origin</span><strong>Q4 · What do the posts mean? What is the origin of their contents?</strong><p>Evidence autopsy showing content_source origin, empty published body, and the reasoning behind the malfunction interpretation.</p></a><a class='card' href='q5_historic_recurrence.html'><span>q5_historic_recurrence</span><strong>Q5 · Historic recurrence and contrast</strong><p>A recurrence matrix illustrating prior instances and contrasting them with the latest SwiftWren case.</p></a><a class='card' href='q6_intervention_point.html'><span>q6_intervention_point</span><strong>Q6 · Intervention point</strong><p>A before/after intervention diagram showing why saidit_post validation is the best single control point.</p></a></section>
+  </main>
+</body>
+</html>

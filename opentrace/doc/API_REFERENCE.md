@@ -98,37 +98,6 @@ server.record_step_details(
 
 **⚠️ 重要**: 这是必填项，每步都必须调用，否则验证失败。
 
-### 5. visualize_prov_dag()
-
-```python
-from opentrace.prov_visualizer import visualize_prov_dag
-
-visualize_prov_dag(
-    session_dir: str,       # 会话目录
-    output_file: str = None # 输出文件路径
-)
-```
-
-### 6. validate_session()
-
-```python
-from opentrace.prov_validation import validate_session
-
-is_valid, errors = validate_session(session_dir)
-# is_valid: bool
-# errors: List[str]
-
-# 常见错误：
-# - "step_details.json 文件不存在" - 未调用 record_step_details()
-# - "步骤 step_1 缺少必要字段" - 参数不完整
-```
-
-**验证规则**:
-- step_details.json 文件必须存在
-- 每个步骤必须包含必要字段（step_id, step_name, description, code_files, commands_run）
-- code_files 或 code_generated 至少有一个
-- commands_run 不能为空
-
 ---
 
 ## 常用参数值
@@ -197,7 +166,6 @@ is_valid, errors = validate_session(session_dir)
 
 ```python
 from opentrace.mcp_server import get_server
-from opentrace.prov_visualizer import visualize_prov_dag
 from pathlib import Path
 
 # 初始化
@@ -237,7 +205,4 @@ server.record_step_details(
     input_files=["data.json"],
     output_files=["filtered.json"]
 )
-
-# 生成可视化
-visualize_prov_dag(str(work_dir), "data_flow.txt")
 ```

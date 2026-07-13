@@ -71,17 +71,7 @@ server.record_step_details(
 )
 ```
 
-### Step 3: 生成可视化 (1分钟)
-
-```python
-from opentrace.prov_visualizer import visualize_prov_dag
-from pathlib import Path
-
-session_dir = Path(server.base_dir) / session_id
-visualize_prov_dag(str(session_dir), "data_flow.txt")
-```
-
-### Step 4: 查看结果 (1分钟)
+### Step 3: 查看结果 (1分钟)
 
 ```
 .opentrace/
@@ -89,8 +79,7 @@ visualize_prov_dag(str(session_dir), "data_flow.txt")
     ├── prov_dag.json          # DAG元数据
     ├── prov_nodes.json        # 节点信息
     ├── prov_edges.json        # 关系信息
-    ├── step_details.json      # 步骤详情
-    └── data_flow.txt         # 可视化图表
+    └── step_details.json      # 步骤详情
 ```
 
 ## 核心原则
@@ -111,9 +100,6 @@ visualize_prov_dag(str(session_dir), "data_flow.txt")
 
 **Q: 数据存储在哪里？**
 A: 默认存储在项目根目录 `.opentrace/`，可通过环境变量 `OPENTRACE_BASE_DIR` 自定义。
-
-**Q: 如何验证会话完整性？**
-A: 使用 `validate_session(session_dir)` 函数验证。
 
 **Q: 支持哪些数据格式？**
 A: 当前支持 JSON 和 CSV，可扩展。

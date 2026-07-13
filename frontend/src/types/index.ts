@@ -65,6 +65,9 @@ export interface LlmArtifact {
   description?: string;
   sample_data?: unknown;
   echarts_chart?: object;
+  // 可视化内容：可以是图片URL、base64图片或HTML字符串
+  visualization?: string;
+  visualization_type?: 'image' | 'html' | 'echarts';
   key_findings?: unknown;
   answers?: unknown;
 }

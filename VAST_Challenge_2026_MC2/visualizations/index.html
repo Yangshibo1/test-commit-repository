@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VAST MC2 Core Visualizations</title>
+  <style>
+    body { margin:0; min-height:100vh; padding:36px; background:radial-gradient(circle at top left,#5c3524,#201812 42%,#120e0b); color:#fffaf3; font-family:Georgia,'Times New Roman',serif; }
+    main { max-width:1180px; margin:0 auto; }
+    h1 { font-size:42px; line-height:1; margin:0 0 8px; letter-spacing:-.04em; }
+    .subtitle { color:#dbc7b4; margin:0 0 28px; max-width:820px; line-height:1.5; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; }
+    .card { display:block; text-decoration:none; color:#30251d; background:#fffaf3; border:1px solid #dcc8b5; border-radius:22px; padding:18px; box-shadow:0 22px 55px rgba(0,0,0,.24); transition:transform .18s ease, box-shadow .18s ease; }
+    .card:hover { transform:translateY(-4px); box-shadow:0 28px 70px rgba(0,0,0,.34); }
+    .card span { display:block; color:#d97745; font:700 11px ui-monospace,Consolas,monospace; text-transform:uppercase; letter-spacing:.12em; margin-bottom:10px; }
+    .card strong { display:block; font-size:22px; }
+    .card p { color:#7a6859; line-height:1.45; margin:8px 0 0; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>VAST MC2 Core Visualizations</h1>
+    <p class="subtitle">Standalone HTML previews for the core challenge questions: route, timeline, system context, meaning, recurrence, and intervention.</p>
+    <section class="grid"><a class='card' href='node_04_source_trace.html'><span>node_04_source_trace</span><strong>Exact Anomaly Chain</strong><p>Route map and timeline for the target anomalous SaidIT post.</p></a><a class='card' href='node_09_instruction_outcome_comparison.html'><span>node_09_instruction_outcome_comparison</span><strong>Historical Recurrence Matrix</strong><p>Contrasts prior anomalous posts with the most recent SwiftWren post.</p></a><a class='card' href='node_12_john_all_posts_analysis.html'><span>node_12_john_all_posts_analysis</span><strong>John Posting Behavior</strong><p>Shows why John Windward is a posting-behavior outlier.</p></a><a class='card' href='node_20_content_and_creator_verification.html'><span>node_20_content_and_creator_verification</span><strong>Content Origin Autopsy</strong><p>Illustrates the reasoning behind the post meaning and content origin.</p></a><a class='card' href='node_24_system_change_recommendations.html'><span>node_24_system_change_recommendations</span><strong>Intervention Gate Simulation</strong><p>Before/after view of the recommended saidit_post validation gate.</p></a><a class='card' href='node_25_final_investigation_summary.html'><span>node_25_final_investigation_summary</span><strong>Investigation Summary Dashboard</strong><p>Consolidates the challenge answers and the recommended intervention.</p></a></section>
+  </main>
+</body>
+</html>

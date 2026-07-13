@@ -18,7 +18,6 @@ OpenTrace 是一个**通用的数据分析工作流记录服务**，适用于任
    - `record_step_details()` - 记录详情（必填）
 3. **读取输出** → 观察结果
 4. **决策下一步** → 基于观察结果
-5. **生成可视化** → `visualize_prov_dag()`
 
 ## 示例脚本
 
@@ -27,7 +26,7 @@ OpenTrace 是一个**通用的数据分析工作流记录服务**，适用于任
 | `step1_load_data.py` | 数据加载 | init_session, record_prov_relation, record_step_details |
 | `step2_filter_saidit.py` | 数据过滤 | record_prov_relation, record_step_details |
 | `step3_analyze_chain.py` | 数据分析 | record_prov_relation, record_step_details |
-| `generate_report.py` | 报告生成 | visualize_prov_dag |
+| `generate_report.py` | 报告生成 | record_prov_relation, record_step_details |
 
 ## 关键要点
 
