@@ -137,7 +137,14 @@ class LegendLayoutTests(unittest.TestCase):
         try:
             legends = []
             for label in ("Event type", "TXT chain", "Department"):
-                legend = axis.legend(handles=[Line2D([0], [0], label=label)], title=label)
+                legend = axis.legend(
+                    handles=[Line2D([0], [0], label=label)],
+                    title=label,
+                    loc="upper left",
+                )
+                legend.set_loc = MagicMock(
+                    side_effect=AssertionError("stack_legends must not call set_loc")
+                )
                 axis.add_artist(legend)
                 legends.append(legend)
 

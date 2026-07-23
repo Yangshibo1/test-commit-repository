@@ -195,7 +195,6 @@ def stack_legends(axis: Any, legends: List[Any]) -> None:
     """Place legends in one right-side column using their rendered heights."""
     next_top = 1.0
     for legend in legends:
-        legend.set_loc("upper left")
         legend.set_bbox_to_anchor(
             (LEGEND_COLUMN_X, next_top), transform=axis.transAxes
         )
