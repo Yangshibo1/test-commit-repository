@@ -104,7 +104,7 @@ class EventSequenceTests(unittest.TestCase):
         )
         self.assertEqual(
             build_sequence_ticks(375, 25),
-            [1, 26, 51, 76, 101, 126, 151, 176, 201, 226, 251, 276, 301, 326, 351, 375],
+            [1, 26, 51, 76, 101, 126, 151, 176, 201, 226, 251, 276, 301, 326, 375],
         )
 
     def test_builds_ticks_for_empty_and_single_event_sequences(self):

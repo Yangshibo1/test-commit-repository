@@ -183,7 +183,7 @@ def build_sequence_ticks(event_count: int, interval: int = SEQUENCE_TICK_INTERVA
         return []
     ticks = list(range(1, event_count + 1, interval))
     if ticks[-1] != event_count:
-        if event_count - ticks[-1] < interval / 2:
+        if event_count - ticks[-1] < interval:
             ticks.pop()
         ticks.append(event_count)
     return ticks
