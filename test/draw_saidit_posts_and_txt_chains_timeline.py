@@ -12,8 +12,11 @@ from matplotlib.lines import Line2D
 PROJECT_ROOT = Path(__file__).parent.parent
 CHAIN_ORDER = ("SwiftWren.txt", "HiddenOrca.txt", "MellowOtter.txt")
 SEQUENCE_TICK_INTERVAL = 25
+DEPARTMENT_LABEL_X = 1.005
 LEGEND_COLUMN_X = 1.16
 LEGEND_VERTICAL_PADDING = 0.025
+FIGURE_WIDTH = 34
+FIGURE_HEIGHT = 14.5
 DEPARTMENT_COLORS = [
     "#4E79A7", "#F28E2B", "#59A14F", "#E15759", "#B07AA1",
     "#76B7B2", "#EDC948", "#FF9DA7", "#9C755F", "#BAB0AC",
@@ -216,7 +219,7 @@ def render_timeline(events: List[Dict[str, Any]], rows: List[Dict[str, Any]], ou
         if event.get("chain_file") in CHAIN_ORDER:
             chain_events[event["chain_file"]].append(event)
 
-    fig, axis = plt.subplots(figsize=(25, max(14, len(rows) * 0.32 + 5)))
+    fig, axis = plt.subplots(figsize=(FIGURE_WIDTH, FIGURE_HEIGHT))
     fig.patch.set_facecolor("#FAFAF8")
     axis.set_facecolor("#FFFFFF")
 
@@ -227,7 +230,7 @@ def render_timeline(events: List[Dict[str, Any]], rows: List[Dict[str, Any]], ou
                 axis.plot(
                     [event["sequence_position"] for event in segment],
                     [event["y"] for event in segment], color=CHAIN_COLORS[chain_file],
-                    alpha=0.42, linewidth=1.25, solid_capstyle="round", zorder=1,
+                    alpha=0.42, linewidth=1.0, solid_capstyle="round", zorder=1,
                 )
 
     for event_type, marker in EVENT_MARKERS.items():
@@ -237,7 +240,7 @@ def render_timeline(events: List[Dict[str, Any]], rows: List[Dict[str, Any]], ou
                 [event["sequence_position"] for event in typed_events],
                 [event["y"] for event in typed_events],
                 c=[department_colors[event["department"]] for event in typed_events],
-                marker=marker, s=58 if event_type == "saidit_post" else 38,
+                marker=marker, s=46 if event_type == "saidit_post" else 30,
                 edgecolors="#FFFFFF", linewidths=0.55, alpha=0.92, zorder=3,
             )
 
@@ -245,11 +248,7 @@ def render_timeline(events: List[Dict[str, Any]], rows: List[Dict[str, Any]], ou
     axis.set_yticklabels([row["person_label"] for row in rows], fontsize=7.5)
     axis.invert_yaxis()
     event_count = len(events)
-    tick_interval = 25
-    sequence_ticks = list(range(1, event_count + 1, tick_interval))
-    if event_count and sequence_ticks[-1] != event_count:
-        sequence_ticks.append(event_count)
-    axis.set_xticks(sequence_ticks)
+    axis.set_xticks(build_sequence_ticks(event_count))
     axis.set_xlim(0.5, event_count + 0.5)
     axis.grid(axis="x", color="#D9D9D6", linewidth=0.6, alpha=0.75)
     axis.grid(axis="y", visible=False)
@@ -263,18 +262,19 @@ def render_timeline(events: List[Dict[str, Any]], rows: List[Dict[str, Any]], ou
         if department not in seen_departments:
             y = row_lookup[row["person_id"]]["y"]
             axis.axhline(y - 0.5, color="#D0D0CC", linewidth=0.7, zorder=0)
-            axis.text(1.005, y, department, transform=axis.get_yaxis_transform(), va="center", ha="left", fontsize=8, weight="bold", color=department_colors[department])
+            axis.text(DEPARTMENT_LABEL_X, y, department, transform=axis.get_yaxis_transform(), va="center", ha="left", fontsize=8, weight="bold", color=department_colors[department])
             seen_departments.add(department)
 
     event_handles = [Line2D([0], [0], marker=marker, color="none", markerfacecolor="#666666", markeredgecolor="#FFFFFF", markersize=7, label=name) for name, marker in EVENT_MARKERS.items()]
     chain_handles = [Line2D([0], [0], color=CHAIN_COLORS[name], linewidth=2, label=name) for name in CHAIN_ORDER]
     department_handles = [Line2D([0], [0], marker="o", color="none", markerfacecolor=color, markersize=7, label=name) for name, color in department_colors.items()]
-    first_legend = axis.legend(handles=event_handles, title="Event type", loc="upper left", bbox_to_anchor=(1.005, 1.0), fontsize=8)
+    first_legend = axis.legend(handles=event_handles, title="Event type", loc="upper left", fontsize=8)
     axis.add_artist(first_legend)
-    second_legend = axis.legend(handles=chain_handles, title="TXT chain", loc="upper left", bbox_to_anchor=(1.005, 0.76), fontsize=8)
+    second_legend = axis.legend(handles=chain_handles, title="TXT chain", loc="upper left", fontsize=8)
     axis.add_artist(second_legend)
-    axis.legend(handles=department_handles, title="Department", loc="upper left", bbox_to_anchor=(1.005, 0.57), fontsize=8)
-    fig.subplots_adjust(left=0.20, right=0.80, top=0.92, bottom=0.07)
+    third_legend = axis.legend(handles=department_handles, title="Department", loc="upper left", fontsize=8)
+    stack_legends(axis, [first_legend, second_legend, third_legend])
+    fig.subplots_adjust(left=0.15, right=0.68, top=0.92, bottom=0.08)
     fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
 

@@ -12,7 +12,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 from draw_saidit_posts_and_txt_chains_timeline import (
     CHAIN_COLORS,
     CHAIN_ORDER,
+    DEPARTMENT_LABEL_X,
     EVENT_MARKERS,
+    FIGURE_HEIGHT,
+    FIGURE_WIDTH,
     LEGEND_COLUMN_X,
     LEGEND_VERTICAL_PADDING,
     build_employee_rows,
@@ -171,18 +174,36 @@ class TimelineOutputTests(unittest.TestCase):
             {"id": 1, "when": 1.0, "sequence_position": 1, "short_name": "create_file", "department": "Operations", "y": 0, "chain_file": "SwiftWren.txt"},
             {"id": 2, "when": 999999.0, "sequence_position": 2, "short_name": "saidit_post", "department": "Operations", "y": 0, "chain_file": "SwiftWren.txt"},
         ]
-        axis = MagicMock()
         figure = MagicMock()
-        with patch("draw_saidit_posts_and_txt_chains_timeline.plt.subplots", return_value=(figure, axis)):
-            with patch("draw_saidit_posts_and_txt_chains_timeline.plt.close"):
-                render_timeline(events, rows, Path("timeline.png"))
+        axis = MagicMock()
+        axis.figure = figure
+        legends = [MagicMock(), MagicMock(), MagicMock()]
+        axis.legend.side_effect = legends
+        with patch(
+            "draw_saidit_posts_and_txt_chains_timeline.plt.subplots",
+            return_value=(figure, axis),
+        ) as subplots:
+            with patch("draw_saidit_posts_and_txt_chains_timeline.stack_legends") as stack:
+                with patch("draw_saidit_posts_and_txt_chains_timeline.plt.close"):
+                    render_timeline(events, rows, Path("timeline.png"))
 
+        subplots.assert_called_once_with(figsize=(FIGURE_WIDTH, FIGURE_HEIGHT))
         self.assertEqual(axis.set_xlabel.call_args.args[0], "Event sequence (chronological order)")
-        self.assertIn(1, axis.set_xticks.call_args.args[0])
-        self.assertIn(2, axis.set_xticks.call_args.args[0])
+        self.assertEqual(axis.set_xticks.call_args.args[0], build_sequence_ticks(len(events)))
+        axis.set_xlim.assert_called_once_with(0.5, len(events) + 0.5)
         self.assertEqual(axis.plot.call_args.args[0], [1, 2])
+        self.assertEqual(axis.plot.call_args.kwargs["linewidth"], 1.0)
         self.assertEqual(axis.scatter.call_args_list[0].args[0], [2])
+        self.assertEqual(axis.scatter.call_args_list[0].kwargs["s"], 46)
         self.assertEqual(axis.scatter.call_args_list[1].args[0], [1])
+        self.assertEqual(axis.scatter.call_args_list[1].kwargs["s"], 30)
+        self.assertEqual(axis.text.call_args.args[0], DEPARTMENT_LABEL_X)
+        self.assertTrue(all(call.kwargs["loc"] == "upper left" for call in axis.legend.call_args_list))
+        self.assertTrue(all("bbox_to_anchor" not in call.kwargs for call in axis.legend.call_args_list))
+        stack.assert_called_once_with(axis, legends)
+        figure.subplots_adjust.assert_called_once_with(
+            left=0.15, right=0.68, top=0.92, bottom=0.08
+        )
 
     def test_renders_real_combined_dataset_to_png(self):
         rows = build_employee_rows(load_org_chart())
