@@ -15,6 +15,10 @@ SEQUENCE_TICK_INTERVAL = 25
 DEPARTMENT_LABEL_X = 1.005
 LEGEND_COLUMN_X = 1.16
 LEGEND_VERTICAL_PADDING = 0.025
+LEGEND_MIN_FONT_SIZE = 4.0
+LEGEND_MIN_TITLE_FONT_SIZE = 4.0
+LEGEND_MIN_VERTICAL_PADDING = 0.0
+LEGEND_COMPRESSION_FACTOR = 0.8
 FIGURE_WIDTH = 34
 FIGURE_HEIGHT = 14.5
 DEPARTMENT_COLORS = [
@@ -39,9 +43,9 @@ def normalize_person_id(actor_id: str) -> Optional[str]:
     """Return a bare employee ID, excluding system and other non-person actors."""
     value = str(actor_id)
     if value.startswith("Agent/person:"):
-        return value.removeprefix("Agent/person:")
+        return value[len("Agent/person:"):]
     if value.startswith("person:"):
-        return value.removeprefix("person:")
+        return value[len("person:"):]
     return None
 
 
@@ -194,19 +198,85 @@ def build_sequence_ticks(event_count: int, interval: int = SEQUENCE_TICK_INTERVA
     return ticks
 
 
-def stack_legends(axis: Any, legends: List[Any]) -> None:
-    """Place legends in one right-side column using their rendered heights."""
-    next_top = 1.0
+def _legend_bounds(axis: Any, legends: List[Any]) -> List[Any]:
+    """Return rendered legend bounds in axes coordinates."""
+    axis.figure.canvas.draw()
+    renderer = axis.figure.canvas.get_renderer()
+    return [
+        axis.transAxes.inverted().transform_bbox(legend.get_window_extent(renderer))
+        for legend in legends
+    ]
+
+
+def _compress_legends(legends: List[Any]) -> bool:
+    """Reduce legend typography and vertical padding once, returning whether it changed."""
+    changed = False
     for legend in legends:
-        legend.set_bbox_to_anchor(
-            (LEGEND_COLUMN_X, next_top), transform=axis.transAxes
+        text_sizes = [text.get_fontsize() for text in legend.get_texts()]
+        new_text_size = max(
+            LEGEND_MIN_FONT_SIZE,
+            min(text_sizes) * LEGEND_COMPRESSION_FACTOR,
         )
-        axis.figure.canvas.draw()
-        renderer = axis.figure.canvas.get_renderer()
-        bounds = axis.transAxes.inverted().transform_bbox(
-            legend.get_window_extent(renderer)
+        title = legend.get_title()
+        new_title_size = max(
+            LEGEND_MIN_TITLE_FONT_SIZE,
+            title.get_fontsize() * LEGEND_COMPRESSION_FACTOR,
         )
-        next_top = bounds.y0 - LEGEND_VERTICAL_PADDING
+        padding_attributes = ("borderpad", "labelspacing", "handletextpad", "borderaxespad")
+        new_paddings = {
+            attribute: max(
+                LEGEND_MIN_VERTICAL_PADDING,
+                getattr(legend, attribute) * LEGEND_COMPRESSION_FACTOR,
+            )
+            for attribute in padding_attributes
+        }
+        if (
+            new_text_size >= min(text_sizes)
+            and new_title_size >= title.get_fontsize()
+            and all(new_paddings[name] >= getattr(legend, name) for name in new_paddings)
+        ):
+            continue
+        for text in legend.get_texts():
+            text.set_fontsize(new_text_size)
+        title.set_fontsize(new_title_size)
+        for attribute, padding in new_paddings.items():
+            setattr(legend, attribute, padding)
+        legend._fontsize = new_text_size
+        changed = True
+    return changed
+
+
+def stack_legends(axis: Any, legends: List[Any]) -> None:
+    """Place legends in one right-side column, compressing only when needed."""
+    if not legends:
+        return
+    minimums_reached = False
+    for _ in range(32):
+        bounds = _legend_bounds(axis, legends)
+        total_height = sum(bound.height for bound in bounds)
+        padding = min(
+            LEGEND_VERTICAL_PADDING,
+            max(0.0, (1.0 - total_height) / max(1, len(legends) - 1)),
+        )
+        if total_height + padding * (len(legends) - 1) <= 1.0:
+            next_top = 1.0
+            for legend, bound in zip(legends, bounds):
+                legend.set_bbox_to_anchor(
+                    (LEGEND_COLUMN_X, next_top - (1.0 - bound.y1)),
+                    transform=axis.transAxes,
+                )
+                next_top -= bound.height + padding
+            fitted_bounds = _legend_bounds(axis, legends)
+            if all(
+                bound.y0 >= 0.0 and bound.y1 <= 1.0 for bound in fitted_bounds
+            ):
+                return
+        if minimums_reached:
+            break
+        minimums_reached = not _compress_legends(legends)
+    raise ValueError(
+        "Legends cannot fit within axes bounds at minimum font sizes and padding."
+    )
 
 
 def render_timeline(events: List[Dict[str, Any]], rows: List[Dict[str, Any]], output_path: Path) -> None:

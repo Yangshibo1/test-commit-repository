@@ -165,6 +165,49 @@ class LegendLayoutTests(unittest.TestCase):
             self.assertGreaterEqual(boxes[1].y0 - boxes[2].y1, LEGEND_VERTICAL_PADDING - 0.01)
         finally:
             plt.close(figure)
+    def test_compresses_overflowing_legends_within_vertical_axes_bounds(self):
+        figure, axis = plt.subplots(figsize=(2, 3))
+        try:
+            legends = []
+            for index in range(1):
+                handles = [Line2D([0], [0], label=f"Entry {entry}") for entry in range(5)]
+                legend = axis.legend(
+                    handles=handles,
+                    title=f"Legend {index}",
+                    loc="upper left",
+                    fontsize=14,
+                    title_fontsize=16,
+                    borderpad=1.0,
+                    labelspacing=0.8,
+                )
+                axis.add_artist(legend)
+                legends.append(legend)
+
+            original_font_sizes = [legend.get_texts()[0].get_fontsize() for legend in legends]
+            original_title_sizes = [legend.get_title().get_fontsize() for legend in legends]
+            original_paddings = [legend.labelspacing for legend in legends]
+
+            stack_legends(axis, legends)
+            figure.canvas.draw()
+            renderer = figure.canvas.get_renderer()
+            boxes = [
+                axis.transAxes.inverted().transform_bbox(legend.get_window_extent(renderer))
+                for legend in legends
+            ]
+
+            self.assertTrue(all(box.y0 >= 0.0 and box.y1 <= 1.0 for box in boxes))
+            self.assertTrue(
+                any(
+                    legend.get_texts()[0].get_fontsize() < original_font_size
+                    or legend.get_title().get_fontsize() < original_title_size
+                    or legend.labelspacing < original_padding
+                    for legend, original_font_size, original_title_size, original_padding in zip(
+                        legends, original_font_sizes, original_title_sizes, original_paddings
+                    )
+                )
+            )
+        finally:
+            plt.close(figure)
 
 
 class TimelineOutputTests(unittest.TestCase):
