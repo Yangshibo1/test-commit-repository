@@ -4,12 +4,17 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+
 sys.path.insert(0, str(Path(__file__).parent))
 
 from draw_saidit_posts_and_txt_chains_timeline import (
     CHAIN_COLORS,
     CHAIN_ORDER,
     EVENT_MARKERS,
+    LEGEND_COLUMN_X,
+    LEGEND_VERTICAL_PADDING,
     build_employee_rows,
     build_render_events,
     build_row_lookup,
@@ -21,6 +26,7 @@ from draw_saidit_posts_and_txt_chains_timeline import (
     normalize_person_id,
     primary_actor,
     render_timeline,
+    stack_legends,
 )
 
 
@@ -123,6 +129,32 @@ class EventSequenceTests(unittest.TestCase):
             [(event["id"], event["sequence_position"]) for event in events],
             [(3, 1), (5, 2), (9, 3)],
         )
+
+
+class LegendLayoutTests(unittest.TestCase):
+    def test_stacks_real_legends_in_right_column_using_measured_heights(self):
+        figure, axis = plt.subplots()
+        try:
+            legends = []
+            for label in ("Event type", "TXT chain", "Department"):
+                legend = axis.legend(handles=[Line2D([0], [0], label=label)], title=label)
+                axis.add_artist(legend)
+                legends.append(legend)
+
+            stack_legends(axis, legends)
+            figure.canvas.draw()
+            renderer = figure.canvas.get_renderer()
+            boxes = [
+                axis.transAxes.inverted().transform_bbox(legend.get_window_extent(renderer))
+                for legend in legends
+            ]
+
+            self.assertGreater(boxes[0].x0, 1.005)
+            self.assertAlmostEqual(boxes[0].x0, LEGEND_COLUMN_X, delta=0.03)
+            self.assertGreaterEqual(boxes[0].y0 - boxes[1].y1, LEGEND_VERTICAL_PADDING - 0.01)
+            self.assertGreaterEqual(boxes[1].y0 - boxes[2].y1, LEGEND_VERTICAL_PADDING - 0.01)
+        finally:
+            plt.close(figure)
 
 
 class TimelineOutputTests(unittest.TestCase):

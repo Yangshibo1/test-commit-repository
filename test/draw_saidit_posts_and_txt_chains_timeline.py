@@ -12,6 +12,8 @@ from matplotlib.lines import Line2D
 PROJECT_ROOT = Path(__file__).parent.parent
 CHAIN_ORDER = ("SwiftWren.txt", "HiddenOrca.txt", "MellowOtter.txt")
 SEQUENCE_TICK_INTERVAL = 25
+LEGEND_COLUMN_X = 1.16
+LEGEND_VERTICAL_PADDING = 0.025
 DEPARTMENT_COLORS = [
     "#4E79A7", "#F28E2B", "#59A14F", "#E15759", "#B07AA1",
     "#76B7B2", "#EDC948", "#FF9DA7", "#9C755F", "#BAB0AC",
@@ -187,6 +189,22 @@ def build_sequence_ticks(event_count: int, interval: int = SEQUENCE_TICK_INTERVA
             ticks.pop()
         ticks.append(event_count)
     return ticks
+
+
+def stack_legends(axis: Any, legends: List[Any]) -> None:
+    """Place legends in one right-side column using their rendered heights."""
+    next_top = 1.0
+    for legend in legends:
+        legend.set_loc("upper left")
+        legend.set_bbox_to_anchor(
+            (LEGEND_COLUMN_X, next_top), transform=axis.transAxes
+        )
+        axis.figure.canvas.draw()
+        renderer = axis.figure.canvas.get_renderer()
+        bounds = axis.transAxes.inverted().transform_bbox(
+            legend.get_window_extent(renderer)
+        )
+        next_top = bounds.y0 - LEGEND_VERTICAL_PADDING
 
 
 def render_timeline(events: List[Dict[str, Any]], rows: List[Dict[str, Any]], output_path: Path) -> None:
