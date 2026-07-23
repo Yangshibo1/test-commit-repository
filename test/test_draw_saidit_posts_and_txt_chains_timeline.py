@@ -166,11 +166,13 @@ class LegendLayoutTests(unittest.TestCase):
         finally:
             plt.close(figure)
     def test_compresses_overflowing_legends_within_vertical_axes_bounds(self):
-        figure, axis = plt.subplots(figsize=(2, 3))
+        figure, axis = plt.subplots(figsize=(2.5, 3.0))
         try:
             legends = []
-            for index in range(1):
-                handles = [Line2D([0], [0], label=f"Entry {entry}") for entry in range(5)]
+            for index in range(3):
+                handles = [
+                    Line2D([0], [0], label=f"Legend {index} entry")
+                ]
                 legend = axis.legend(
                     handles=handles,
                     title=f"Legend {index}",
@@ -195,7 +197,11 @@ class LegendLayoutTests(unittest.TestCase):
                 for legend in legends
             ]
 
-            self.assertTrue(all(box.y0 >= 0.0 and box.y1 <= 1.0 for box in boxes))
+            self.assertTrue(all(0.0 <= box.y0 and box.y1 <= 1.0 for box in boxes))
+            self.assertTrue(all(
+                upper.y0 >= lower.y1
+                for upper, lower in zip(boxes, boxes[1:])
+            ))
             self.assertTrue(
                 any(
                     legend.get_texts()[0].get_fontsize() < original_font_size

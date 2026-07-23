@@ -15,8 +15,8 @@ SEQUENCE_TICK_INTERVAL = 25
 DEPARTMENT_LABEL_X = 1.005
 LEGEND_COLUMN_X = 1.16
 LEGEND_VERTICAL_PADDING = 0.025
-LEGEND_MIN_FONT_SIZE = 4.0
-LEGEND_MIN_TITLE_FONT_SIZE = 4.0
+LEGEND_MIN_FONT_SIZE = 2.0
+LEGEND_MIN_TITLE_FONT_SIZE = 2.0
 LEGEND_MIN_VERTICAL_PADDING = 0.0
 LEGEND_COMPRESSION_FACTOR = 0.8
 FIGURE_WIDTH = 34
@@ -261,11 +261,14 @@ def stack_legends(axis: Any, legends: List[Any]) -> None:
         if total_height + padding * (len(legends) - 1) <= 1.0:
             next_top = 1.0
             for legend, bound in zip(legends, bounds):
+                anchor = legend.get_bbox_to_anchor()
+                anchor_y = axis.transAxes.inverted().transform((anchor.x0, anchor.y0))[1]
                 legend.set_bbox_to_anchor(
-                    (LEGEND_COLUMN_X, next_top - (1.0 - bound.y1)),
+                    (LEGEND_COLUMN_X, anchor_y + next_top - bound.y1),
                     transform=axis.transAxes,
                 )
-                next_top -= bound.height + padding
+                measured_bound = _legend_bounds(axis, [legend])[0]
+                next_top = measured_bound.y0 - padding
             fitted_bounds = _legend_bounds(axis, legends)
             if all(
                 bound.y0 >= 0.0 and bound.y1 <= 1.0 for bound in fitted_bounds
