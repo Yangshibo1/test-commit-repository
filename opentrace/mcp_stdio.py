@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from mcp.server.fastmcp import FastMCP
 
@@ -37,14 +38,40 @@ def _run_id() -> str:
     return run_id
 
 
+def _json_list(value: str, field_name: str) -> List[Any]:
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as error:
+        raise WorkflowError(f"{field_name} must be valid JSON: {error}") from error
+    if not isinstance(parsed, list):
+        raise WorkflowError(f"{field_name} must contain a JSON array")
+    return parsed
+
+
+def _json_object(value: str, field_name: str) -> Dict[str, Any]:
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as error:
+        raise WorkflowError(f"{field_name} must be valid JSON: {error}") from error
+    if not isinstance(parsed, dict):
+        raise WorkflowError(f"{field_name} must contain a JSON object")
+    return parsed
+
+
 @mcp.tool(name="opentrace_set_plan")
-def set_plan(nodes: List[Dict[str, Any]], reason: str = "initial plan") -> Dict[str, Any]:
+def set_plan(nodes_json: str, reason: str = "initial plan") -> Dict[str, Any]:
     """Record Claude's current semantic analysis plan.
+
+    ``nodes_json`` is a JSON array of objects. Each object contains node_id,
+    objective, step_type, and optional depends_on.
 
     Calling this again creates a new immutable plan revision.  Nodes describe
     analysis objectives, not commands, Python functions, or individual file reads.
     """
 
+    nodes = _json_list(nodes_json, "nodes_json")
+    if not all(isinstance(node, dict) for node in nodes):
+        raise WorkflowError("every nodes_json entry must be an object")
     return _store().set_plan(_run_id(), nodes, reason)
 
 
@@ -54,7 +81,7 @@ def start_step(
     objective: str,
     input_files: List[str],
     completion_condition: str,
-    expected_output_roles: Optional[List[str]] = None,
+    expected_output_roles: List[str],
     target_data: str = "",
 ) -> Dict[str, Any]:
     """Start one real semantic analysis step before material Claude tool use.
@@ -79,29 +106,36 @@ def start_step(
 def complete_step(
     step_id: str,
     operation_summary: str,
-    output_files: Optional[List[Dict[str, str]]] = None,
-    processing_result: Optional[Dict[str, Any]] = None,
-    analysis_conclusion: Optional[Dict[str, Any]] = None,
-    operation_types: Optional[List[str]] = None,
-    parameters: Optional[Dict[str, Any]] = None,
-    algorithms: Optional[List[Dict[str, Any]]] = None,
-    programs: Optional[List[Dict[str, Any]]] = None,
+    output_files_json: str = "[]",
+    processing_result_json: str = "{}",
+    analysis_conclusion_json: str = "{}",
+    operation_types: List[str] = [],
+    parameters_json: str = "{}",
+    algorithms_json: str = "[]",
+    programs_json: str = "[]",
 ) -> Dict[str, Any]:
     """Complete the active step with a truthful semantic summary.
 
+    Fields ending in ``_json`` contain serialized JSON arrays or objects.
     Output entries use ``{"path": "...", "role": "..."}``; role is one of
-    step_output, internal_intermediate, or temporary.  OpenTrace verifies and
-    hashes files but does not infer the analysis meaning.
+    step_output, internal_intermediate, or temporary.
     """
 
+    output_files = _json_list(output_files_json, "output_files_json")
+    algorithms = _json_list(algorithms_json, "algorithms_json")
+    programs = _json_list(programs_json, "programs_json")
     return _store().complete_step(
         step_id=step_id,
         operation_summary=operation_summary,
         output_files=output_files,
-        processing_result=processing_result,
-        analysis_conclusion=analysis_conclusion,
+        processing_result=_json_object(
+            processing_result_json, "processing_result_json"
+        ),
+        analysis_conclusion=_json_object(
+            analysis_conclusion_json, "analysis_conclusion_json"
+        ),
         operation_types=operation_types,
-        parameters=parameters,
+        parameters=_json_object(parameters_json, "parameters_json"),
         algorithms=algorithms,
         programs=programs,
     )
@@ -112,8 +146,8 @@ def classify_user_input(
     input_event_id: str,
     input_type: str,
     structured_summary: str = "",
-    target_step_id: Optional[str] = None,
-    target_plan_version: Optional[int] = None,
+    target_step_id: str = "",
+    target_plan_version: int = 0,
     workflow_effect: str = "",
 ) -> Dict[str, Any]:
     """Classify a user intervention captured by the UserPromptSubmit hook."""
@@ -122,8 +156,8 @@ def classify_user_input(
         input_event_id=input_event_id,
         input_type=input_type,
         structured_summary=structured_summary,
-        target_step_id=target_step_id,
-        target_plan_version=target_plan_version,
+        target_step_id=target_step_id or None,
+        target_plan_version=target_plan_version or None,
         workflow_effect=workflow_effect,
     )
 
@@ -132,16 +166,16 @@ def classify_user_input(
 def apply_user_input(
     input_event_id: str,
     workflow_effect: str,
-    target_step_id: Optional[str] = None,
-    target_plan_version: Optional[int] = None,
+    target_step_id: str = "",
+    target_plan_version: int = 0,
 ) -> Dict[str, Any]:
     """Record how a classified human contribution actually changed the workflow."""
 
     return _store().apply_user_input(
         input_event_id=input_event_id,
         workflow_effect=workflow_effect,
-        target_step_id=target_step_id,
-        target_plan_version=target_plan_version,
+        target_step_id=target_step_id or None,
+        target_plan_version=target_plan_version or None,
     )
 
 

@@ -11,7 +11,9 @@ algorithms, interpret results, or decide the next analysis action.
 For the task "$ARGUMENTS":
 
 1. Inspect enough context to propose a semantic plan, then call
-   `opentrace_set_plan`.
+   `opentrace_set_plan`. Its `nodes_json` argument is a serialized JSON array.
+   Use the input files declared by the OpenTrace Run; do not search for substitute
+   datasets.
 2. Before Read, Bash, Write, Edit, or NotebookEdit performs material analysis,
    call `opentrace_start_step`.
 3. A Step is one independently explainable data-analysis objective. A Python
@@ -20,7 +22,8 @@ For the task "$ARGUMENTS":
 4. Keep implementation details inside the current Step unless you must inspect
    an intermediate result before deciding what analysis comes next, or the
    output becomes the input to another semantic task.
-5. After observing the real result, call `opentrace_complete_step`. Record:
+5. After observing the real result, call `opentrace_complete_step`. Arguments
+   ending in `_json` are serialized JSON arrays or objects. Record:
    inputs, operations, algorithms when relevant, program paths, output roles,
    processing result, and analysis conclusion when relevant.
 6. Classify every input event identified by the UserPromptSubmit hook before

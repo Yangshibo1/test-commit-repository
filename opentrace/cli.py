@@ -135,7 +135,13 @@ def command_run(args: argparse.Namespace) -> int:
     prompt = (
         f"[OPENTRACE_INITIAL_TASK run_id={run_id}]\n"
         f"{args.task}\n\n"
+        "Declared input files:\n"
+        + "\n".join(
+            f"- {item['path']}" for item in result["initial_file_versions"]
+        )
+        + "\n\n"
         "OpenTrace only records this workflow. You own all data analysis. "
+        "Use the declared input files rather than searching for substitutes. "
         "Use the OpenTrace MCP tools to set a semantic plan before material work."
     )
     launch = {

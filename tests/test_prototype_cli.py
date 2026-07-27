@@ -33,3 +33,4 @@ def test_run_no_launch_creates_bound_run(tmp_path: Path, capsys):
     state = store.get_state(payload["run_id"])
     assert state["run"]["claude_session_id"] == payload["claude_session_id"]
     assert payload["launch_command"][1] == "--session-id"
+    assert str(data.resolve()) in payload["launch_command"][-1]

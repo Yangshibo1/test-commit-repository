@@ -74,6 +74,9 @@ def session_start(payload: Dict[str, Any]) -> Dict[str, Any]:
             "Read/Bash/Write/Edit analysis, then complete it truthfully. Do not "
             "create a step merely because a Python script or intermediate file exists."
         ),
+        "declared_initial_files": [
+            item["path"] for item in state["run"]["initial_file_versions"]
+        ],
         "plan": state["plan"],
         "active_step": active,
         "pending_user_inputs": state["pending_user_inputs"],
