@@ -20,6 +20,7 @@ OpenTrace 当前定位为个人使用、本地运行的数据分析 Agent 工作
 ### 2.1 本阶段必须完成
 
 - 一次用户数据分析任务对应一个 Run。
+- 由 OpenTrace CLI 创建 Run 并启动交互式 Claude Code，确保记录先于 Agent 执行开始。
 - Agent 在开始实质性分析前建立可调整的任务计划。
 - 每个语义 Step 有明确目标、输入文件、真实执行、数据操作、输出文件、处理结果和可选分析结论。
 - 自动记录 Claude Code 实际运行的命令、修改的程序、执行结果、失败和重试。
@@ -141,6 +142,7 @@ Step 字段分为以下部分。
 
 - `objective`
 - `target_data`
+- `completion_condition`
 
 #### 输入文件
 
@@ -190,8 +192,15 @@ Step 字段分为以下部分。
 
 #### 输出文件
 
-- `output_file_version_ids`
-- `intermediate_file_version_ids`
+- `output_files`
+  - `file_version_id`
+  - `role`
+
+输出文件角色：
+
+- `step_output`：表达本 Step 的主要数据处理结果，可以被后续 Step 使用。
+- `internal_intermediate`：只服务于本 Step 内部执行，不构成新的 Step 边界。
+- `temporary`：缓存、调试文件等临时内容，只保留文件事件，不进入正式文件血缘。
 
 #### 数据处理结果
 
@@ -244,7 +253,7 @@ Input FileVersion → Step → Output FileVersion
 
 ### 4.5 HumanContribution
 
-只实现记录真实人机协作所需的最小模型，不实现审批流。
+只实现记录真实人机协作所需的最小模型，不实现审批流。人的主要作用是帮助 Agent 分析、参与规划下一步，或对已执行的数据处理提出异议。
 
 支持三种类型：
 
@@ -269,6 +278,21 @@ Input FileVersion → Step → Output FileVersion
 人的输入不是数据处理 Step。它可以导致当前 Step 增加执行尝试、生成 PlanRevision，或触发新的验证/纠正 Step。
 
 历史 Step 不允许被覆盖。若异议成立，原 Step 保持 `execution_status=completed`，并通过 `review_status=superseded` 指向纠正 Step。
+
+用户直接在交互式 Claude Code 会话中输入自然语言。`UserPromptSubmit` Hook 保存原始输入，并要求 Agent 在下一次实质性工具调用前将其分类为：
+
+- `conversation_only`
+- `analysis_guidance`
+- `planning_input`
+- `challenge`
+
+只有后三类进入正式工作流。原始用户文本由 Hook 记录，Agent只补充结构化类型、目标 Step/Plan 和实际 workflow effect。
+
+处理规则：
+
+- `analysis_guidance`：若不改变当前 Step 的主要目标，作为 HumanContribution 关联当前 Step，并记录后续新增的执行尝试或参数变化。
+- `planning_input`：生成 PlanRevision，记录实际新增、调整或跳过的节点。
+- `challenge`：关联被质疑的历史 Step、数据操作或输出 FileVersion；如需重新检查，创建新的 `validate` 或纠正 Step，不能修改原始执行记录。
 
 ## 5. 单一事实源与存储
 
@@ -326,6 +350,8 @@ Input FileVersion → Step → Output FileVersion
 - `node_id`
 - `objective`
 - `input_files`
+- `completion_condition`
+- `expected_output_roles`
 
 服务端负责：
 
@@ -356,11 +382,101 @@ Input FileVersion → Step → Output FileVersion
 - 运行结构和颗粒度验证
 - 原子完成 Step
 
-## 7. Claude Code Plugin 约束
+## 7. Claude Code 的启动与恢复
+
+### 7.1 主入口
+
+第一版不以“用户先打开 Claude Code，再希望 Claude 自己想起使用 OpenTrace”为主流程。由 OpenTrace CLI 负责创建 Run 并启动 Claude Code：
+
+```text
+opentrace run
+  --project <project-path>
+  --task "<task-description>"
+  --data <file-1> <file-2>
+```
+
+CLI 顺序：
+
+1. 验证项目路径和初始数据文件。
+2. 生成 Claude Code session ID，并创建 Run、计算初始 FileVersion。
+3. 写入 Run 启动上下文，将 session ID 持久化到 Run。
+4. 为子进程设置 `OPENTRACE_RUN_ID`、数据库路径和项目根目录。
+5. 在项目目录启动交互式 Claude Code，并加载 OpenTrace Plugin。
+6. 将任务描述、Run ID 和“先建立计划”的短指令作为初始 Prompt。
+7. `SessionStart` Hook 从数据库读取 Run 状态并注入 Claude。
+8. Claude 调用 `set_plan` 后进入正式分析。
+
+开发模式下，启动器实际执行的命令等价于：
+
+```text
+claude
+  --session-id <claude-session-id>
+  --plugin-dir <opentrace-plugin-path>
+  "<initial-prompt>"
+```
+
+启动器是 Claude Code 的父进程，但不接管 Claude 的分析循环。Claude 仍在用户熟悉的交互式终端中运行；OpenTrace 只负责在启动前建立 Run、向子进程传递上下文，并在退出后保存最终状态。
+
+开发阶段使用本地插件目录启动；安装插件后的个人日常使用不需要显式传入插件路径。
+
+采用交互式 Claude Code，而不是一次性 `claude -p`，因为用户需要在分析过程中随时提供分析指导、规划建议和异议。
+
+### 7.2 次要入口
+
+已经打开 Claude Code 时，可以使用显式 Skill：
+
+```text
+/opentrace:data-analysis <task>
+```
+
+该入口内部调用 `start_run`。它用于临时任务和调试，不作为最强保证的默认启动方式。
+
+### 7.3 恢复
+
+```text
+opentrace resume <run-id>
+```
+
+CLI 根据 Run 中保存的 Claude Code session ID 恢复交互式会话，并设置相同 `OPENTRACE_RUN_ID`。`SessionStart` Hook 注入：
+
+- 当前 Plan 版本
+- 已完成 Step
+- active/interrupted Step
+- 未处理 HumanContribution
+- 最近验证错误
+
+Claude Code 异常退出时，`SessionEnd` 只把 Run/Step 标记为 `interrupted`，不能标记为完成。
+
+### 7.4 人工介入的运行方式
+
+人工介入不需要离开 Claude Code，也不需要另做一个审批界面。用户直接在当前交互式会话中输入：
+
+- 对当前分析的补充或方法建议。
+- 对下一步方向的规划意见。
+- 对已完成处理、结果或结论的异议。
+
+一次输入的处理顺序：
+
+1. `UserPromptSubmit` Hook 先保存原始文本，创建待分类的输入事件。
+2. Hook 向 Claude 注入一条短上下文，要求在下一次实质性工具调用前处理该输入。
+3. Claude 将其判断为普通对话，或调用 `register_human_contribution` 登记为指导、规划或异议。
+4. 若为普通对话，关闭待分类事件，不进入正式工作流。
+5. 若影响工作流，Claude 调用 `apply_human_contribution`，明确关联的 Step/Plan 及实际采取的动作。
+6. `PreToolUse` 在仍有未处理且可能影响工作流的人工输入时阻止新的实质性操作。
+
+人工输入本身不创建 Step：
+
+- 当前 Step 内的方法建议，只改变该 Step 的参数、程序或新增 execution attempt。
+- 对下一步的建议生成 PlanRevision，真正执行时才创建 Step。
+- 对历史结果的异议先关联原 Step；需要复查或纠正时，另外创建真实的 `validate` 或纠正 Step。
+
+Agent 可以像普通对话一样主动向用户询问分析决策。只有用户的回答实际改变计划或执行时，才形成 HumanContribution。若用户在长时间运行的命令中主动中断执行，Hook 先记录该 attempt 的中断状态，再按上述流程处理后续输入。
+
+## 8. Claude Code Plugin 约束
 
 插件由三部分组成。
 
-### 7.1 Skill
+### 8.1 Skill
 
 提供简短、稳定的规则：
 
@@ -372,11 +488,11 @@ Input FileVersion → Step → Output FileVersion
 
 不再把完整 API 手册和 PROV 标准放进 Agent 工作说明。
 
-### 7.2 MCP Server
+### 8.2 MCP Server
 
 提供上述类型化工具，并由状态机拒绝非法调用。
 
-### 7.3 Hooks
+### 8.3 Hooks
 
 只在 OpenTrace Run 活动时启用门禁。
 
@@ -388,9 +504,9 @@ Input FileVersion → Step → Output FileVersion
 - `Stop`：存在 active step、缺失结果或 Run 未完成时阻止 Agent 提前结束。
 - `SessionEnd`：将未完成会话标记为 interrupted，而不是 completed。
 
-## 8. Step 颗粒度约束
+## 9. Step 颗粒度约束
 
-### 8.1 标准定义
+### 9.1 标准定义
 
 一个合格 Step 必须：
 
@@ -410,7 +526,41 @@ A 和 B 是两个 Step。
 
 若多个命令和数据操作共同服务于同一目标，则保留在同一个 Step 内。
 
-### 8.2 不应成为 Step
+### 9.2 脚本和中间数据是否形成 Step
+
+“使用了一个 Python 脚本”或“生成了一个文件”都不是创建 Step 的充分条件。创建 Step 的必要条件是存在一个可独立说明和验收的语义目标。
+
+在满足语义目标的前提下，出现以下任一边界时，应当完成当前 Step，并在后续工作开始时创建新 Step：
+
+1. Agent 必须查看当前结果，才能决定后续分析怎么做。
+2. 当前输出会作为另一个语义任务的输入。
+3. 当前操作形成可独立复用或审查的数据状态，例如清洗后的数据集、合并后的主表、模型结果或验证报告。
+4. 数据的人群范围、统计口径、模式、结构或分析含义发生了值得独立说明的变化。
+
+因此：
+
+- 一个脚本可以包含一个 Step 的多次操作和重试，不按函数、命令或代码块拆 Step。
+- 多个脚本也可以共同属于一个 Step，只要它们服务同一目标，且中间没有观察后决策边界。
+- 脚本在 Step 内生成但随后立即继续使用、Agent 未单独检查、后续 Step 也不依赖的文件，记为 `internal_intermediate`。
+- 仅用于缓存、调试或程序传递的文件记为 `temporary`。
+- 被后续 Step 明确消费，或本身代表可独立复核数据状态的中间数据，记为 `step_output`；它通常意味着当前 Step 可以结束。
+
+示例：
+
+| 实际执行 | 是否单独形成 Step | 原因 |
+|---|---|---|
+| `profile_data.py` 生成 `profile.json`，Agent 阅读后决定清洗策略 | 是 | 存在“观察结果后决策”的真实边界 |
+| `clean_data.py` 将 `raw.csv` 变为后续分析使用的 `clean.parquet` | 是 | 形成独立可复用的数据状态和文件级血缘边界 |
+| 同一清洗脚本内部生成临时 CSV，随即读取并删除 | 否 | 只是当前 Step 的内部实现 |
+| 为解决编码问题先转一次 UTF-8，再继续同一加载目标 | 通常否 | 技术性处理没有形成新的语义目标 |
+| 分析脚本同时生成统计表和配套图表 | 通常否 | 两个产物共同回答同一个分析问题 |
+| 先生成特征数据，之后另行训练并比较模型 | 是，至少两个 Step | 特征数据被另一个语义任务消费 |
+
+如果 Agent 一次运行一个“大脚本”，脚本内部完成加载、清洗、分析和报告，且执行期间 Agent 没有观察中间结果或作出新的分析决策，OpenTrace 必须如实记录为一个过粗 Step，并给出颗粒度警告。不能在执行后根据脚本结构虚构多个并未真实发生的语义 Step。
+
+要得到高质量任务链，约束发生在执行前：`set_plan` 和 `start_step` 检查目标及预期输出角色，鼓励 Agent 把可能出现分析决策的阶段拆开执行，而不是事后拆日志。
+
+### 9.3 不应成为 Step
 
 - 查看目录
 - 读取一个文件
@@ -422,7 +572,7 @@ A 和 B 是两个 Step。
 
 这些是 Step 内的执行事件。
 
-### 8.3 颗粒度验证
+### 9.4 颗粒度验证
 
 第一版采用“确定性硬规则 + 语义软验证”。
 
@@ -451,7 +601,7 @@ A 和 B 是两个 Step。
 
 第一版软验证不直接永久阻塞执行。Agent必须处理反馈；连续无法修正时允许带警告继续，避免个人系统被误判锁死。
 
-## 9. 真实性保证
+## 10. 真实性保证
 
 字段来源必须严格区分。
 
@@ -490,7 +640,7 @@ A 和 B 是两个 Step。
 - Hook 根据执行前后文件状态验证输出确实新增或变化。
 - 后续再考虑对 `open()`、pandas 和数据库读写进行可选插桩，不进入当前 MVP。
 
-## 10. 实施阶段
+## 11. 实施阶段
 
 ### Phase 0：冻结当前行为并建立测试基线
 
@@ -542,6 +692,8 @@ A 和 B 是两个 Step。
 
 工作：
 
+- 实现 `opentrace run` 和 `opentrace resume` 启动器。
+- 在创建 Run 后以固定 session ID 启动交互式 Claude Code。
 - 实现标准 MCP Server。
 - 创建 Plugin manifest 和 Skill。
 - 将 MCP Server 随插件加载。
@@ -549,9 +701,10 @@ A 和 B 是两个 Step。
 
 产出：
 
+- 用户通过一个 OpenTrace 命令进入已绑定 Run 的 Claude Code 会话。
 - Claude Code 可以直接调用 OpenTrace 工具。
 
-预计：2～3 个工作日。
+预计：3～4 个工作日。
 
 ### Phase 4：Hook 自动采集与执行门禁
 
@@ -574,9 +727,10 @@ A 和 B 是两个 Step。
 工作：
 
 - 实现确定性颗粒度规则。
+- 实现输出文件的 `step_output`、`internal_intermediate` 和 `temporary` 分类。
 - 编写精简 Skill 和正反例。
 - 实现软验证结果与修正循环。
-- 实现最小 HumanContribution 记录及历史 Step challenge。
+- 实现 UserPromptSubmit 待分类事件、最小 HumanContribution 及历史 Step challenge。
 
 产出：
 
@@ -600,26 +754,27 @@ A 和 B 是两个 Step。
 
 预计：3～5 个工作日。
 
-## 11. 时间评估
+## 12. 时间评估
 
 以一名熟悉现有代码的开发者、Claude Code 辅助开发、暂不重做前端计算：
 
 | 交付级别 | 范围 | 预计时间 |
 |---|---|---:|
-| 技术原型 | 新模型、Python API、单条成功工作流 | 6～9 个工作日 |
-| 可用 MVP | MCP、核心 Hook、文件血缘、基本颗粒度约束 | 15～20 个工作日 |
-| 稳定个人版 | 人工介入、恢复、兼容导出、完整端到端测试 | 20～28 个工作日 |
+| 技术原型 | 新模型、Python API、单条成功工作流 | 7～10 个工作日 |
+| 可用 MVP | 启动器、MCP、核心 Hook、文件血缘、基本颗粒度约束 | 16～22 个工作日 |
+| 稳定个人版 | 人工介入、恢复、兼容导出、完整端到端测试 | 22～30 个工作日 |
 
-推荐按 4 周安排：
+推荐按 4～5 周安排：
 
 - 第 1 周：Phase 0～1。
 - 第 2 周：Phase 2～3。
 - 第 3 周：Phase 4。
-- 第 4 周：Phase 5～6 和稳定性修复。
+- 第 4 周：Phase 5 和端到端集成。
+- 第 5 周或预留缓冲：Phase 6 和稳定性修复。
 
 最大不确定性不是数据模型，而是 Claude Code Hook 在不同工具、失败、会话恢复和上下文压缩场景下的稳定行为。应为 Hook 集成和端到端调试保留约 25% 缓冲时间。
 
-## 12. 验收标准
+## 13. 验收标准
 
 ### 目标一：完整记录 Step 级真实工作流
 
@@ -631,6 +786,10 @@ A 和 B 是两个 Step。
 - 任意输出文件都能回溯到产生它的 Step 和输入文件。
 - Agent 声明、Hook 观察和系统计算字段可以区分。
 - 会话恢复后不会创建重复 Run 或丢失 active step。
+- OpenTrace 在启动 Claude Code 前已经创建 Run，并能用同一 session ID 恢复。
+- Python 脚本和文件创建事件不会被自动误记为语义 Step。
+- 被后续 Step 使用的中间数据能够成为 `step_output` 并建立文件级血缘。
+- 单次大脚本的真实执行不会在事后被伪造为多个 Step。
 
 ### 目标二：约束 Agent 合理分析
 
@@ -641,17 +800,18 @@ A 和 B 是两个 Step。
 - Step 缺少真实输出或处理结果时不能完成。
 - Run 存在未完成 Step 时不能结束。
 - Skill 内容保持简短，不再要求 Agent理解底层 PROV 结构。
+- 人工输入必须在下一次实质操作前完成分类；规划和异议能追溯到对应 Plan 或 Step。
 
-## 13. 开发优先级
+## 14. 开发优先级
 
 严格按照以下顺序：
 
 1. Step 模型与单一事实源。
 2. 文件级输入输出和真实执行记录。
 3. 两阶段 Step API。
-4. MCP 接入。
+4. OpenTrace 启动器、MCP 接入和会话恢复。
 5. Hook 自动采集和门禁。
-6. 颗粒度验证。
+6. 颗粒度验证及输出角色分类。
 7. 最小 HumanContribution。
 8. 兼容导出。
 
