@@ -35,7 +35,7 @@ EVENT_MARKERS = {
 CHAIN_COLORS = {
     "SwiftWren.txt": "#C33C54",
     "HiddenOrca.txt": "#246EB9",
-    "MellowOtter.txt": "#5A9367",
+    "MellowOtter.txt": "#000000",
 }
 
 
@@ -325,9 +325,9 @@ def render_timeline(events: List[Dict[str, Any]], rows: List[Dict[str, Any]], ou
     axis.set_xlim(0.5, event_count + 0.5)
     axis.grid(axis="x", color="#D9D9D6", linewidth=0.6, alpha=0.75)
     axis.grid(axis="y", visible=False)
-    axis.set_xlabel("Event sequence (chronological order)", fontsize=11, weight="bold")
+    axis.set_xlabel("Event sequence (uniformly spaced in actual time order)", fontsize=11, weight="bold")
     axis.set_ylabel("Employees, grouped by department", fontsize=11, weight="bold")
-    axis.set_title("Saidit Posts and Traceable TXT Posting Chains\nDepartment-colored events, typed actions, and chronological chain paths", fontsize=16, weight="bold", pad=20)
+    axis.set_title("All Saidit Posts and Their Posting Chains", fontsize=16, weight="bold", pad=20)
 
     seen_departments = set()
     for row in rows:

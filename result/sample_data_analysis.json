@@ -1,0 +1,448 @@
+{
+  "unknown_employees": [
+    {
+      "employee_id": "world:calendar",
+      "raw_party_format": "world:calendar",
+      "event_count": 185147,
+      "sample_event": {
+        "short_name": "sent",
+        "parties": [
+          "person:isaac_mast",
+          "person:levi_signal"
+        ],
+        "when": 2409423492.0,
+        "details": {
+          "from": "person:isaac_mast",
+          "to": "person:levi_signal",
+          "subject": "calendar: meeting request from person:isaac_mast",
+          "status": "sent"
+        },
+        "id": 15246
+      },
+      "event_types": [
+        "send_email",
+        "read_file",
+        "saidit_post_check",
+        "ask_agent",
+        "enter_room",
+        "suggest_contacts",
+        "post_saidit",
+        "check_in",
+        "give_advice",
+        "post_flex",
+        "propose_meeting",
+        "received",
+        "sent",
+        "delete_file",
+        "assign_agent_task",
+        "create_file",
+        "saidit_post",
+        "access_files",
+        "flex_post",
+        "list_files",
+        "check_email",
+        "access_email",
+        "check_access",
+        "queue_subordinate_task"
+      ]
+    },
+    {
+      "employee_id": "Owen Hatch",
+      "raw_party_format": "Owen Hatch",
+      "event_count": 185147,
+      "sample_event": {
+        "short_name": "sent",
+        "parties": [
+          "person:isaac_mast",
+          "person:levi_signal"
+        ],
+        "when": 2409423492.0,
+        "details": {
+          "from": "person:isaac_mast",
+          "to": "person:levi_signal",
+          "subject": "calendar: meeting request from person:isaac_mast",
+          "status": "sent"
+        },
+        "id": 15246
+      },
+      "event_types": [
+        "send_email",
+        "read_file",
+        "saidit_post_check",
+        "ask_agent",
+        "enter_room",
+        "suggest_contacts",
+        "post_saidit",
+        "check_in",
+        "give_advice",
+        "post_flex",
+        "propose_meeting",
+        "received",
+        "sent",
+        "delete_file",
+        "assign_agent_task",
+        "create_file",
+        "saidit_post",
+        "access_files",
+        "flex_post",
+        "list_files",
+        "check_email",
+        "access_email",
+        "check_access",
+        "queue_subordinate_task"
+      ]
+    },
+    {
+      "employee_id": "Ella Pilot",
+      "raw_party_format": "Ella Pilot",
+      "event_count": 185147,
+      "sample_event": {
+        "short_name": "sent",
+        "parties": [
+          "person:isaac_mast",
+          "person:levi_signal"
+        ],
+        "when": 2409423492.0,
+        "details": {
+          "from": "person:isaac_mast",
+          "to": "person:levi_signal",
+          "subject": "calendar: meeting request from person:isaac_mast",
+          "status": "sent"
+        },
+        "id": 15246
+      },
+      "event_types": [
+        "send_email",
+        "read_file",
+        "saidit_post_check",
+        "ask_agent",
+        "enter_room",
+        "suggest_contacts",
+        "post_saidit",
+        "check_in",
+        "give_advice",
+        "post_flex",
+        "propose_meeting",
+        "received",
+        "sent",
+        "delete_file",
+        "assign_agent_task",
+        "create_file",
+        "saidit_post",
+        "access_files",
+        "flex_post",
+        "list_files",
+        "check_email",
+        "access_email",
+        "check_access",
+        "queue_subordinate_task"
+      ]
+    },
+    {
+      "employee_id": "Dylan Hawser",
+      "raw_party_format": "Dylan Hawser",
+      "event_count": 185147,
+      "sample_event": {
+        "short_name": "sent",
+        "parties": [
+          "person:isaac_mast",
+          "person:levi_signal"
+        ],
+        "when": 2409423492.0,
+        "details": {
+          "from": "person:isaac_mast",
+          "to": "person:levi_signal",
+          "subject": "calendar: meeting request from person:isaac_mast",
+          "status": "sent"
+        },
+        "id": 15246
+      },
+      "event_types": [
+        "send_email",
+        "read_file",
+        "saidit_post_check",
+        "ask_agent",
+        "enter_room",
+        "suggest_contacts",
+        "post_saidit",
+        "check_in",
+        "give_advice",
+        "post_flex",
+        "propose_meeting",
+        "received",
+        "sent",
+        "delete_file",
+        "assign_agent_task",
+        "create_file",
+        "saidit_post",
+        "access_files",
+        "flex_post",
+        "list_files",
+        "check_email",
+        "access_email",
+        "check_access",
+        "queue_subordinate_task"
+      ]
+    },
+    {
+      "employee_id": "Julian Seaway",
+      "raw_party_format": "Julian Seaway",
+      "event_count": 185147,
+      "sample_event": {
+        "short_name": "sent",
+        "parties": [
+          "person:isaac_mast",
+          "person:levi_signal"
+        ],
+        "when": 2409423492.0,
+        "details": {
+          "from": "person:isaac_mast",
+          "to": "person:levi_signal",
+          "subject": "calendar: meeting request from person:isaac_mast",
+          "status": "sent"
+        },
+        "id": 15246
+      },
+      "event_types": [
+        "send_email",
+        "read_file",
+        "saidit_post_check",
+        "ask_agent",
+        "enter_room",
+        "suggest_contacts",
+        "post_saidit",
+        "check_in",
+        "give_advice",
+        "post_flex",
+        "propose_meeting",
+        "received",
+        "sent",
+        "delete_file",
+        "assign_agent_task",
+        "create_file",
+        "saidit_post",
+        "access_files",
+        "flex_post",
+        "list_files",
+        "check_email",
+        "access_email",
+        "check_access",
+        "queue_subordinate_task"
+      ]
+    }
+  ],
+  "normal_posts": [
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:ava_tiller"
+      ],
+      "when": 2409442510.0,
+      "details": {
+        "poster_id": "person:ava_tiller",
+        "content": "Vendor Dispatch & SLA Tracking Alerts",
+        "forum": "general",
+        "timestamp": "2046-05-08T18:34:26"
+      },
+      "id": 17093
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:ava_tiller"
+      ],
+      "when": 2409442882.0,
+      "details": {
+        "poster_id": "person:ava_tiller",
+        "content": "Work-Order Triage Update for Maintenance Requests",
+        "forum": "general",
+        "timestamp": "2046-05-08T18:36:28"
+      },
+      "id": 17128
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:ava_tiller"
+      ],
+      "when": 2409465566.0,
+      "details": {
+        "poster_id": "person:ava_tiller",
+        "content": "Work-Order Triage Updates for Maintenance Requests",
+        "forum": "general",
+        "timestamp": "2046-05-09T01:03:49"
+      },
+      "id": 18796
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:aria_towline"
+      ],
+      "when": 2409494174.0,
+      "details": {
+        "poster_id": "person:aria_towline",
+        "content": "SLA Tracking Dashboard for CivicLoom Realty Partners",
+        "forum": "general",
+        "timestamp": "2046-05-09T08:56:34"
+      },
+      "id": 21580
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:aria_towline"
+      ],
+      "when": 2409494409.0,
+      "details": {
+        "poster_id": "person:aria_towline",
+        "content": "Package Notifications & Resident Messaging Updates via HarborCrest ResidentEdge",
+        "forum": "general",
+        "timestamp": "2046-05-09T08:58:36"
+      },
+      "id": 21604
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:aria_towline"
+      ],
+      "when": 2409497366.0,
+      "details": {
+        "poster_id": "person:aria_towline",
+        "content": "Resident Messaging: Building Announcements & Package Notifications",
+        "forum": "general",
+        "timestamp": "2046-05-09T09:45:22"
+      },
+      "id": 21875
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "when": 2409569142.0,
+      "details": {
+        "forum": "general",
+        "content_source": "HiddenOrca.txt"
+      },
+      "id": 27290
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "when": 2409612964.0,
+      "details": {
+        "forum": "general",
+        "content_source": "MellowOtter.txt"
+      },
+      "id": 98591
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:ava_tiller"
+      ],
+      "when": 2409752966.0,
+      "details": {
+        "poster_id": "person:ava_tiller",
+        "content": "Work-Order Triage Updates for Property Staff",
+        "forum": "general",
+        "timestamp": "2046-05-12T08:52:57"
+      },
+      "id": 341114
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:aria_towline"
+      ],
+      "when": 2409780566.0,
+      "details": {
+        "poster_id": "person:aria_towline",
+        "content": "Resident Messaging: Renewal Notices & Rent Increase Alerts",
+        "forum": "general",
+        "timestamp": "2046-05-12T16:33:58"
+      },
+      "id": 343195
+    }
+  ],
+  "content_analysis": {
+    "total_posts": 108,
+    "with_source": 3,
+    "without_source": 105,
+    "source_types": {
+      "txt": 3
+    },
+    "content_sources_sample": [
+      {
+        "post_id": 27290,
+        "content_source": "HiddenOrca.txt",
+        "parties": [
+          "Agent/person:john_windward",
+          "system:saidit"
+        ],
+        "when": 2409569142.0
+      },
+      {
+        "post_id": 98591,
+        "content_source": "MellowOtter.txt",
+        "parties": [
+          "Agent/person:john_windward",
+          "system:saidit"
+        ],
+        "when": 2409612964.0
+      },
+      {
+        "post_id": 373902,
+        "content_source": "SwiftWren.txt",
+        "parties": [
+          "Agent/person:john_windward",
+          "system:saidit"
+        ],
+        "when": 2410168875.0
+      }
+    ],
+    "posts_without_source_sample": [
+      {
+        "post_id": 17093,
+        "parties": [
+          "person:ava_tiller"
+        ],
+        "when": 2409442510.0
+      },
+      {
+        "post_id": 17128,
+        "parties": [
+          "person:ava_tiller"
+        ],
+        "when": 2409442882.0
+      },
+      {
+        "post_id": 18796,
+        "parties": [
+          "person:ava_tiller"
+        ],
+        "when": 2409465566.0
+      },
+      {
+        "post_id": 21580,
+        "parties": [
+          "person:aria_towline"
+        ],
+        "when": 2409494174.0
+      },
+      {
+        "post_id": 21604,
+        "parties": [
+          "person:aria_towline"
+        ],
+        "when": 2409494409.0
+      }
+    ]
+  }
+}

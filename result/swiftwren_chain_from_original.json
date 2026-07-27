@@ -1,0 +1,3718 @@
+{
+  "chain_events": [
+    {
+      "short_name": "create_file",
+      "parties": [
+        "Agent/person:emma_harbor",
+        "system:file_system"
+      ],
+      "when": 2409490921.0,
+      "details": {
+        "action": "create_file",
+        "target": "SwiftWren.txt",
+        "size_hint": 30615
+      },
+      "id": 21202
+    },
+    {
+      "short_name": "read_file",
+      "parties": [
+        "Agent/person:emma_harbor",
+        "system:file_system"
+      ],
+      "when": 2409490922.0,
+      "details": {
+        "action": "read_file",
+        "target": "SwiftWren_further_instructions.md"
+      },
+      "id": 21208
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:emma_harbor",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409490923.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 21209
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:chloe_ballast"
+      ],
+      "when": 2409497533.0,
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 21882
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:mia_fender"
+      ],
+      "when": 2409501408.0,
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 22234
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:mia_fender",
+        "system:saidit"
+      ],
+      "when": 2409501409.0,
+      "details": {},
+      "id": 22237
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2409506475.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 22642
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:owen_hatch"
+      ],
+      "when": 2409506536.0,
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 22644
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:henry_sail",
+        "system:saidit"
+      ],
+      "when": 2409510817.0,
+      "details": {},
+      "id": 23827
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:victoria_rigging"
+      ],
+      "when": 2409512063.0,
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 23869
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "system:saidit"
+      ],
+      "when": 2409512064.0,
+      "details": {},
+      "id": 23873
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "system:saidit"
+      ],
+      "when": 2409515691.0,
+      "details": {},
+      "id": 24108
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:owen_hatch"
+      ],
+      "when": 2409516820.0,
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 24188
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:mia_fender"
+      ],
+      "when": 2409519459.0,
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 24332
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409524286.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 24629
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:daniel_gangway"
+      ],
+      "when": 2409530742.0,
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 25009
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:chloe_ballast"
+      ],
+      "when": 2409536616.0,
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 25341
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:lily_anchorline"
+      ],
+      "when": 2409540969.0,
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 25600
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2409542279.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 25681
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:chloe_ballast"
+      ],
+      "when": 2409545905.0,
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 25905
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:mia_fender"
+      ],
+      "when": 2409546677.0,
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 25933
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409550530.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 26154
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "system:saidit"
+      ],
+      "when": 2409552417.0,
+      "details": {},
+      "id": 26260
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:daniel_gangway"
+      ],
+      "when": 2409557365.0,
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 26552
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "system:saidit"
+      ],
+      "when": 2409557366.0,
+      "details": {},
+      "id": 26555
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:victoria_rigging"
+      ],
+      "when": 2409561969.0,
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 26819
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "system:saidit"
+      ],
+      "when": 2409562906.0,
+      "details": {},
+      "id": 26861
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:owen_hatch"
+      ],
+      "when": 2409566412.0,
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 27091
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:liam_anchor"
+      ],
+      "when": 2409568451.0,
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 27220
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "system:saidit"
+      ],
+      "when": 2409568452.0,
+      "details": {},
+      "id": 27224
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "when": 2409569141.0,
+      "details": {},
+      "id": 27283
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "when": 2409569142.0,
+      "details": {
+        "forum": "general",
+        "content_source": "HiddenOrca.txt"
+      },
+      "id": 27290
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2409572699.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 27502
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "system:saidit"
+      ],
+      "when": 2409572700.0,
+      "details": {},
+      "id": 27507
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:victoria_rigging"
+      ],
+      "when": 2409579286.0,
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 27850
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2409581054.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 27935
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "system:saidit"
+      ],
+      "when": 2409581055.0,
+      "details": {},
+      "id": 27941
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:levi_signal",
+        "system:saidit"
+      ],
+      "when": 2409581332.0,
+      "details": {},
+      "id": 27981
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:henry_sail"
+      ],
+      "when": 2409586702.0,
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 28308
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2409587959.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 28404
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:levi_signal",
+        "system:saidit"
+      ],
+      "when": 2409587960.0,
+      "details": {},
+      "id": 28408
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:olivia_keel"
+      ],
+      "when": 2409590920.0,
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 28603
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:olivia_keel"
+      ],
+      "when": 2409593849.0,
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 28793
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "system:saidit"
+      ],
+      "when": 2409593850.0,
+      "details": {},
+      "id": 28796
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:john_windward"
+      ],
+      "when": 2409600147.0,
+      "details": {
+        "target_agent": "Agent/person:john_windward",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 46396
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "system:saidit"
+      ],
+      "when": 2409602749.0,
+      "details": {},
+      "id": 56927
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:john_windward",
+        "Agent/person:owen_hatch"
+      ],
+      "when": 2409603296.0,
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 59126
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "system:saidit"
+      ],
+      "when": 2409603297.0,
+      "details": {},
+      "id": 59137
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "system:saidit"
+      ],
+      "when": 2409607620.0,
+      "details": {},
+      "id": 76858
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:david_breakwater"
+      ],
+      "when": 2409609024.0,
+      "details": {
+        "target_agent": "Agent/person:david_breakwater",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 82635
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:david_breakwater",
+        "Agent/person:henry_sail"
+      ],
+      "when": 2409609688.0,
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 85342
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:henry_sail",
+        "system:saidit"
+      ],
+      "when": 2409609689.0,
+      "details": {},
+      "id": 85352
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:henry_sail"
+      ],
+      "when": 2409610025.0,
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 86741
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:henry_sail",
+        "system:saidit"
+      ],
+      "when": 2409610026.0,
+      "details": {},
+      "id": 86747
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "when": 2409612963.0,
+      "details": {},
+      "id": 98582
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "when": 2409612964.0,
+      "details": {
+        "forum": "general",
+        "content_source": "MellowOtter.txt"
+      },
+      "id": 98591
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2409615765.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 110012
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:henry_sail"
+      ],
+      "when": 2409620750.0,
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 119716
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:henry_sail",
+        "system:saidit"
+      ],
+      "when": 2409620751.0,
+      "details": {},
+      "id": 119720
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409623154.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 119921
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:henry_sail"
+      ],
+      "when": 2409623523.0,
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 119950
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:henry_sail",
+        "system:saidit"
+      ],
+      "when": 2409623524.0,
+      "details": {},
+      "id": 119952
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2409629030.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 120525
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "system:saidit"
+      ],
+      "when": 2409629031.0,
+      "details": {},
+      "id": 120529
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:chloe_ballast"
+      ],
+      "when": 2409631184.0,
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 120761
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:liam_anchor"
+      ],
+      "when": 2409633327.0,
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 120942
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:liam_anchor"
+      ],
+      "when": 2409635567.0,
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 121211
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:mia_fender"
+      ],
+      "when": 2409637816.0,
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 121408
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:victoria_rigging"
+      ],
+      "when": 2409642584.0,
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 121792
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:olivia_keel"
+      ],
+      "when": 2409646000.0,
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 122058
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:olivia_keel"
+      ],
+      "when": 2409647288.0,
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 122268
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:chloe_ballast"
+      ],
+      "when": 2409647568.0,
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 122304
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:daniel_gangway"
+      ],
+      "when": 2409648748.0,
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 122397
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:liam_anchor"
+      ],
+      "when": 2409655582.0,
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 122999
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:john_windward"
+      ],
+      "when": 2409656610.0,
+      "details": {
+        "target_agent": "Agent/person:john_windward",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 123088
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:john_windward",
+        "Agent/person:owen_hatch"
+      ],
+      "when": 2409659138.0,
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 123340
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2409663848.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 123750
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:chloe_ballast"
+      ],
+      "when": 2409667642.0,
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 126278
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:mia_fender"
+      ],
+      "when": 2409669340.0,
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 133171
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409673478.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 149838
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2409679044.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 172346
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "system:saidit"
+      ],
+      "when": 2409679045.0,
+      "details": {},
+      "id": 172356
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2409683504.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 190443
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409684069.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 192660
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2409689928.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 209675
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:liam_anchor"
+      ],
+      "when": 2409696985.0,
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 210118
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2409701704.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 210394
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2409706832.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 210651
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "system:saidit"
+      ],
+      "when": 2409706833.0,
+      "details": {},
+      "id": 210655
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2409709854.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 210817
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "system:saidit"
+      ],
+      "when": 2409709855.0,
+      "details": {},
+      "id": 210822
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:victoria_rigging"
+      ],
+      "when": 2409712004.0,
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 210938
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:lily_anchorline"
+      ],
+      "when": 2409718231.0,
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 211314
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2409719628.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 211405
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "system:saidit"
+      ],
+      "when": 2409719629.0,
+      "details": {},
+      "id": 211408
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2409723670.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 217879
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:olivia_keel"
+      ],
+      "when": 2409730137.0,
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 269983
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2409735531.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 304495
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "system:saidit"
+      ],
+      "when": 2409735532.0,
+      "details": {},
+      "id": 304506
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2409736241.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 307392
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "system:saidit"
+      ],
+      "when": 2409736242.0,
+      "details": {},
+      "id": 307403
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:daniel_gangway"
+      ],
+      "when": 2409740224.0,
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 311422
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2409744506.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 328327
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:levi_signal",
+        "system:saidit"
+      ],
+      "when": 2409744507.0,
+      "details": {},
+      "id": 328336
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:liam_anchor"
+      ],
+      "when": 2409749984.0,
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 340969
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:david_breakwater"
+      ],
+      "when": 2409755262.0,
+      "details": {
+        "target_agent": "Agent/person:david_breakwater",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 341255
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:david_breakwater",
+        "system:saidit"
+      ],
+      "when": 2409755263.0,
+      "details": {},
+      "id": 341261
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:david_breakwater",
+        "Agent/person:james_stern"
+      ],
+      "when": 2409759667.0,
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 341502
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:james_stern",
+        "system:saidit"
+      ],
+      "when": 2409759668.0,
+      "details": {},
+      "id": 341507
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:victoria_rigging"
+      ],
+      "when": 2409763528.0,
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 341740
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409763756.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 341766
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409768123.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 342159
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "system:saidit"
+      ],
+      "when": 2409768124.0,
+      "details": {},
+      "id": 342164
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:lily_anchorline"
+      ],
+      "when": 2409770428.0,
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 342324
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:michael_capstan"
+      ],
+      "when": 2409775035.0,
+      "details": {
+        "target_agent": "Agent/person:michael_capstan",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 342701
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409775585.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 342759
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:victoria_rigging"
+      ],
+      "when": 2409779607.0,
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 343098
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "system:saidit"
+      ],
+      "when": 2409779608.0,
+      "details": {},
+      "id": 343101
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409783106.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 343511
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:victoria_rigging"
+      ],
+      "when": 2409785763.0,
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 343785
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "system:saidit"
+      ],
+      "when": 2409785764.0,
+      "details": {},
+      "id": 343787
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:lily_anchorline"
+      ],
+      "when": 2409790676.0,
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 344224
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:lily_anchorline"
+      ],
+      "when": 2409795567.0,
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 344720
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:henry_sail"
+      ],
+      "when": 2409798057.0,
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 344958
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2409798939.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 345019
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:james_stern"
+      ],
+      "when": 2409799447.0,
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 345062
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:james_stern",
+        "system:saidit"
+      ],
+      "when": 2409799448.0,
+      "details": {},
+      "id": 345063
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2409803318.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 345389
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:daniel_gangway"
+      ],
+      "when": 2409806187.0,
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 345695
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:james_stern"
+      ],
+      "when": 2409807339.0,
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 345843
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:victoria_rigging"
+      ],
+      "when": 2409807807.0,
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 345885
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2409809304.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 346060
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2409811033.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 346234
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:chloe_ballast"
+      ],
+      "when": 2409812196.0,
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 346371
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:james_stern"
+      ],
+      "when": 2409816806.0,
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 346789
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:james_stern",
+        "system:saidit"
+      ],
+      "when": 2409816807.0,
+      "details": {},
+      "id": 346795
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2409820389.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 347144
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "system:saidit"
+      ],
+      "when": 2409820390.0,
+      "details": {},
+      "id": 347148
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:victoria_rigging"
+      ],
+      "when": 2409825837.0,
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 347697
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2409829946.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 348032
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2409833750.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 348383
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:owen_hatch"
+      ],
+      "when": 2409836337.0,
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 348607
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:liam_anchor"
+      ],
+      "when": 2409838680.0,
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 348819
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:owen_hatch"
+      ],
+      "when": 2409843741.0,
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 349291
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "person:john_windward"
+      ],
+      "when": 2409847766.0,
+      "details": {
+        "poster_id": "person:john_windward",
+        "content": "SLA Tracking: Work-Order Triage Status Updates for Maintenance Requests",
+        "forum": "general",
+        "timestamp": "2046-05-13T11:08:14"
+      },
+      "id": 349631
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:olivia_keel"
+      ],
+      "when": 2409849539.0,
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 349798
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:henry_sail"
+      ],
+      "when": 2409850326.0,
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 349872
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2409851656.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 350011
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:mia_fender"
+      ],
+      "when": 2409855709.0,
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 350355
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:james_stern"
+      ],
+      "when": 2409862245.0,
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 351019
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:daniel_gangway"
+      ],
+      "when": 2409868056.0,
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 351563
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "system:saidit"
+      ],
+      "when": 2409868057.0,
+      "details": {},
+      "id": 351569
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:lily_anchorline"
+      ],
+      "when": 2409871762.0,
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 351912
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:michael_capstan"
+      ],
+      "when": 2409876549.0,
+      "details": {
+        "target_agent": "Agent/person:michael_capstan",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 352406
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "system:saidit"
+      ],
+      "when": 2409876550.0,
+      "details": {},
+      "id": 352409
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "Agent/person:liam_anchor"
+      ],
+      "when": 2409880932.0,
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 352801
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:michael_capstan"
+      ],
+      "when": 2409887196.0,
+      "details": {
+        "target_agent": "Agent/person:michael_capstan",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 353470
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "Agent/person:liam_anchor"
+      ],
+      "when": 2409891529.0,
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 353931
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:owen_hatch"
+      ],
+      "when": 2409893331.0,
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 354067
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "system:saidit"
+      ],
+      "when": 2409893332.0,
+      "details": {},
+      "id": 354071
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:chloe_ballast"
+      ],
+      "when": 2409899127.0,
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 354624
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:chloe_ballast"
+      ],
+      "when": 2409901911.0,
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 354895
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2409907031.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 355362
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:olivia_keel"
+      ],
+      "when": 2409908133.0,
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 355483
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:mia_fender"
+      ],
+      "when": 2409914903.0,
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 356087
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:mia_fender"
+      ],
+      "when": 2409917843.0,
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 356392
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409922659.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 356784
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2409924109.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 356936
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2409924838.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 356995
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:levi_signal",
+        "system:saidit"
+      ],
+      "when": 2409924839.0,
+      "details": {},
+      "id": 356997
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:owen_hatch"
+      ],
+      "when": 2409926582.0,
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 357152
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2409928500.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 357362
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:victoria_rigging"
+      ],
+      "when": 2409935110.0,
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 357996
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "system:saidit"
+      ],
+      "when": 2409935111.0,
+      "details": {},
+      "id": 358002
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409937502.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 358243
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "system:saidit"
+      ],
+      "when": 2409937503.0,
+      "details": {},
+      "id": 358250
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:chloe_ballast"
+      ],
+      "when": 2409941215.0,
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 358563
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:mia_fender"
+      ],
+      "when": 2409947649.0,
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 361089
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:mia_fender",
+        "system:saidit"
+      ],
+      "when": 2409947650.0,
+      "details": {},
+      "id": 361095
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2409950846.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 361265
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:chloe_ballast"
+      ],
+      "when": 2409951474.0,
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 361303
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:liam_anchor"
+      ],
+      "when": 2409953641.0,
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 361444
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "system:saidit"
+      ],
+      "when": 2409953642.0,
+      "details": {},
+      "id": 361448
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:james_stern"
+      ],
+      "when": 2409957256.0,
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 361644
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:james_stern",
+        "system:saidit"
+      ],
+      "when": 2409957257.0,
+      "details": {},
+      "id": 361646
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2409962641.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 361958
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "system:saidit"
+      ],
+      "when": 2409962642.0,
+      "details": {},
+      "id": 361960
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2409968711.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 362358
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "system:saidit"
+      ],
+      "when": 2409968712.0,
+      "details": {},
+      "id": 362364
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2409972776.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 362619
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409976940.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 362878
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "system:saidit"
+      ],
+      "when": 2409976941.0,
+      "details": {},
+      "id": 362882
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2409983789.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 363298
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "system:saidit"
+      ],
+      "when": 2409983790.0,
+      "details": {},
+      "id": 363305
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:henry_sail"
+      ],
+      "when": 2409984110.0,
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 363323
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:olivia_keel"
+      ],
+      "when": 2409991184.0,
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 363751
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:owen_hatch"
+      ],
+      "when": 2409993061.0,
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 363863
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:david_breakwater"
+      ],
+      "when": 2409994119.0,
+      "details": {
+        "target_agent": "Agent/person:david_breakwater",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 363937
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:david_breakwater",
+        "Agent/person:olivia_keel"
+      ],
+      "when": 2409997204.0,
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 364121
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:john_windward"
+      ],
+      "when": 2410000952.0,
+      "details": {
+        "target_agent": "Agent/person:john_windward",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 364377
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:john_windward",
+        "Agent/person:john_windward"
+      ],
+      "when": 2410004090.0,
+      "details": {
+        "target_agent": "Agent/person:john_windward",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 364604
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:john_windward",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2410008826.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 364912
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:henry_sail"
+      ],
+      "when": 2410013151.0,
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 365187
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:henry_sail"
+      ],
+      "when": 2410017695.0,
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 365421
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2410022755.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 365743
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:daniel_gangway"
+      ],
+      "when": 2410025686.0,
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 365934
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2410030314.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 366207
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:daniel_gangway"
+      ],
+      "when": 2410032960.0,
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 366385
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2410037078.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 366616
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "system:saidit"
+      ],
+      "when": 2410037079.0,
+      "details": {},
+      "id": 366618
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:liam_anchor"
+      ],
+      "when": 2410041119.0,
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 366880
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "system:saidit"
+      ],
+      "when": 2410041120.0,
+      "details": {},
+      "id": 366882
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:david_breakwater"
+      ],
+      "when": 2410045315.0,
+      "details": {
+        "target_agent": "Agent/person:david_breakwater",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 367149
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:david_breakwater",
+        "system:saidit"
+      ],
+      "when": 2410045316.0,
+      "details": {},
+      "id": 367154
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:david_breakwater",
+        "Agent/person:lily_anchorline"
+      ],
+      "when": 2410046554.0,
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 367253
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "system:saidit"
+      ],
+      "when": 2410046555.0,
+      "details": {},
+      "id": 367260
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2410047504.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 367310
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "system:saidit"
+      ],
+      "when": 2410047505.0,
+      "details": {},
+      "id": 367312
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:owen_hatch"
+      ],
+      "when": 2410050430.0,
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 367490
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2410057042.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 367975
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "system:saidit"
+      ],
+      "when": 2410057043.0,
+      "details": {},
+      "id": 367976
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:olivia_keel"
+      ],
+      "when": 2410057949.0,
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 368034
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "system:saidit"
+      ],
+      "when": 2410057950.0,
+      "details": {},
+      "id": 368036
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:owen_hatch"
+      ],
+      "when": 2410062551.0,
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 368308
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:daniel_gangway"
+      ],
+      "when": 2410068609.0,
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 368685
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:lily_anchorline"
+      ],
+      "when": 2410071683.0,
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 368876
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "system:saidit"
+      ],
+      "when": 2410071684.0,
+      "details": {},
+      "id": 368880
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2410073639.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369026
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2410075069.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369090
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:victoria_rigging"
+      ],
+      "when": 2410078444.0,
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369250
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:owen_hatch"
+      ],
+      "when": 2410083003.0,
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369502
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:mia_fender"
+      ],
+      "when": 2410085890.0,
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369656
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:levi_signal"
+      ],
+      "when": 2410089026.0,
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369812
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:evelyn_dock"
+      ],
+      "when": 2410089568.0,
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369837
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "system:saidit"
+      ],
+      "when": 2410089569.0,
+      "details": {},
+      "id": 369839
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:chloe_ballast"
+      ],
+      "when": 2410096576.0,
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 370227
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:michael_capstan"
+      ],
+      "when": 2410102478.0,
+      "details": {
+        "target_agent": "Agent/person:michael_capstan",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 370548
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "system:saidit"
+      ],
+      "when": 2410102479.0,
+      "details": {},
+      "id": 370552
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "Agent/person:michael_capstan"
+      ],
+      "when": 2410109511.0,
+      "details": {
+        "target_agent": "Agent/person:michael_capstan",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 370916
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "Agent/person:michael_capstan"
+      ],
+      "when": 2410116601.0,
+      "details": {
+        "target_agent": "Agent/person:michael_capstan",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 371331
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "Agent/person:mia_fender"
+      ],
+      "when": 2410122525.0,
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 371557
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:james_stern"
+      ],
+      "when": 2410127325.0,
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 371890
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:gabriel_sonar"
+      ],
+      "when": 2410131103.0,
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 372157
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:daniel_gangway"
+      ],
+      "when": 2410136771.0,
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 372473
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2410143152.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 372821
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:mia_fender"
+      ],
+      "when": 2410148072.0,
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373064
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:victoria_rigging"
+      ],
+      "when": 2410149171.0,
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373130
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:zoey_drydock"
+      ],
+      "when": 2410152268.0,
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373282
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "system:saidit"
+      ],
+      "when": 2410152269.0,
+      "details": {},
+      "id": 373286
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:lily_anchorline"
+      ],
+      "when": 2410157767.0,
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373635
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:daniel_gangway"
+      ],
+      "when": 2410164691.0,
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373831
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "system:saidit"
+      ],
+      "when": 2410164692.0,
+      "details": {},
+      "id": 373838
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:chloe_ballast"
+      ],
+      "when": 2410168344.0,
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373882
+    },
+    {
+      "short_name": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:john_windward"
+      ],
+      "when": 2410168873.0,
+      "details": {
+        "target_agent": "Agent/person:john_windward",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373893
+    },
+    {
+      "short_name": "saidit_post_check",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "when": 2410168874.0,
+      "details": {},
+      "id": 373899
+    },
+    {
+      "short_name": "saidit_post",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "when": 2410168875.0,
+      "details": {
+        "forum": "general",
+        "content_source": "SwiftWren.txt"
+      },
+      "id": 373902
+    }
+  ],
+  "statistics": {
+    "total_events": 256,
+    "event_types": {
+      "create_file": 1,
+      "read_file": 1,
+      "queue_subordinate_task": 186,
+      "saidit_post_check": 64,
+      "saidit_post": 4
+    },
+    "start_time": 2409490921.0,
+    "end_time": 2410168875.0
+  },
+  "meta": {
+    "description": "完整SwiftWren链路：从Emma创建文件到John Windward发帖",
+    "data_source": "MC2 data.json",
+    "extraction_method": "relation_tracking_bfs",
+    "extraction_date": "2026-07-15T16:55:44.904823"
+  }
+}

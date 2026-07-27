@@ -34,6 +34,22 @@ def _actor(event: Mapping[str, Any]) -> str:
     return str(parties[0]) if parties else "unknown"
 
 
+def _content_observation(observed: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Represent verified content facts without converting missing data to empty."""
+    if observed is None:
+        return {
+            "content_length": None,
+            "is_empty": None,
+            "verification_status": "unavailable",
+        }
+    content_length = observed.get("content_length")
+    return {
+        "content_length": content_length,
+        "is_empty": content_length == 0,
+        "verification_status": "observed",
+    }
+
+
 def _event_row(event: Mapping[str, Any], sequence: int) -> dict[str, Any]:
     details = dict(event.get("details") or {})
     row = {
@@ -44,6 +60,7 @@ def _event_row(event: Mapping[str, Any], sequence: int) -> dict[str, Any]:
         "actor": _actor(event),
         "parties": list(event.get("parties") or []),
         "source_event_ids": [event["id"]],
+        "evidence_reference": [f"event:{event['id']}"],
     }
     row.update(details)
     return row
@@ -94,25 +111,36 @@ def build_chart_tables(challenge_dir: Path | str) -> dict[str, list[dict[str, An
             "component": "John Windward SaidIT activity",
             "metric": "total_posts",
             "value": activity.get("total_posts", 0),
-            "source_event_ids": all_post_ids,
+            "source_event_ids": [],
+            "evidence_reference": [
+                "record:node_12_john_all_posts_analysis.json#john_saidit_activity.total_posts"
+            ],
         },
         {
             "component": "John Windward SaidIT activity",
             "metric": "abnormal_posts",
             "value": activity.get("abnormal_posts", 0),
             "source_event_ids": all_post_ids,
+            "evidence_reference": [
+                *[f"event:{event_id}" for event_id in all_post_ids],
+                "record:node_12_john_all_posts_analysis.json#john_saidit_activity.abnormal_posts",
+            ],
         },
         {
             "component": "Target cross-system chain",
             "metric": "observed_events",
             "value": len(q1_events),
             "source_event_ids": target_chain_ids,
+            "evidence_reference": [f"event:{event_id}" for event_id in target_chain_ids],
         },
         {
             "component": identity.get("department", "Customer Support"),
             "metric": "direct_subordinates",
             "value": len(identity.get("direct_subordinates") or []),
-            "source_event_ids": all_post_ids,
+            "source_event_ids": [],
+            "evidence_reference": [
+                "record:node_12_john_all_posts_analysis.json#john_windward_identity.direct_subordinates"
+            ],
         },
     ]
 
@@ -128,17 +156,21 @@ def build_chart_tables(challenge_dir: Path | str) -> dict[str, list[dict[str, An
             {
                 "post_id": post_id,
                 "content_source": source,
-                "content_length": observed.get("content_length", 0),
-                "is_empty": observed.get("content_length", 0) == 0,
+                "content_length": observed.get("content_length"),
+                "is_empty": observed.get("content_length") == 0,
                 "is_gibberish": observed.get("is_gibberish", False),
+                "verification_status": "observed",
                 "creator": _actor(created[0]) if source == trace.get("content_source") and created else None,
                 "source_event_ids": provenance,
+                "evidence_reference": [f"event:{event_id}" for event_id in provenance],
             }
         )
 
     q5 = []
     for post in abnormal_posts:
-        observed = content_by_id.get(post.get("id"), {})
+        observed = content_by_id.get(post.get("id"))
+        verification_status = "observed" if observed is not None else "unavailable"
+        content_length = observed.get("content_length") if observed is not None else None
         q5.append(
             {
                 "post_id": post["id"],
@@ -147,9 +179,15 @@ def build_chart_tables(challenge_dir: Path | str) -> dict[str, list[dict[str, An
                 "poster": _actor(post),
                 "forum": post.get("forum") or post.get("details", {}).get("forum"),
                 "content_source": post.get("content_source"),
-                "content_length": observed.get("content_length", 0),
-                "is_empty": observed.get("content_length", 0) == 0,
+                "content_length": content_length,
+                "is_empty": content_length == 0 if observed is not None else None,
+                "verification_status": verification_status,
                 "source_event_ids": [post["id"]],
+                "evidence_reference": [
+                    f"event:{post['id']}",
+                    f"record:node_20_content_and_creator_verification.json#q1_post_content_analysis.posts[post_id={post['id']}]"
+                    if observed is not None else "record:node_20_content_and_creator_verification.json#q1_post_content_analysis.posts (no matching observation)",
+                ],
             }
         )
 
@@ -163,6 +201,10 @@ def build_chart_tables(challenge_dir: Path | str) -> dict[str, list[dict[str, An
             "known_cases": len(abnormal_posts),
             "preventable_cases": len(abnormal_posts),
             "source_event_ids": all_post_ids,
+            "evidence_reference": [
+                *[f"event:{event_id}" for event_id in all_post_ids],
+                "record:node_25_final_investigation_summary.json#intervention_recommended",
+            ],
         }
     ]
 

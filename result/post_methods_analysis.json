@@ -1,0 +1,15 @@
+{
+  "direct_posts": 105,
+  "txt_posts": 3,
+  "total": 108,
+  "anomalous_posts": [
+    {
+      "id": 373902,
+      "content_source": "SwiftWren.txt",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ]
+    }
+  ]
+}

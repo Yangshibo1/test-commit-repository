@@ -21,6 +21,11 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
 
   const title = selectedProvNode?.description || selectedProvNode?.name || selectedStep?.name || 'Selection';
   const summary = selectedStep?.description || selectedProvNode?.location || '';
+  const isN5FinalReport = /node_05_final_report/i.test([
+    selectedProvNode?.location,
+    selectedProvNode?.name,
+    selectedStep?.name,
+  ].filter(Boolean).join(' '));
 
   // 根据节点类型判断（用于没有匹配到 artifact 的情况）
   const getNodeType = (): 'dataset' | 'report' | 'code' | 'other' => {
@@ -499,8 +504,8 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
         )}
 
         {activeTab === 'visualization' && (artifactKind === 'dataset' || artifactKind === 'report' || getNodeType() === 'dataset' || getNodeType() === 'report') && (
-          <div>
-            {/* HTML 可视化 */}
+          <div className="space-y-4">
+            {/* HTML visualization */}
             {artifact?.visualization && artifact.visualization_type === 'html' && (
               <div
                 className="w-full border border-[rgba(184,165,143,0.42)] rounded-xl bg-white"
@@ -508,7 +513,7 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
               />
             )}
 
-            {/* 图片可视化 */}
+            {/* Image visualization */}
             {artifact?.visualization && artifact.visualization_type === 'image' && (
               <div className="w-full border border-[rgba(184,165,143,0.42)] rounded-xl bg-white p-4">
                 <img
@@ -519,7 +524,7 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
               </div>
             )}
 
-            {/* ECharts 可视化（原有支持） */}
+            {/* ECharts visualization (existing support) */}
             {artifact?.echarts_chart && !artifact?.visualization && (
               <div
                 ref={setChartRef}
@@ -527,7 +532,22 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
               />
             )}
 
-            {/* 无可视化内容 */}
+            {isN5FinalReport && isExpanded && (
+              <iframe
+                src="http://localhost:8000/Q6_john_posting_intervention_network.html?v=department-nodes"
+                title="Q6 personnel intervention network"
+                className="block w-full border border-[rgba(184,165,143,0.42)] rounded-xl bg-white"
+                style={{ height: 'min(78vh, 980px)' }}
+              />
+            )}
+
+            {isN5FinalReport && !isExpanded && (
+              <p className="m-0 text-center text-sm text-muted">
+                Expand the right panel to view the interactive D3 chart page.
+              </p>
+            )}
+
+            {/* No visualization content */}
             {!artifact?.visualization && !artifact?.echarts_chart && (
               <p className="text-muted text-sm">
                 {artifact ? 'No visualization available for this artifact.' : 'No artifact available. Visualization requires matching analysis artifact.'}

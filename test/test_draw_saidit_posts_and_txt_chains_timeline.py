@@ -237,7 +237,14 @@ class TimelineOutputTests(unittest.TestCase):
                     render_timeline(events, rows, Path("timeline.png"))
 
         subplots.assert_called_once_with(figsize=(FIGURE_WIDTH, FIGURE_HEIGHT))
-        self.assertEqual(axis.set_xlabel.call_args.args[0], "Event sequence (chronological order)")
+        self.assertEqual(
+            axis.set_xlabel.call_args.args[0],
+            "Event sequence (uniformly spaced in actual time order)",
+        )
+        self.assertEqual(
+            axis.set_title.call_args.args[0],
+            "All Saidit Posts and Their Posting Chains",
+        )
         self.assertEqual(axis.set_xticks.call_args.args[0], build_sequence_ticks(len(events)))
         axis.set_xlim.assert_called_once_with(0.5, len(events) + 0.5)
         self.assertEqual(axis.plot.call_args.args[0], [1, 2])
@@ -287,6 +294,7 @@ class TimelineOutputTests(unittest.TestCase):
             },
         )
         self.assertEqual(set(CHAIN_COLORS), set(CHAIN_ORDER))
+        self.assertEqual(CHAIN_COLORS["MellowOtter.txt"], "#000000")
         self.assertEqual(len(set(CHAIN_COLORS.values())), 3)
         self.assertTrue(all(event["department"] is not None for event in events))
         with TemporaryDirectory() as temporary_directory:

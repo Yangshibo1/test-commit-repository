@@ -1,0 +1,77 @@
+{
+  "saidit_statistics": {
+    "total_posts": 108,
+    "total_checks": 71,
+    "chain_related_posts": 1,
+    "chain_related_checks": 64
+  },
+  "post_patterns": {
+    "by_person": {
+      "ava_tiller": 25,
+      "aria_towline": 23,
+      "john_windward": 21,
+      "system:saidit": 2,
+      "dylan_hawser": 16,
+      "anthony_reef": 22
+    },
+    "content_sources": {
+      "HiddenOrca.txt": 1,
+      "MellowOtter.txt": 1
+    }
+  },
+  "check_patterns": {
+    "by_person": {
+      "liam_anchor": 5,
+      "system:saidit": 71,
+      "victoria_rigging": 6,
+      "james_stern": 5,
+      "owen_hatch": 3,
+      "lily_anchorline": 4,
+      "mia_fender": 2,
+      "henry_sail": 5,
+      "evelyn_dock": 7,
+      "gabriel_sonar": 11,
+      "daniel_gangway": 3,
+      "michael_capstan": 3,
+      "john_windward": 3,
+      "levi_signal": 4,
+      "olivia_keel": 2,
+      "zoey_drydock": 6,
+      "david_breakwater": 2
+    }
+  },
+  "anomalous_post": {
+    "short_name": "saidit_post",
+    "parties": [
+      "Agent/person:john_windward",
+      "system:saidit"
+    ],
+    "when": 2410168875.0,
+    "details": {
+      "forum": "general",
+      "content_source": "SwiftWren.txt"
+    },
+    "id": 373902
+  },
+  "comparison": {
+    "anomalous_features": {
+      "person": "john_windward",
+      "content_source": "SwiftWren.txt",
+      "timestamp": 2410168875.0,
+      "datetime": "2046-05-17T19:21:15"
+    },
+    "regular_features": {
+      "avg_content_source": "HiddenOrca.txt",
+      "common_persons": [],
+      "time_patterns": []
+    },
+    "key_differences": [
+      "异常帖子由 john_windward 发布，不属于常见发帖人",
+      "异常帖子内容来源 'SwiftWren.txt' 与常见来源 'HiddenOrca.txt' 不同"
+    ]
+  },
+  "chain_relation": {
+    "saidit_events_in_chain": 65,
+    "saidit_events_outside_chain": 114
+  }
+}

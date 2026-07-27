@@ -1,0 +1,444 @@
+{
+  "participant_analysis": {
+    "total_participants": 40,
+    "by_department": {
+      "Executive Suite": 2,
+      "Human Resources": 2,
+      "Unknown": 22,
+      "Information Technologies": 7,
+      "Products": 5,
+      "Legal": 1,
+      "Customer Support": 1
+    },
+    "by_level": {
+      "3": 7,
+      "4": 11
+    },
+    "participants_details": [
+      {
+        "name": "emma_harbor",
+        "department": "Executive Suite",
+        "level": 3,
+        "type": "person",
+        "path": [
+          "Emma Harbor",
+          "Executive Suite",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "michael_capstan",
+        "department": "Human Resources",
+        "level": 3,
+        "type": "person",
+        "path": [
+          "Michael Capstan",
+          "Human Resources",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "File_system",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "lily_anchorline",
+        "department": "Information Technologies",
+        "level": 4,
+        "type": "person",
+        "path": [
+          "Lily Anchorline",
+          "Infrastructure",
+          "Information Technologies",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "David Breakwater",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "Henry Sail",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "Mia Fender",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "Levi Signal",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "james_stern",
+        "department": "Products",
+        "level": 4,
+        "type": "person",
+        "path": [
+          "James Stern",
+          "Residential App",
+          "Products",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "Daniel Gangway",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "system:saidit",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "zoey_drydock",
+        "department": "Information Technologies",
+        "level": 4,
+        "type": "person",
+        "path": [
+          "Zoey Drydock",
+          "Helpdesk",
+          "Information Technologies",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "daniel_gangway",
+        "department": "Human Resources",
+        "level": 4,
+        "type": "person",
+        "path": [
+          "Daniel Gangway",
+          "Hiring",
+          "Human Resources",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "John Windward",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "henry_sail",
+        "department": "Products",
+        "level": 4,
+        "type": "person",
+        "path": [
+          "Henry Sail",
+          "Analytics Suite",
+          "Products",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "Lily Anchorline",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "owen_hatch",
+        "department": "Information Technologies",
+        "level": 4,
+        "type": "person",
+        "path": [
+          "Owen Hatch",
+          "Infrastructure",
+          "Information Technologies",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "liam_anchor",
+        "department": "Executive Suite",
+        "level": 3,
+        "type": "person",
+        "path": [
+          "Liam Anchor",
+          "Executive Suite",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "James Stern",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "evelyn_dock",
+        "department": "Products",
+        "level": 4,
+        "type": "person",
+        "path": [
+          "Evelyn Dock",
+          "Integrations",
+          "Products",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "chloe_ballast",
+        "department": "Information Technologies",
+        "level": 3,
+        "type": "person",
+        "path": [
+          "Chloe Ballast",
+          "Information Technologies",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "system:file_system",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "Emma Harbor",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "Victoria Rigging",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "olivia_keel",
+        "department": "Products",
+        "level": 3,
+        "type": "person",
+        "path": [
+          "Olivia Keel",
+          "Products",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "david_breakwater",
+        "department": "Legal",
+        "level": 3,
+        "type": "person",
+        "path": [
+          "David Breakwater",
+          "Legal",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "levi_signal",
+        "department": "Information Technologies",
+        "level": 4,
+        "type": "person",
+        "path": [
+          "Levi Signal",
+          "AI Systems",
+          "Information Technologies",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "Gabriel Sonar",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "Evelyn Dock",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "john_windward",
+        "department": "Customer Support",
+        "level": 3,
+        "type": "person",
+        "path": [
+          "John Windward",
+          "Customer Support",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "Owen Hatch",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "victoria_rigging",
+        "department": "Information Technologies",
+        "level": 4,
+        "type": "person",
+        "path": [
+          "Victoria Rigging",
+          "AI Systems",
+          "Information Technologies",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "gabriel_sonar",
+        "department": "Information Technologies",
+        "level": 4,
+        "type": "person",
+        "path": [
+          "Gabriel Sonar",
+          "Helpdesk",
+          "Information Technologies",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "Saidit",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "mia_fender",
+        "department": "Products",
+        "level": 4,
+        "type": "person",
+        "path": [
+          "Mia Fender",
+          "Property Ops Console",
+          "Products",
+          "Tenant Thread"
+        ]
+      },
+      {
+        "name": "Zoey Drydock",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "Liam Anchor",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "Olivia Keel",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "Chloe Ballast",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      },
+      {
+        "name": "Michael Capstan",
+        "department": "Unknown",
+        "level": 0,
+        "type": "unknown",
+        "path": []
+      }
+    ]
+  },
+  "event_distribution": {
+    "by_department": {
+      "Executive Suite": 16,
+      "Products": 76,
+      "Information Technologies": 123,
+      "Human Resources": 23,
+      "Customer Support": 10,
+      "Legal": 6
+    },
+    "by_event_type": {
+      "create_file": 1,
+      "queue_subordinate_task": 186,
+      "saidit_post_check": 64,
+      "saidit_post": 1,
+      "delete_file": 2
+    },
+    "by_department_event_type": {
+      "Executive Suite": {
+        "create_file": 1,
+        "queue_subordinate_task": 12,
+        "saidit_post_check": 3,
+        "delete_file": 0,
+        "saidit_post": 0
+      },
+      "Products": {
+        "queue_subordinate_task": 56,
+        "saidit_post_check": 20,
+        "create_file": 0,
+        "delete_file": 0,
+        "saidit_post": 0
+      },
+      "Information Technologies": {
+        "queue_subordinate_task": 93,
+        "saidit_post_check": 30,
+        "create_file": 0,
+        "delete_file": 0,
+        "saidit_post": 0
+      },
+      "Human Resources": {
+        "queue_subordinate_task": 17,
+        "saidit_post_check": 6,
+        "create_file": 0,
+        "delete_file": 0,
+        "saidit_post": 0
+      },
+      "Customer Support": {
+        "saidit_post_check": 3,
+        "queue_subordinate_task": 4,
+        "saidit_post": 1,
+        "delete_file": 2,
+        "create_file": 0
+      },
+      "Legal": {
+        "queue_subordinate_task": 4,
+        "saidit_post_check": 2,
+        "create_file": 0,
+        "delete_file": 0,
+        "saidit_post": 0
+      }
+    }
+  }
+}

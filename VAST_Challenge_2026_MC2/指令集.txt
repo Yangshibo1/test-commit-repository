@@ -1,0 +1,1 @@
+.从21202号任务emma创建SwiftWren.txt，到emma创建SwiftWren_further_instructions.md，中间通过queue_subordinate_task · read_file传递任务。以及这些相关人员接收指令后的相关操作。最后到john发帖，删帖结束。写一个python脚本把数据提取出来。

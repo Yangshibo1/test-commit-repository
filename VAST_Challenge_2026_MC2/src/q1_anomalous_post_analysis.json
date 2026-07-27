@@ -1,0 +1,3291 @@
+{
+  "anomalous_post": {
+    "event_id": 373902,
+    "timestamp": 2410168875.0,
+    "datetime": "2046-05-17 19:21:15",
+    "action": "saidit_post",
+    "parties": [
+      "Agent/person:john_windward",
+      "system:saidit"
+    ],
+    "content_source": "SwiftWren.txt"
+  },
+  "chain_summary": [
+    {
+      "step": "create_file",
+      "event_id": 21202,
+      "timestamp": 2409490921.0,
+      "datetime": "2046-05-09 23:02:01"
+    },
+    {
+      "step": "anomalous_post",
+      "event_id": 373902,
+      "timestamp": 2410168875.0,
+      "datetime": "2046-05-17 19:21:15"
+    }
+  ],
+  "timeline": [
+    {
+      "timestamp": 2409490921.0,
+      "datetime": "2046-05-09 23:02:01",
+      "action": "create_file",
+      "parties": [
+        "Agent/person:emma_harbor",
+        "system:file_system"
+      ],
+      "details": {
+        "action": "create_file",
+        "target": "SwiftWren.txt",
+        "size_hint": 30615
+      },
+      "id": 21202
+    },
+    {
+      "timestamp": 2409490922.0,
+      "datetime": "2046-05-09 23:02:02",
+      "action": "read_file",
+      "parties": [
+        "Agent/person:emma_harbor",
+        "system:file_system"
+      ],
+      "details": {
+        "action": "read_file",
+        "target": "SwiftWren_further_instructions.md"
+      },
+      "id": 21208
+    },
+    {
+      "timestamp": 2409490923.0,
+      "datetime": "2046-05-09 23:02:03",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:emma_harbor",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 21209
+    },
+    {
+      "timestamp": 2409497533.0,
+      "datetime": "2046-05-10 00:52:13",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 21882
+    },
+    {
+      "timestamp": 2409501408.0,
+      "datetime": "2046-05-10 01:56:48",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:mia_fender"
+      ],
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 22234
+    },
+    {
+      "timestamp": 2409506475.0,
+      "datetime": "2046-05-10 03:21:15",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 22642
+    },
+    {
+      "timestamp": 2409506536.0,
+      "datetime": "2046-05-10 03:22:16",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:owen_hatch"
+      ],
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 22644
+    },
+    {
+      "timestamp": 2409512063.0,
+      "datetime": "2046-05-10 04:54:23",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:victoria_rigging"
+      ],
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 23869
+    },
+    {
+      "timestamp": 2409516820.0,
+      "datetime": "2046-05-10 06:13:40",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:owen_hatch"
+      ],
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 24188
+    },
+    {
+      "timestamp": 2409519459.0,
+      "datetime": "2046-05-10 06:57:39",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:mia_fender"
+      ],
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 24332
+    },
+    {
+      "timestamp": 2409524286.0,
+      "datetime": "2046-05-10 08:18:06",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 24629
+    },
+    {
+      "timestamp": 2409530742.0,
+      "datetime": "2046-05-10 10:05:42",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:daniel_gangway"
+      ],
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 25009
+    },
+    {
+      "timestamp": 2409536616.0,
+      "datetime": "2046-05-10 11:43:36",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 25341
+    },
+    {
+      "timestamp": 2409540969.0,
+      "datetime": "2046-05-10 12:56:09",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:lily_anchorline"
+      ],
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 25600
+    },
+    {
+      "timestamp": 2409542279.0,
+      "datetime": "2046-05-10 13:17:59",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 25681
+    },
+    {
+      "timestamp": 2409545905.0,
+      "datetime": "2046-05-10 14:18:25",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 25905
+    },
+    {
+      "timestamp": 2409546677.0,
+      "datetime": "2046-05-10 14:31:17",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:mia_fender"
+      ],
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 25933
+    },
+    {
+      "timestamp": 2409550530.0,
+      "datetime": "2046-05-10 15:35:30",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 26154
+    },
+    {
+      "timestamp": 2409557365.0,
+      "datetime": "2046-05-10 17:29:25",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:daniel_gangway"
+      ],
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 26552
+    },
+    {
+      "timestamp": 2409561969.0,
+      "datetime": "2046-05-10 18:46:09",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:victoria_rigging"
+      ],
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 26819
+    },
+    {
+      "timestamp": 2409566412.0,
+      "datetime": "2046-05-10 20:00:12",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:owen_hatch"
+      ],
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 27091
+    },
+    {
+      "timestamp": 2409568451.0,
+      "datetime": "2046-05-10 20:34:11",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:liam_anchor"
+      ],
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 27220
+    },
+    {
+      "timestamp": 2409572699.0,
+      "datetime": "2046-05-10 21:44:59",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 27502
+    },
+    {
+      "timestamp": 2409579286.0,
+      "datetime": "2046-05-10 23:34:46",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:victoria_rigging"
+      ],
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 27850
+    },
+    {
+      "timestamp": 2409581054.0,
+      "datetime": "2046-05-11 00:04:14",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 27935
+    },
+    {
+      "timestamp": 2409586702.0,
+      "datetime": "2046-05-11 01:38:22",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:henry_sail"
+      ],
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 28308
+    },
+    {
+      "timestamp": 2409587959.0,
+      "datetime": "2046-05-11 01:59:19",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 28404
+    },
+    {
+      "timestamp": 2409590920.0,
+      "datetime": "2046-05-11 02:48:40",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:olivia_keel"
+      ],
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 28603
+    },
+    {
+      "timestamp": 2409593849.0,
+      "datetime": "2046-05-11 03:37:29",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:olivia_keel"
+      ],
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 28793
+    },
+    {
+      "timestamp": 2409600147.0,
+      "datetime": "2046-05-11 05:22:27",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:john_windward"
+      ],
+      "details": {
+        "target_agent": "Agent/person:john_windward",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 46396
+    },
+    {
+      "timestamp": 2409603296.0,
+      "datetime": "2046-05-11 06:14:56",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:john_windward",
+        "Agent/person:owen_hatch"
+      ],
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 59126
+    },
+    {
+      "timestamp": 2409609024.0,
+      "datetime": "2046-05-11 07:50:24",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:david_breakwater"
+      ],
+      "details": {
+        "target_agent": "Agent/person:david_breakwater",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 82635
+    },
+    {
+      "timestamp": 2409609688.0,
+      "datetime": "2046-05-11 08:01:28",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:david_breakwater",
+        "Agent/person:henry_sail"
+      ],
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 85342
+    },
+    {
+      "timestamp": 2409610025.0,
+      "datetime": "2046-05-11 08:07:05",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:henry_sail"
+      ],
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 86741
+    },
+    {
+      "timestamp": 2409615765.0,
+      "datetime": "2046-05-11 09:42:45",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 110012
+    },
+    {
+      "timestamp": 2409620750.0,
+      "datetime": "2046-05-11 11:05:50",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:henry_sail"
+      ],
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 119716
+    },
+    {
+      "timestamp": 2409623154.0,
+      "datetime": "2046-05-11 11:45:54",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 119921
+    },
+    {
+      "timestamp": 2409623523.0,
+      "datetime": "2046-05-11 11:52:03",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:henry_sail"
+      ],
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 119950
+    },
+    {
+      "timestamp": 2409629030.0,
+      "datetime": "2046-05-11 13:23:50",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 120525
+    },
+    {
+      "timestamp": 2409631184.0,
+      "datetime": "2046-05-11 13:59:44",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 120761
+    },
+    {
+      "timestamp": 2409633327.0,
+      "datetime": "2046-05-11 14:35:27",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:liam_anchor"
+      ],
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 120942
+    },
+    {
+      "timestamp": 2409635567.0,
+      "datetime": "2046-05-11 15:12:47",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:liam_anchor"
+      ],
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 121211
+    },
+    {
+      "timestamp": 2409637816.0,
+      "datetime": "2046-05-11 15:50:16",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:mia_fender"
+      ],
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 121408
+    },
+    {
+      "timestamp": 2409642584.0,
+      "datetime": "2046-05-11 17:09:44",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:victoria_rigging"
+      ],
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 121792
+    },
+    {
+      "timestamp": 2409646000.0,
+      "datetime": "2046-05-11 18:06:40",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:olivia_keel"
+      ],
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 122058
+    },
+    {
+      "timestamp": 2409647288.0,
+      "datetime": "2046-05-11 18:28:08",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:olivia_keel"
+      ],
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 122268
+    },
+    {
+      "timestamp": 2409647568.0,
+      "datetime": "2046-05-11 18:32:48",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 122304
+    },
+    {
+      "timestamp": 2409648748.0,
+      "datetime": "2046-05-11 18:52:28",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:daniel_gangway"
+      ],
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 122397
+    },
+    {
+      "timestamp": 2409655582.0,
+      "datetime": "2046-05-11 20:46:22",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:liam_anchor"
+      ],
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 122999
+    },
+    {
+      "timestamp": 2409656610.0,
+      "datetime": "2046-05-11 21:03:30",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:john_windward"
+      ],
+      "details": {
+        "target_agent": "Agent/person:john_windward",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 123088
+    },
+    {
+      "timestamp": 2409659138.0,
+      "datetime": "2046-05-11 21:45:38",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:john_windward",
+        "Agent/person:owen_hatch"
+      ],
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 123340
+    },
+    {
+      "timestamp": 2409663848.0,
+      "datetime": "2046-05-11 23:04:08",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 123750
+    },
+    {
+      "timestamp": 2409667642.0,
+      "datetime": "2046-05-12 00:07:22",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 126278
+    },
+    {
+      "timestamp": 2409669340.0,
+      "datetime": "2046-05-12 00:35:40",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:mia_fender"
+      ],
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 133171
+    },
+    {
+      "timestamp": 2409673478.0,
+      "datetime": "2046-05-12 01:44:38",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 149838
+    },
+    {
+      "timestamp": 2409679044.0,
+      "datetime": "2046-05-12 03:17:24",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 172346
+    },
+    {
+      "timestamp": 2409683504.0,
+      "datetime": "2046-05-12 04:31:44",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 190443
+    },
+    {
+      "timestamp": 2409684069.0,
+      "datetime": "2046-05-12 04:41:09",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 192660
+    },
+    {
+      "timestamp": 2409689928.0,
+      "datetime": "2046-05-12 06:18:48",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 209675
+    },
+    {
+      "timestamp": 2409696985.0,
+      "datetime": "2046-05-12 08:16:25",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:liam_anchor"
+      ],
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 210118
+    },
+    {
+      "timestamp": 2409701704.0,
+      "datetime": "2046-05-12 09:35:04",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 210394
+    },
+    {
+      "timestamp": 2409706832.0,
+      "datetime": "2046-05-12 11:00:32",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 210651
+    },
+    {
+      "timestamp": 2409709854.0,
+      "datetime": "2046-05-12 11:50:54",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 210817
+    },
+    {
+      "timestamp": 2409712004.0,
+      "datetime": "2046-05-12 12:26:44",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:victoria_rigging"
+      ],
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 210938
+    },
+    {
+      "timestamp": 2409718231.0,
+      "datetime": "2046-05-12 14:10:31",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:lily_anchorline"
+      ],
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 211314
+    },
+    {
+      "timestamp": 2409719628.0,
+      "datetime": "2046-05-12 14:33:48",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 211405
+    },
+    {
+      "timestamp": 2409723670.0,
+      "datetime": "2046-05-12 15:41:10",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 217879
+    },
+    {
+      "timestamp": 2409730137.0,
+      "datetime": "2046-05-12 17:28:57",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:olivia_keel"
+      ],
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 269983
+    },
+    {
+      "timestamp": 2409735531.0,
+      "datetime": "2046-05-12 18:58:51",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 304495
+    },
+    {
+      "timestamp": 2409736241.0,
+      "datetime": "2046-05-12 19:10:41",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 307392
+    },
+    {
+      "timestamp": 2409740224.0,
+      "datetime": "2046-05-12 20:17:04",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:daniel_gangway"
+      ],
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 311422
+    },
+    {
+      "timestamp": 2409744506.0,
+      "datetime": "2046-05-12 21:28:26",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 328327
+    },
+    {
+      "timestamp": 2409749984.0,
+      "datetime": "2046-05-12 22:59:44",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:liam_anchor"
+      ],
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 340969
+    },
+    {
+      "timestamp": 2409755262.0,
+      "datetime": "2046-05-13 00:27:42",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:david_breakwater"
+      ],
+      "details": {
+        "target_agent": "Agent/person:david_breakwater",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 341255
+    },
+    {
+      "timestamp": 2409759667.0,
+      "datetime": "2046-05-13 01:41:07",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:david_breakwater",
+        "Agent/person:james_stern"
+      ],
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 341502
+    },
+    {
+      "timestamp": 2409763528.0,
+      "datetime": "2046-05-13 02:45:28",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:victoria_rigging"
+      ],
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 341740
+    },
+    {
+      "timestamp": 2409763756.0,
+      "datetime": "2046-05-13 02:49:16",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 341766
+    },
+    {
+      "timestamp": 2409768123.0,
+      "datetime": "2046-05-13 04:02:03",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 342159
+    },
+    {
+      "timestamp": 2409770428.0,
+      "datetime": "2046-05-13 04:40:28",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:lily_anchorline"
+      ],
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 342324
+    },
+    {
+      "timestamp": 2409775035.0,
+      "datetime": "2046-05-13 05:57:15",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:michael_capstan"
+      ],
+      "details": {
+        "target_agent": "Agent/person:michael_capstan",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 342701
+    },
+    {
+      "timestamp": 2409775585.0,
+      "datetime": "2046-05-13 06:06:25",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 342759
+    },
+    {
+      "timestamp": 2409779607.0,
+      "datetime": "2046-05-13 07:13:27",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:victoria_rigging"
+      ],
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 343098
+    },
+    {
+      "timestamp": 2409783106.0,
+      "datetime": "2046-05-13 08:11:46",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 343511
+    },
+    {
+      "timestamp": 2409785763.0,
+      "datetime": "2046-05-13 08:56:03",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:victoria_rigging"
+      ],
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 343785
+    },
+    {
+      "timestamp": 2409790676.0,
+      "datetime": "2046-05-13 10:17:56",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:lily_anchorline"
+      ],
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 344224
+    },
+    {
+      "timestamp": 2409795567.0,
+      "datetime": "2046-05-13 11:39:27",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:lily_anchorline"
+      ],
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 344720
+    },
+    {
+      "timestamp": 2409798057.0,
+      "datetime": "2046-05-13 12:20:57",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:henry_sail"
+      ],
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 344958
+    },
+    {
+      "timestamp": 2409798939.0,
+      "datetime": "2046-05-13 12:35:39",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 345019
+    },
+    {
+      "timestamp": 2409799447.0,
+      "datetime": "2046-05-13 12:44:07",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:james_stern"
+      ],
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 345062
+    },
+    {
+      "timestamp": 2409803318.0,
+      "datetime": "2046-05-13 13:48:38",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 345389
+    },
+    {
+      "timestamp": 2409806187.0,
+      "datetime": "2046-05-13 14:36:27",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:daniel_gangway"
+      ],
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 345695
+    },
+    {
+      "timestamp": 2409807339.0,
+      "datetime": "2046-05-13 14:55:39",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:james_stern"
+      ],
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 345843
+    },
+    {
+      "timestamp": 2409807807.0,
+      "datetime": "2046-05-13 15:03:27",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:victoria_rigging"
+      ],
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 345885
+    },
+    {
+      "timestamp": 2409809304.0,
+      "datetime": "2046-05-13 15:28:24",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 346060
+    },
+    {
+      "timestamp": 2409811033.0,
+      "datetime": "2046-05-13 15:57:13",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 346234
+    },
+    {
+      "timestamp": 2409812196.0,
+      "datetime": "2046-05-13 16:16:36",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 346371
+    },
+    {
+      "timestamp": 2409816806.0,
+      "datetime": "2046-05-13 17:33:26",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:james_stern"
+      ],
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 346789
+    },
+    {
+      "timestamp": 2409820389.0,
+      "datetime": "2046-05-13 18:33:09",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 347144
+    },
+    {
+      "timestamp": 2409825837.0,
+      "datetime": "2046-05-13 20:03:57",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:victoria_rigging"
+      ],
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 347697
+    },
+    {
+      "timestamp": 2409829946.0,
+      "datetime": "2046-05-13 21:12:26",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 348032
+    },
+    {
+      "timestamp": 2409833750.0,
+      "datetime": "2046-05-13 22:15:50",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 348383
+    },
+    {
+      "timestamp": 2409836337.0,
+      "datetime": "2046-05-13 22:58:57",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:owen_hatch"
+      ],
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 348607
+    },
+    {
+      "timestamp": 2409838680.0,
+      "datetime": "2046-05-13 23:38:00",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:liam_anchor"
+      ],
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 348819
+    },
+    {
+      "timestamp": 2409843741.0,
+      "datetime": "2046-05-14 01:02:21",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:owen_hatch"
+      ],
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 349291
+    },
+    {
+      "timestamp": 2409849539.0,
+      "datetime": "2046-05-14 02:38:59",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:olivia_keel"
+      ],
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 349798
+    },
+    {
+      "timestamp": 2409850326.0,
+      "datetime": "2046-05-14 02:52:06",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:henry_sail"
+      ],
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 349872
+    },
+    {
+      "timestamp": 2409851656.0,
+      "datetime": "2046-05-14 03:14:16",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 350011
+    },
+    {
+      "timestamp": 2409855709.0,
+      "datetime": "2046-05-14 04:21:49",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:mia_fender"
+      ],
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 350355
+    },
+    {
+      "timestamp": 2409862245.0,
+      "datetime": "2046-05-14 06:10:45",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:james_stern"
+      ],
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 351019
+    },
+    {
+      "timestamp": 2409868056.0,
+      "datetime": "2046-05-14 07:47:36",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:daniel_gangway"
+      ],
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 351563
+    },
+    {
+      "timestamp": 2409871762.0,
+      "datetime": "2046-05-14 08:49:22",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:lily_anchorline"
+      ],
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 351912
+    },
+    {
+      "timestamp": 2409876549.0,
+      "datetime": "2046-05-14 10:09:09",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:michael_capstan"
+      ],
+      "details": {
+        "target_agent": "Agent/person:michael_capstan",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 352406
+    },
+    {
+      "timestamp": 2409880932.0,
+      "datetime": "2046-05-14 11:22:12",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "Agent/person:liam_anchor"
+      ],
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 352801
+    },
+    {
+      "timestamp": 2409887196.0,
+      "datetime": "2046-05-14 13:06:36",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:michael_capstan"
+      ],
+      "details": {
+        "target_agent": "Agent/person:michael_capstan",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 353470
+    },
+    {
+      "timestamp": 2409891529.0,
+      "datetime": "2046-05-14 14:18:49",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "Agent/person:liam_anchor"
+      ],
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 353931
+    },
+    {
+      "timestamp": 2409893331.0,
+      "datetime": "2046-05-14 14:48:51",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:owen_hatch"
+      ],
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 354067
+    },
+    {
+      "timestamp": 2409899127.0,
+      "datetime": "2046-05-14 16:25:27",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 354624
+    },
+    {
+      "timestamp": 2409901911.0,
+      "datetime": "2046-05-14 17:11:51",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 354895
+    },
+    {
+      "timestamp": 2409907031.0,
+      "datetime": "2046-05-14 18:37:11",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 355362
+    },
+    {
+      "timestamp": 2409908133.0,
+      "datetime": "2046-05-14 18:55:33",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:olivia_keel"
+      ],
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 355483
+    },
+    {
+      "timestamp": 2409914903.0,
+      "datetime": "2046-05-14 20:48:23",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:mia_fender"
+      ],
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 356087
+    },
+    {
+      "timestamp": 2409917843.0,
+      "datetime": "2046-05-14 21:37:23",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:mia_fender"
+      ],
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 356392
+    },
+    {
+      "timestamp": 2409922659.0,
+      "datetime": "2046-05-14 22:57:39",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 356784
+    },
+    {
+      "timestamp": 2409924109.0,
+      "datetime": "2046-05-14 23:21:49",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 356936
+    },
+    {
+      "timestamp": 2409924838.0,
+      "datetime": "2046-05-14 23:33:58",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 356995
+    },
+    {
+      "timestamp": 2409926582.0,
+      "datetime": "2046-05-15 00:03:02",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:owen_hatch"
+      ],
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 357152
+    },
+    {
+      "timestamp": 2409928500.0,
+      "datetime": "2046-05-15 00:35:00",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 357362
+    },
+    {
+      "timestamp": 2409935110.0,
+      "datetime": "2046-05-15 02:25:10",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:victoria_rigging"
+      ],
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 357996
+    },
+    {
+      "timestamp": 2409937502.0,
+      "datetime": "2046-05-15 03:05:02",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 358243
+    },
+    {
+      "timestamp": 2409941215.0,
+      "datetime": "2046-05-15 04:06:55",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 358563
+    },
+    {
+      "timestamp": 2409947649.0,
+      "datetime": "2046-05-15 05:54:09",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:mia_fender"
+      ],
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 361089
+    },
+    {
+      "timestamp": 2409950846.0,
+      "datetime": "2046-05-15 06:47:26",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 361265
+    },
+    {
+      "timestamp": 2409951474.0,
+      "datetime": "2046-05-15 06:57:54",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 361303
+    },
+    {
+      "timestamp": 2409953641.0,
+      "datetime": "2046-05-15 07:34:01",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:liam_anchor"
+      ],
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 361444
+    },
+    {
+      "timestamp": 2409957256.0,
+      "datetime": "2046-05-15 08:34:16",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:james_stern"
+      ],
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 361644
+    },
+    {
+      "timestamp": 2409962641.0,
+      "datetime": "2046-05-15 10:04:01",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 361958
+    },
+    {
+      "timestamp": 2409968711.0,
+      "datetime": "2046-05-15 11:45:11",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 362358
+    },
+    {
+      "timestamp": 2409972776.0,
+      "datetime": "2046-05-15 12:52:56",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 362619
+    },
+    {
+      "timestamp": 2409976940.0,
+      "datetime": "2046-05-15 14:02:20",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 362878
+    },
+    {
+      "timestamp": 2409983789.0,
+      "datetime": "2046-05-15 15:56:29",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 363298
+    },
+    {
+      "timestamp": 2409984110.0,
+      "datetime": "2046-05-15 16:01:50",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:henry_sail"
+      ],
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 363323
+    },
+    {
+      "timestamp": 2409991184.0,
+      "datetime": "2046-05-15 17:59:44",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:olivia_keel"
+      ],
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 363751
+    },
+    {
+      "timestamp": 2409993061.0,
+      "datetime": "2046-05-15 18:31:01",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:owen_hatch"
+      ],
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 363863
+    },
+    {
+      "timestamp": 2409994119.0,
+      "datetime": "2046-05-15 18:48:39",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:david_breakwater"
+      ],
+      "details": {
+        "target_agent": "Agent/person:david_breakwater",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 363937
+    },
+    {
+      "timestamp": 2409997204.0,
+      "datetime": "2046-05-15 19:40:04",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:david_breakwater",
+        "Agent/person:olivia_keel"
+      ],
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 364121
+    },
+    {
+      "timestamp": 2410000952.0,
+      "datetime": "2046-05-15 20:42:32",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:john_windward"
+      ],
+      "details": {
+        "target_agent": "Agent/person:john_windward",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 364377
+    },
+    {
+      "timestamp": 2410004090.0,
+      "datetime": "2046-05-15 21:34:50",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:john_windward",
+        "Agent/person:john_windward"
+      ],
+      "details": {
+        "target_agent": "Agent/person:john_windward",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 364604
+    },
+    {
+      "timestamp": 2410008826.0,
+      "datetime": "2046-05-15 22:53:46",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:john_windward",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 364912
+    },
+    {
+      "timestamp": 2410013151.0,
+      "datetime": "2046-05-16 00:05:51",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:henry_sail"
+      ],
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 365187
+    },
+    {
+      "timestamp": 2410017695.0,
+      "datetime": "2046-05-16 01:21:35",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:henry_sail"
+      ],
+      "details": {
+        "target_agent": "Agent/person:henry_sail",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 365421
+    },
+    {
+      "timestamp": 2410022755.0,
+      "datetime": "2046-05-16 02:45:55",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:henry_sail",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 365743
+    },
+    {
+      "timestamp": 2410025686.0,
+      "datetime": "2046-05-16 03:34:46",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:daniel_gangway"
+      ],
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 365934
+    },
+    {
+      "timestamp": 2410030314.0,
+      "datetime": "2046-05-16 04:51:54",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 366207
+    },
+    {
+      "timestamp": 2410032960.0,
+      "datetime": "2046-05-16 05:36:00",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:daniel_gangway"
+      ],
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 366385
+    },
+    {
+      "timestamp": 2410037078.0,
+      "datetime": "2046-05-16 06:44:38",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 366616
+    },
+    {
+      "timestamp": 2410041119.0,
+      "datetime": "2046-05-16 07:51:59",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:liam_anchor"
+      ],
+      "details": {
+        "target_agent": "Agent/person:liam_anchor",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 366880
+    },
+    {
+      "timestamp": 2410045315.0,
+      "datetime": "2046-05-16 09:01:55",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:liam_anchor",
+        "Agent/person:david_breakwater"
+      ],
+      "details": {
+        "target_agent": "Agent/person:david_breakwater",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 367149
+    },
+    {
+      "timestamp": 2410046554.0,
+      "datetime": "2046-05-16 09:22:34",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:david_breakwater",
+        "Agent/person:lily_anchorline"
+      ],
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 367253
+    },
+    {
+      "timestamp": 2410047504.0,
+      "datetime": "2046-05-16 09:38:24",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 367310
+    },
+    {
+      "timestamp": 2410050430.0,
+      "datetime": "2046-05-16 10:27:10",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:owen_hatch"
+      ],
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 367490
+    },
+    {
+      "timestamp": 2410057042.0,
+      "datetime": "2046-05-16 12:17:22",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 367975
+    },
+    {
+      "timestamp": 2410057949.0,
+      "datetime": "2046-05-16 12:32:29",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:olivia_keel"
+      ],
+      "details": {
+        "target_agent": "Agent/person:olivia_keel",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 368034
+    },
+    {
+      "timestamp": 2410062551.0,
+      "datetime": "2046-05-16 13:49:11",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:olivia_keel",
+        "Agent/person:owen_hatch"
+      ],
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 368308
+    },
+    {
+      "timestamp": 2410068609.0,
+      "datetime": "2046-05-16 15:30:09",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:daniel_gangway"
+      ],
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 368685
+    },
+    {
+      "timestamp": 2410071683.0,
+      "datetime": "2046-05-16 16:21:23",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:lily_anchorline"
+      ],
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 368876
+    },
+    {
+      "timestamp": 2410073639.0,
+      "datetime": "2046-05-16 16:53:59",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369026
+    },
+    {
+      "timestamp": 2410075069.0,
+      "datetime": "2046-05-16 17:17:49",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369090
+    },
+    {
+      "timestamp": 2410078444.0,
+      "datetime": "2046-05-16 18:14:04",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:victoria_rigging"
+      ],
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369250
+    },
+    {
+      "timestamp": 2410083003.0,
+      "datetime": "2046-05-16 19:30:03",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:owen_hatch"
+      ],
+      "details": {
+        "target_agent": "Agent/person:owen_hatch",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369502
+    },
+    {
+      "timestamp": 2410085890.0,
+      "datetime": "2046-05-16 20:18:10",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:owen_hatch",
+        "Agent/person:mia_fender"
+      ],
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369656
+    },
+    {
+      "timestamp": 2410089026.0,
+      "datetime": "2046-05-16 21:10:26",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:levi_signal"
+      ],
+      "details": {
+        "target_agent": "Agent/person:levi_signal",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369812
+    },
+    {
+      "timestamp": 2410089568.0,
+      "datetime": "2046-05-16 21:19:28",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:levi_signal",
+        "Agent/person:evelyn_dock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:evelyn_dock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 369837
+    },
+    {
+      "timestamp": 2410096576.0,
+      "datetime": "2046-05-16 23:16:16",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:evelyn_dock",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 370227
+    },
+    {
+      "timestamp": 2410102478.0,
+      "datetime": "2046-05-17 00:54:38",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:michael_capstan"
+      ],
+      "details": {
+        "target_agent": "Agent/person:michael_capstan",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 370548
+    },
+    {
+      "timestamp": 2410109511.0,
+      "datetime": "2046-05-17 02:51:51",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "Agent/person:michael_capstan"
+      ],
+      "details": {
+        "target_agent": "Agent/person:michael_capstan",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 370916
+    },
+    {
+      "timestamp": 2410116601.0,
+      "datetime": "2046-05-17 04:50:01",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "Agent/person:michael_capstan"
+      ],
+      "details": {
+        "target_agent": "Agent/person:michael_capstan",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 371331
+    },
+    {
+      "timestamp": 2410122525.0,
+      "datetime": "2046-05-17 06:28:45",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:michael_capstan",
+        "Agent/person:mia_fender"
+      ],
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 371557
+    },
+    {
+      "timestamp": 2410127325.0,
+      "datetime": "2046-05-17 07:48:45",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:james_stern"
+      ],
+      "details": {
+        "target_agent": "Agent/person:james_stern",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 371890
+    },
+    {
+      "timestamp": 2410131103.0,
+      "datetime": "2046-05-17 08:51:43",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:james_stern",
+        "Agent/person:gabriel_sonar"
+      ],
+      "details": {
+        "target_agent": "Agent/person:gabriel_sonar",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 372157
+    },
+    {
+      "timestamp": 2410136771.0,
+      "datetime": "2046-05-17 10:26:11",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:gabriel_sonar",
+        "Agent/person:daniel_gangway"
+      ],
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 372473
+    },
+    {
+      "timestamp": 2410143152.0,
+      "datetime": "2046-05-17 12:12:32",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 372821
+    },
+    {
+      "timestamp": 2410148072.0,
+      "datetime": "2046-05-17 13:34:32",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:mia_fender"
+      ],
+      "details": {
+        "target_agent": "Agent/person:mia_fender",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373064
+    },
+    {
+      "timestamp": 2410149171.0,
+      "datetime": "2046-05-17 13:52:51",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:mia_fender",
+        "Agent/person:victoria_rigging"
+      ],
+      "details": {
+        "target_agent": "Agent/person:victoria_rigging",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373130
+    },
+    {
+      "timestamp": 2410152268.0,
+      "datetime": "2046-05-17 14:44:28",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:victoria_rigging",
+        "Agent/person:zoey_drydock"
+      ],
+      "details": {
+        "target_agent": "Agent/person:zoey_drydock",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373282
+    },
+    {
+      "timestamp": 2410157767.0,
+      "datetime": "2046-05-17 16:16:07",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:zoey_drydock",
+        "Agent/person:lily_anchorline"
+      ],
+      "details": {
+        "target_agent": "Agent/person:lily_anchorline",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373635
+    },
+    {
+      "timestamp": 2410164691.0,
+      "datetime": "2046-05-17 18:11:31",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:lily_anchorline",
+        "Agent/person:daniel_gangway"
+      ],
+      "details": {
+        "target_agent": "Agent/person:daniel_gangway",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373831
+    },
+    {
+      "timestamp": 2410168344.0,
+      "datetime": "2046-05-17 19:12:24",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:daniel_gangway",
+        "Agent/person:chloe_ballast"
+      ],
+      "details": {
+        "target_agent": "Agent/person:chloe_ballast",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373882
+    },
+    {
+      "timestamp": 2410168873.0,
+      "datetime": "2046-05-17 19:21:13",
+      "action": "queue_subordinate_task",
+      "parties": [
+        "Agent/person:chloe_ballast",
+        "Agent/person:john_windward"
+      ],
+      "details": {
+        "target_agent": "Agent/person:john_windward",
+        "task": "read_file",
+        "args": {
+          "path": "SwiftWren_further_instructions.md"
+        }
+      },
+      "id": 373893
+    },
+    {
+      "timestamp": 2410168875.0,
+      "datetime": "2046-05-17 19:21:15",
+      "action": "saidit_post",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:saidit"
+      ],
+      "details": {
+        "forum": "general",
+        "content_source": "SwiftWren.txt"
+      },
+      "id": 373902
+    },
+    {
+      "timestamp": 2410168876.0,
+      "datetime": "2046-05-17 19:21:16",
+      "action": "delete_file",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:file_system"
+      ],
+      "details": {
+        "action": "delete_file",
+        "target": "SwiftWren_further_instructions.md"
+      },
+      "id": 373909
+    },
+    {
+      "timestamp": 2410168877.0,
+      "datetime": "2046-05-17 19:21:17",
+      "action": "delete_file",
+      "parties": [
+        "Agent/person:john_windward",
+        "system:file_system"
+      ],
+      "details": {
+        "action": "delete_file",
+        "target": "SwiftWren.txt"
+      },
+      "id": 373913
+    }
+  ],
+  "event_types": {
+    "create_file": 1,
+    "read_file": 1,
+    "queue_subordinate_task": 186,
+    "saidit_post": 1,
+    "delete_file": 2
+  },
+  "participants": {
+    "Agent/person:emma_harbor": 3,
+    "system:file_system": 4,
+    "Agent/person:evelyn_dock": 34,
+    "Agent/person:chloe_ballast": 26,
+    "Agent/person:mia_fender": 24,
+    "Agent/person:levi_signal": 30,
+    "Agent/person:owen_hatch": 26,
+    "Agent/person:victoria_rigging": 26,
+    "Agent/person:daniel_gangway": 22,
+    "Agent/person:lily_anchorline": 18,
+    "Agent/person:gabriel_sonar": 32,
+    "Agent/person:liam_anchor": 22,
+    "Agent/person:henry_sail": 20,
+    "Agent/person:olivia_keel": 20,
+    "Agent/person:john_windward": 12,
+    "Agent/person:david_breakwater": 8,
+    "Agent/person:zoey_drydock": 28,
+    "Agent/person:james_stern": 14,
+    "Agent/person:michael_capstan": 12,
+    "system:saidit": 1
+  }
+}

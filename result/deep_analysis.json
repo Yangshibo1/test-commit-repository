@@ -1,0 +1,1543 @@
+{
+  "unknown_participants": {
+    "total_unique_participants": 152,
+    "known_employees_count": 49,
+    "unknown_likely_system": [
+      "system:file_system",
+      "system:saidit",
+      "system:email_server",
+      "system:flex"
+    ],
+    "unknown_likely_external": [
+      "Zoey Drydock",
+      "Chloe Ballast",
+      "Sebastian Cutter",
+      "agent:noah_mariner",
+      "agent:amelia_skiff",
+      "agent:mia_fender",
+      "Charlotte Current",
+      "agent:ella_pilot",
+      "Lily Anchorline",
+      "Victoria Rigging",
+      "agent:victoria_rigging",
+      "agent:evelyn_dock",
+      "agent:emily_ferry",
+      "agent:hannah_starboard",
+      "agent:nora_bulkhead",
+      "agent:jack_helm",
+      "agent:henry_sail",
+      "agent:audrey_portside",
+      "agent:benjamin_mooring",
+      "agent:isaac_mast",
+      "Benjamin Mooring",
+      "agent:grace_lifeboat",
+      "Julian Seaway",
+      "agent:gabriel_sonar",
+      "agent:michael_capstan",
+      "agent:sophia_beacon",
+      "agent:matthew_tide",
+      "agent:zoey_drydock",
+      "Noah Mariner",
+      "agent:samuel_gull",
+      "Ava Tiller",
+      "world:calendar",
+      "agent:david_breakwater",
+      "agent:john_windward",
+      "agent:dylan_hawser",
+      "Jack Helm",
+      "Michael Capstan",
+      "Nora Bulkhead",
+      "agent:emma_harbor",
+      "agent:lily_anchorline",
+      "agent:owen_hatch",
+      "Avery Sextant",
+      "Henry Sail",
+      "agent:charlotte_current",
+      "agent:layla_channel",
+      "William Rudder",
+      "agent:lucas_compass",
+      "Amelia Skiff",
+      "agent:harper_oar",
+      "Hannah Starboard",
+      "Isaac Mast",
+      "Owen Hatch",
+      "agent:alexander_jetty",
+      "agent:scarlett_wharf",
+      "Layla Channel",
+      "agent:ava_tiller",
+      "James Stern",
+      "Scarlett Wharf",
+      "John Windward",
+      "agent:levi_signal",
+      "Gabriel Sonar",
+      "Evelyn Dock",
+      "Emily Ferry",
+      "Sophia Beacon",
+      "Levi Signal",
+      "Grace Lifeboat",
+      "agent:julian_seaway",
+      "Christopher Jettyline",
+      "Matthew Tide",
+      "agent:avery_sextant",
+      "Joseph Buoy",
+      "agent:christopher_jettyline",
+      "agent:chloe_ballast",
+      "Anthony Reef",
+      "Liam Anchor",
+      "Ella Pilot",
+      "Daniel Gangway",
+      "agent:aria_towline",
+      "agent:james_stern",
+      "Dylan Hawser",
+      "Harper Oar",
+      "Mia Fender",
+      "David Breakwater",
+      "agent:daniel_gangway",
+      "agent:william_rudder",
+      "Samuel Gull",
+      "Alexander Jetty",
+      "agent:abigail_spinnaker",
+      "agent:olivia_keel",
+      "Lucas Compass",
+      "Emma Harbor",
+      "Abigail Spinnaker",
+      "agent:sebastian_cutter",
+      "agent:joseph_buoy",
+      "agent:anthony_reef",
+      "Olivia Keel",
+      "agent:liam_anchor",
+      "Audrey Portside",
+      "Aria Towline"
+    ],
+    "system_components": [],
+    "participant_event_types": {
+      "isaac_mast": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "list_files",
+        "ask_agent",
+        "received",
+        "suggest_contacts",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "check_email"
+      ],
+      "levi_signal": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "access_files",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "give_advice",
+        "saidit_post_check",
+        "check_email"
+      ],
+      "avery_sextant": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "sophia_beacon": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "ask_agent",
+        "suggest_contacts",
+        "received",
+        "list_files",
+        "give_advice",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "access_files",
+        "send_email",
+        "check_email"
+      ],
+      "world:calendar": [
+        "propose_meeting"
+      ],
+      "mia_fender": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "send_email",
+        "saidit_post_check",
+        "check_email"
+      ],
+      "lily_anchorline": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "send_email",
+        "saidit_post_check",
+        "check_email"
+      ],
+      "sebastian_cutter": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "give_advice",
+        "send_email",
+        "check_email"
+      ],
+      "gabriel_sonar": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "delete_file",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "give_advice",
+        "send_email",
+        "saidit_post_check",
+        "check_in",
+        "check_email"
+      ],
+      "evelyn_dock": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "delete_file",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "send_email",
+        "saidit_post_check",
+        "check_in",
+        "check_email"
+      ],
+      "david_breakwater": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "send_email",
+        "saidit_post_check",
+        "check_email"
+      ],
+      "alexander_jetty": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "ask_agent",
+        "access_files",
+        "give_advice",
+        "propose_meeting",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "ava_tiller": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "list_files",
+        "suggest_contacts",
+        "post_saidit",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "check_email",
+        "saidit_post"
+      ],
+      "hannah_starboard": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "give_advice",
+        "send_email",
+        "check_email"
+      ],
+      "james_stern": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "ask_agent",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "saidit_post_check",
+        "check_email"
+      ],
+      "chloe_ballast": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "ask_agent",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "aria_towline": [
+        "read_file",
+        "post_saidit",
+        "received",
+        "saidit_post",
+        "assign_agent_task",
+        "flex_post",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "sent",
+        "check_email",
+        "list_files",
+        "suggest_contacts",
+        "access_email",
+        "queue_subordinate_task",
+        "give_advice",
+        "create_file",
+        "post_flex",
+        "send_email"
+      ],
+      "matthew_tide": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "ask_agent",
+        "list_files",
+        "received",
+        "suggest_contacts",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "nora_bulkhead": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "ask_agent",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "henry_sail": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "saidit_post_check",
+        "check_email"
+      ],
+      "daniel_gangway": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "send_email",
+        "saidit_post_check",
+        "check_email"
+      ],
+      "john_windward": [
+        "read_file",
+        "received",
+        "post_saidit",
+        "saidit_post",
+        "delete_file",
+        "assign_agent_task",
+        "flex_post",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "sent",
+        "check_email",
+        "suggest_contacts",
+        "list_files",
+        "saidit_post_check",
+        "access_email",
+        "queue_subordinate_task",
+        "give_advice",
+        "create_file",
+        "post_flex",
+        "send_email"
+      ],
+      "amelia_skiff": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "check_email"
+      ],
+      "abigail_spinnaker": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "ask_agent",
+        "suggest_contacts",
+        "received",
+        "list_files",
+        "give_advice",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "access_files",
+        "send_email",
+        "check_email"
+      ],
+      "noah_mariner": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "ask_agent",
+        "give_advice",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "access_files",
+        "send_email",
+        "check_email"
+      ],
+      "harper_oar": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "christopher_jettyline": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "ask_agent",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "charlotte_current": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "ask_agent",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "emily_ferry": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "ask_agent",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "zoey_drydock": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "delete_file",
+        "assign_agent_task",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "give_advice",
+        "saidit_post_check",
+        "check_in",
+        "check_email"
+      ],
+      "anthony_reef": [
+        "read_file",
+        "received",
+        "post_saidit",
+        "saidit_post",
+        "assign_agent_task",
+        "flex_post",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "sent",
+        "check_email",
+        "suggest_contacts",
+        "list_files",
+        "access_email",
+        "queue_subordinate_task",
+        "give_advice",
+        "create_file",
+        "post_flex",
+        "send_email"
+      ],
+      "owen_hatch": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "delete_file",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "give_advice",
+        "send_email",
+        "saidit_post_check",
+        "check_in",
+        "check_email"
+      ],
+      "Owen Hatch": [
+        "check_access",
+        "enter_room"
+      ],
+      "layla_channel": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "michael_capstan": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "ask_agent",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "saidit_post_check",
+        "check_email"
+      ],
+      "benjamin_mooring": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "ask_agent",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "olivia_keel": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "ask_agent",
+        "list_files",
+        "received",
+        "suggest_contacts",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "saidit_post_check",
+        "check_email"
+      ],
+      "william_rudder": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "flex_post",
+        "queue_subordinate_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "post_flex",
+        "send_email",
+        "check_email"
+      ],
+      "ella_pilot": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "give_advice",
+        "send_email",
+        "check_email"
+      ],
+      "liam_anchor": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "send_email",
+        "saidit_post_check",
+        "check_email"
+      ],
+      "system:saidit": [
+        "saidit_post_check",
+        "post_saidit",
+        "saidit_post"
+      ],
+      "victoria_rigging": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "send_email",
+        "saidit_post_check",
+        "check_email"
+      ],
+      "samuel_gull": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "ask_agent",
+        "suggest_contacts",
+        "received",
+        "list_files",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "check_email"
+      ],
+      "dylan_hawser": [
+        "read_file",
+        "received",
+        "post_saidit",
+        "saidit_post",
+        "assign_agent_task",
+        "flex_post",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "sent",
+        "check_email",
+        "list_files",
+        "suggest_contacts",
+        "access_email",
+        "queue_subordinate_task",
+        "give_advice",
+        "create_file",
+        "post_flex",
+        "send_email"
+      ],
+      "emma_harbor": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "ask_agent",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "joseph_buoy": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "give_advice",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "system:email_server": [
+        "send_email"
+      ],
+      "audrey_portside": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "give_advice",
+        "send_email",
+        "check_email"
+      ],
+      "scarlett_wharf": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "list_files",
+        "suggest_contacts",
+        "received",
+        "ask_agent",
+        "access_files",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "give_advice",
+        "send_email",
+        "check_email"
+      ],
+      "Ella Pilot": [
+        "check_access",
+        "enter_room"
+      ],
+      "Dylan Hawser": [
+        "check_access",
+        "enter_room"
+      ],
+      "Julian Seaway": [
+        "check_access",
+        "enter_room"
+      ],
+      "julian_seaway": [
+        "read_file",
+        "access_email",
+        "queue_subordinate_task",
+        "assign_agent_task",
+        "ask_agent",
+        "suggest_contacts",
+        "received",
+        "list_files",
+        "give_advice",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "access_files",
+        "send_email",
+        "check_email"
+      ],
+      "William Rudder": [
+        "check_access",
+        "enter_room"
+      ],
+      "Chloe Ballast": [
+        "check_access",
+        "enter_room"
+      ],
+      "Anthony Reef": [
+        "check_access",
+        "enter_room"
+      ],
+      "Evelyn Dock": [
+        "check_access",
+        "enter_room"
+      ],
+      "Amelia Skiff": [
+        "check_access",
+        "enter_room"
+      ],
+      "Christopher Jettyline": [
+        "check_access",
+        "enter_room"
+      ],
+      "Zoey Drydock": [
+        "check_access",
+        "enter_room"
+      ],
+      "Harper Oar": [
+        "check_access",
+        "enter_room"
+      ],
+      "Lucas Compass": [
+        "check_access",
+        "enter_room"
+      ],
+      "lucas_compass": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "ask_agent",
+        "give_advice",
+        "propose_meeting",
+        "create_file",
+        "sent",
+        "access_files",
+        "send_email",
+        "check_email"
+      ],
+      "Audrey Portside": [
+        "check_access",
+        "enter_room"
+      ],
+      "Matthew Tide": [
+        "check_access",
+        "enter_room"
+      ],
+      "Victoria Rigging": [
+        "check_access",
+        "enter_room"
+      ],
+      "Scarlett Wharf": [
+        "check_access",
+        "enter_room"
+      ],
+      "Grace Lifeboat": [
+        "check_access",
+        "enter_room"
+      ],
+      "grace_lifeboat": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "ask_agent",
+        "suggest_contacts",
+        "received",
+        "list_files",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "Samuel Gull": [
+        "check_access",
+        "enter_room"
+      ],
+      "Sebastian Cutter": [
+        "check_access",
+        "enter_room"
+      ],
+      "John Windward": [
+        "check_access",
+        "enter_room"
+      ],
+      "Daniel Gangway": [
+        "check_access",
+        "enter_room"
+      ],
+      "Abigail Spinnaker": [
+        "check_access",
+        "enter_room"
+      ],
+      "Liam Anchor": [
+        "check_access",
+        "enter_room"
+      ],
+      "Levi Signal": [
+        "check_access",
+        "enter_room"
+      ],
+      "Henry Sail": [
+        "check_access",
+        "enter_room"
+      ],
+      "Benjamin Mooring": [
+        "check_access",
+        "enter_room"
+      ],
+      "Sophia Beacon": [
+        "check_access",
+        "enter_room"
+      ],
+      "Nora Bulkhead": [
+        "check_access",
+        "enter_room"
+      ],
+      "Noah Mariner": [
+        "check_access",
+        "enter_room"
+      ],
+      "Joseph Buoy": [
+        "check_access",
+        "enter_room"
+      ],
+      "jack_helm": [
+        "read_file",
+        "access_email",
+        "assign_agent_task",
+        "queue_subordinate_task",
+        "ask_agent",
+        "suggest_contacts",
+        "list_files",
+        "received",
+        "give_advice",
+        "propose_meeting",
+        "access_files",
+        "sent",
+        "create_file",
+        "send_email",
+        "check_email"
+      ],
+      "system:file_system": [
+        "create_file",
+        "read_file",
+        "delete_file"
+      ],
+      "system:flex": [
+        "post_flex"
+      ],
+      "agent:aria_towline": [
+        "read_file"
+      ],
+      "agent:isaac_mast": [
+        "read_file"
+      ],
+      "agent:harper_oar": [
+        "read_file"
+      ],
+      "agent:zoey_drydock": [
+        "read_file"
+      ],
+      "agent:chloe_ballast": [
+        "read_file"
+      ],
+      "agent:anthony_reef": [
+        "read_file"
+      ],
+      "agent:victoria_rigging": [
+        "read_file"
+      ],
+      "agent:noah_mariner": [
+        "read_file"
+      ],
+      "agent:gabriel_sonar": [
+        "read_file"
+      ],
+      "agent:sophia_beacon": [
+        "read_file"
+      ],
+      "agent:daniel_gangway": [
+        "read_file"
+      ],
+      "agent:dylan_hawser": [
+        "read_file"
+      ],
+      "agent:liam_anchor": [
+        "read_file"
+      ],
+      "agent:nora_bulkhead": [
+        "read_file"
+      ],
+      "agent:emily_ferry": [
+        "read_file"
+      ],
+      "agent:lucas_compass": [
+        "read_file"
+      ],
+      "agent:christopher_jettyline": [
+        "read_file"
+      ],
+      "agent:michael_capstan": [
+        "read_file"
+      ],
+      "agent:charlotte_current": [
+        "read_file"
+      ],
+      "agent:jack_helm": [
+        "read_file"
+      ],
+      "agent:layla_channel": [
+        "read_file"
+      ],
+      "agent:scarlett_wharf": [
+        "read_file"
+      ],
+      "Gabriel Sonar": [
+        "check_access",
+        "enter_room"
+      ],
+      "agent:david_breakwater": [
+        "read_file"
+      ],
+      "agent:evelyn_dock": [
+        "read_file"
+      ],
+      "agent:levi_signal": [
+        "read_file"
+      ],
+      "agent:lily_anchorline": [
+        "read_file"
+      ],
+      "agent:olivia_keel": [
+        "read_file"
+      ],
+      "Charlotte Current": [
+        "check_access",
+        "enter_room"
+      ],
+      "Layla Channel": [
+        "check_access",
+        "enter_room"
+      ],
+      "Olivia Keel": [
+        "check_access",
+        "enter_room"
+      ],
+      "Emily Ferry": [
+        "check_access",
+        "enter_room"
+      ],
+      "Avery Sextant": [
+        "check_access",
+        "enter_room"
+      ],
+      "David Breakwater": [
+        "check_access",
+        "enter_room"
+      ],
+      "Lily Anchorline": [
+        "check_access",
+        "enter_room"
+      ],
+      "Aria Towline": [
+        "check_access",
+        "enter_room"
+      ],
+      "Jack Helm": [
+        "check_access",
+        "enter_room"
+      ],
+      "Michael Capstan": [
+        "check_access",
+        "enter_room"
+      ],
+      "Hannah Starboard": [
+        "check_access",
+        "enter_room"
+      ],
+      "Alexander Jetty": [
+        "check_access",
+        "enter_room"
+      ],
+      "Ava Tiller": [
+        "check_access",
+        "enter_room"
+      ],
+      "Isaac Mast": [
+        "check_access",
+        "enter_room"
+      ],
+      "Emma Harbor": [
+        "check_access",
+        "enter_room"
+      ],
+      "Mia Fender": [
+        "check_access",
+        "enter_room"
+      ],
+      "James Stern": [
+        "check_access",
+        "enter_room"
+      ],
+      "agent:emma_harbor": [
+        "read_file"
+      ],
+      "agent:ava_tiller": [
+        "read_file"
+      ],
+      "agent:joseph_buoy": [
+        "read_file"
+      ],
+      "agent:sebastian_cutter": [
+        "read_file"
+      ],
+      "agent:julian_seaway": [
+        "read_file"
+      ],
+      "agent:samuel_gull": [
+        "read_file"
+      ],
+      "agent:alexander_jetty": [
+        "read_file"
+      ],
+      "agent:audrey_portside": [
+        "read_file"
+      ],
+      "agent:abigail_spinnaker": [
+        "read_file"
+      ],
+      "agent:avery_sextant": [
+        "read_file"
+      ],
+      "agent:matthew_tide": [
+        "read_file"
+      ],
+      "agent:hannah_starboard": [
+        "read_file"
+      ],
+      "agent:james_stern": [
+        "read_file"
+      ],
+      "agent:amelia_skiff": [
+        "read_file"
+      ],
+      "agent:owen_hatch": [
+        "read_file"
+      ],
+      "agent:grace_lifeboat": [
+        "read_file"
+      ],
+      "agent:william_rudder": [
+        "read_file"
+      ],
+      "agent:henry_sail": [
+        "read_file"
+      ],
+      "agent:mia_fender": [
+        "read_file"
+      ],
+      "agent:benjamin_mooring": [
+        "read_file"
+      ],
+      "agent:ella_pilot": [
+        "read_file"
+      ],
+      "agent:john_windward": [
+        "read_file"
+      ]
+    }
+  },
+  "normal_post_chains": {
+    "total_normal_posts": 107,
+    "analyzed_sample": 10,
+    "normal_chains": [
+      {
+        "post_id": 17093,
+        "post_time": 2409442510.0,
+        "parties": [
+          "person:ava_tiller"
+        ],
+        "chain_length": 0,
+        "content_source": "",
+        "related_events_count": 0
+      },
+      {
+        "post_id": 17128,
+        "post_time": 2409442882.0,
+        "parties": [
+          "person:ava_tiller"
+        ],
+        "chain_length": 0,
+        "content_source": "",
+        "related_events_count": 0
+      },
+      {
+        "post_id": 18796,
+        "post_time": 2409465566.0,
+        "parties": [
+          "person:ava_tiller"
+        ],
+        "chain_length": 0,
+        "content_source": "",
+        "related_events_count": 0
+      },
+      {
+        "post_id": 21580,
+        "post_time": 2409494174.0,
+        "parties": [
+          "person:aria_towline"
+        ],
+        "chain_length": 0,
+        "content_source": "",
+        "related_events_count": 0
+      },
+      {
+        "post_id": 21604,
+        "post_time": 2409494409.0,
+        "parties": [
+          "person:aria_towline"
+        ],
+        "chain_length": 0,
+        "content_source": "",
+        "related_events_count": 0
+      },
+      {
+        "post_id": 21875,
+        "post_time": 2409497366.0,
+        "parties": [
+          "person:aria_towline"
+        ],
+        "chain_length": 0,
+        "content_source": "",
+        "related_events_count": 0
+      },
+      {
+        "post_id": 27290,
+        "post_time": 2409569142.0,
+        "parties": [
+          "Agent/person:john_windward",
+          "system:saidit"
+        ],
+        "chain_length": 4,
+        "content_source": "HiddenOrca.txt",
+        "related_events_count": 4
+      },
+      {
+        "post_id": 98591,
+        "post_time": 2409612964.0,
+        "parties": [
+          "Agent/person:john_windward",
+          "system:saidit"
+        ],
+        "chain_length": 7,
+        "content_source": "MellowOtter.txt",
+        "related_events_count": 7
+      },
+      {
+        "post_id": 341114,
+        "post_time": 2409752966.0,
+        "parties": [
+          "person:ava_tiller"
+        ],
+        "chain_length": 0,
+        "content_source": "",
+        "related_events_count": 0
+      },
+      {
+        "post_id": 343195,
+        "post_time": 2409780566.0,
+        "parties": [
+          "person:aria_towline"
+        ],
+        "chain_length": 0,
+        "content_source": "",
+        "related_events_count": 0
+      }
+    ],
+    "chain_lengths": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      4,
+      7,
+      0,
+      0
+    ],
+    "avg_chain_length": 1.1
+  },
+  "saidit_validation": {
+    "in_chain_count": 65,
+    "out_of_chain_count": 114,
+    "suspicious_count": 21,
+    "suspicious_examples": [
+      {
+        "id": 27290,
+        "short_name": "saidit_post",
+        "when": 2409569142.0,
+        "parties": [
+          "Agent/person:john_windward",
+          "system:saidit"
+        ],
+        "details": {
+          "forum": "general",
+          "content_source": "HiddenOrca.txt"
+        }
+      },
+      {
+        "id": 98591,
+        "short_name": "saidit_post",
+        "when": 2409612964.0,
+        "parties": [
+          "Agent/person:john_windward",
+          "system:saidit"
+        ],
+        "details": {
+          "forum": "general",
+          "content_source": "MellowOtter.txt"
+        }
+      },
+      {
+        "id": 349631,
+        "short_name": "saidit_post",
+        "when": 2409847766.0,
+        "parties": [
+          "person:john_windward"
+        ],
+        "details": {
+          "poster_id": "person:john_windward",
+          "content": "SLA Tracking: Work-Order Triage Status Updates for Maintenance Requests",
+          "forum": "general",
+          "timestamp": "2046-05-13T11:08:14"
+        }
+      },
+      {
+        "id": 456921,
+        "short_name": "saidit_post",
+        "when": 2411303366.0,
+        "parties": [
+          "person:john_windward"
+        ],
+        "details": {
+          "poster_id": "person:john_windward",
+          "content": "SLA Tracking for Maintenance Requests—On-Time Updates for Residents",
+          "forum": "general",
+          "timestamp": "2046-05-30T07:25:35"
+        }
+      },
+      {
+        "id": 459090,
+        "short_name": "saidit_post",
+        "when": 2411326766.0,
+        "parties": [
+          "person:john_windward"
+        ],
+        "details": {
+          "poster_id": "person:john_windward",
+          "content": "Resident Messaging: Building Announcement Updates",
+          "forum": "general",
+          "timestamp": "2046-05-30T14:00:03"
+        }
+      }
+    ]
+  }
+}

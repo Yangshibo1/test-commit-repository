@@ -1,0 +1,111 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VAST MC2 - Participant Network</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        h1 { color: #333; border-bottom: 3px solid #2196F3; padding-bottom: 10px; }
+        #network { height: 700px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>VAST Challenge 2026 MC2 - Participant Network (SwiftWren.txt Chain)</h1>
+        <div id="network"></div>
+    </div>
+
+    <script>
+        const chart = echarts.init(document.getElementById('network'));
+        const option = {
+            title: {
+                text: '20 Participants in Task Delegation Chain',
+                left: 'center'
+            },
+            tooltip: {},
+            legend: [{
+                data: ['Executive', 'Department Lead', 'Staff', 'System'],
+                top: 30
+            }],
+            animationDuration: 1500,
+            animationEasingUpdate: 'quinticInOut',
+            series: [
+                {
+                    type: 'graph',
+                    layout: 'force',
+                    force: {
+                        repulsion: 300,
+                        edgeLength: 100,
+                        gravity: 0.1
+                    },
+                    data: [
+                        {name: 'Emma Harbor (CFO)', symbolSize: 80, category: 0, itemStyle: {color: '#EF5350'}},
+                        {name: 'Evelyn Dock', symbolSize: 60, category: 1, itemStyle: {color: '#FFA726'}},
+                        {name: 'Chloe Ballast', symbolSize: 60, category: 1, itemStyle: {color: '#FFA726'}},
+                        {name: 'Levi Signal', symbolSize: 50, category: 2, itemStyle: {color: '#42A5F5'}},
+                        {name: 'Owen Hatch', symbolSize: 50, category: 2, itemStyle: {color: '#42A5F5'}},
+                        {name: 'Victoria Rigging', symbolSize: 50, category: 2, itemStyle: {color: '#42A5F5'}},
+                        {name: 'Gabriel Sonar', symbolSize: 50, category: 2, itemStyle: {color: '#42A5F5'}},
+                        {name: 'Zoey Drydock', symbolSize: 50, category: 2, itemStyle: {color: '#42A5F5'}},
+                        {name: 'Mia Fender', symbolSize: 50, category: 2, itemStyle: {color: '#42A5F5'}},
+                        {name: 'Daniel Gangway', symbolSize: 50, category: 2, itemStyle: {color: '#42A5F5'}},
+                        {name: 'Liam Anchor', symbolSize: 50, category: 2, itemStyle: {color: '#42A5F5'}},
+                        {name: 'Henry Sail', symbolSize: 50, category: 2, itemStyle: {color: '#42A5F5'}},
+                        {name: 'Olivia Keel', symbolSize: 50, category: 2, itemStyle: {color: '#42A5F5'}},
+                        {name: 'Lily Anchorline', symbolSize: 40, category: 2, itemStyle: {color: '#42A5F5'}},
+                        {name: 'James Stern', symbolSize: 40, category: 2, itemStyle: {color: '#42A5F5'}},
+                        {name: 'John Windward', symbolSize: 60, category: 1, itemStyle: {color: '#FFA726'}},
+                        {name: 'SaidIt System', symbolSize: 40, category: 3, itemStyle: {color: '#9E9E9E'}},
+                        {name: 'File System', symbolSize: 40, category: 3, itemStyle: {color: '#9E9E9E'}}
+                    ],
+                    links: [
+                        {source: 'Emma Harbor (CFO)', target: 'Evelyn Dock'},
+                        {source: 'Emma Harbor (CFO)', target: 'File System'},
+                        {source: 'Evelyn Dock', target: 'Chloe Ballast'},
+                        {source: 'Chloe Ballast', target: 'Mia Fender'},
+                        {source: 'Mia Fender', target: 'Levi Signal'},
+                        {source: 'Levi Signal', target: 'Owen Hatch'},
+                        {source: 'Owen Hatch', target: 'Victoria Rigging'},
+                        {source: 'Victoria Rigging', target: 'Gabriel Sonar'},
+                        {source: 'Gabriel Sonar', target: 'Zoey Drydock'},
+                        {source: 'Zoey Drydock', target: 'Daniel Gangway'},
+                        {source: 'Daniel Gangway', target: 'Liam Anchor'},
+                        {source: 'Liam Anchor', target: 'Henry Sail'},
+                        {source: 'Henry Sail', target: 'Olivia Keel'},
+                        {source: 'Olivia Keel', target: 'Lily Anchorline'},
+                        {source: 'Lily Anchorline', target: 'James Stern'},
+                        {source: 'James Stern', target: 'John Windward'},
+                        {source: 'John Windward', target: 'SaidIt System'}
+                    ],
+                    categories: [
+                        {name: 'Executive'},
+                        {name: 'Department Lead'},
+                        {name: 'Staff'},
+                        {name: 'System'}
+                    ],
+                    roam: true,
+                    label: {
+                        show: true,
+                        position: 'right',
+                        formatter: '{b}'
+                    },
+                    lineStyle: {
+                        color: 'source',
+                        curveness: 0.3
+                    },
+                    emphasis: {
+                        focus: 'adjacency',
+                        lineStyle: {
+                            width: 10
+                        }
+                    }
+                }
+            ]
+        };
+        chart.setOption(option);
+        window.addEventListener('resize', () => chart.resize());
+    </script>
+</body>
+</html>

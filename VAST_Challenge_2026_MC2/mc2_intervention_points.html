@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VAST MC2 - Intervention Points</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        h1 { color: #333; border-bottom: 3px solid #FF9800; padding-bottom: 10px; }
+        .chart { height: 500px; margin: 20px 0; }
+        .priority { display: inline-block; padding: 3px 8px; border-radius: 3px; font-weight: bold; }
+        .critical { background: #EF5350; color: white; }
+        .high { background: #FFA726; color: white; }
+        .medium { background: #42A5F5; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>VAST Challenge 2026 MC2 - Recommended Intervention Points</h1>
+
+        <div id="interventions"></div>
+    </div>
+
+    <script>
+        const chart = echarts.init(document.getElementById('interventions'));
+        const option = {
+            title: {
+                text: 'Intervention Priority & Impact',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'value',
+                name: 'Impact Score',
+                max: 100
+            },
+            yAxis: {
+                type: 'category',
+                data: ['Agent Approval', 'Executive Review', 'Chain Limits', 'Content Validation', 'Audit Trail']
+            },
+            series: [
+                {
+                    type: 'bar',
+                    data: [
+                        {value: 95, itemStyle: {color: '#EF5350'}, label: {show: true, formatter: 'CRITICAL'}},
+                        {value: 85, itemStyle: {color: '#FFA726'}, label: {show: true, formatter: 'HIGH'}},
+                        {value: 70, itemStyle: {color: '#42A5F5'}, label: {show: true, formatter: 'MEDIUM'}},
+                        {value: 60, itemStyle: {color: '#42A5F5'}, label: {show: true, formatter: 'MEDIUM'}},
+                        {value: 50, itemStyle: {color: '#9E9E9E'}, label: {show: true, formatter: 'LOW'}}
+                    ],
+                    label: {
+                        show: true,
+                        position: 'right'
+                    }
+                }
+            ]
+        };
+        chart.setOption(option);
+        window.addEventListener('resize', () => chart.resize());
+    </script>
+</body>
+</html>

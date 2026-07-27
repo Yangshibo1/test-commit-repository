@@ -20,6 +20,11 @@ __MACOSX/
 
 # Claude Code temporary worktrees
 .claude/worktrees/
+.claude/settings.local.json
+
+# Local test and extraction caches
+.pytest_cache/
+VAST_Challenge_2026_MC2（1）/
 
 # VAST challenge datasets and generated analysis artifacts
 VAST_Challenge_2026_MC1/

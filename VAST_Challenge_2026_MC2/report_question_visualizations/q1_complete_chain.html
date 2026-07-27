@@ -61,6 +61,10 @@
 
   .stage-stats { display:grid; gap:8px; }
   .stage-row { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #e7d3bd; font:11px ui-monospace, Consolas, monospace; }
+  .mini-bars { display:grid; gap:7px; }
+  .bar { display:grid; grid-template-columns:150px 1fr 34px; gap:8px; align-items:center; font:11px ui-monospace, Consolas, monospace; }
+  .bar-track { height:12px; background:#ead9c7; border-radius:999px; overflow:hidden; }
+  .bar-fill { height:100%; background:var(--dept-color); }
 </style>
 </head>
 <body>
@@ -68,7 +72,7 @@
   <header>
     <div>
       <h1>Q1 · SwiftWren Event Chain</h1>
-      <p class="subtitle">Complete chain from Emma Harbor creating SwiftWren.txt to John Windward's anomalous SaidIT post. Nodes show key events; arrows show queue delegation.</p>
+      <p class="subtitle">Complete chain from Emma Harbor creating SwiftWren.txt to John Windward's anomalous SaidIT post. Nodes show key events; arrows show chronological order (queue-labeled arrows also show delegation).</p>
     </div>
     <div class="stats">
       <div class="stat"><b>254</b><span>events</span></div>
@@ -96,12 +100,14 @@
 
   <section class="details">
     <div class="panel">
-      <h3>Event Type Distribution</h3>
-      <div id="eventTypeStats" class="stage-stats"></div>
+      <h3>Department activity</h3>
+      <div id="deptActivity" class="mini-bars"></div>
     </div>
     <div class="panel">
       <h3>About</h3>
-      <p style="color:var(--muted);font-size:11px;line-height:1.4">Nodes: Personnel events with department info. Edges: Queue delegation. Timeline in MST (UTC-7). Third line shows task details based on event type.</p>
+      <p style="color:var(--muted);font-size:11px;line-height:1.4"><b>Visual Encoding:</b> Nodes = events with person, department, and type; edges = chronological order (queue-labeled edges also show delegation); colors = departments; timeline = MST (UTC-7).</p>
+      <p style="color:var(--muted);font-size:11px;line-height:1.4"><b>Key Events:</b> Events directly related to the anomalous post and their first-hop queue chains.</p>
+      <p style="color:var(--muted);font-size:11px;line-height:1.4"><b>Interactions:</b> Toggle display modes (First 7+Last 7 / Show all / Key events); filter by department, event type, or person; search across all fields.</p>
     </div>
   </section>
 </main>
@@ -308,15 +314,21 @@ function render() {
 
   chain.innerHTML = html;
 
-  // Update event type stats
-  const eventTypes = {};
-  displayNodes.forEach(n => {
-    const key = n.short_name;
-    eventTypes[key] = (eventTypes[key] || 0) + 1;
+  // Update department activity stats
+  renderDeptBars();
+}
+
+function renderDeptBars() {
+  const counts = {};
+  NODES.forEach(n => {
+    if (n.department) {
+      counts[n.department] = (counts[n.department] || 0) + 1;
+    }
   });
-  document.getElementById('eventTypeStats').innerHTML = Object.entries(eventTypes)
+  const max = Math.max(...Object.values(counts));
+  document.getElementById('deptActivity').innerHTML = Object.entries(counts)
     .sort((a, b) => b[1] - a[1])
-    .map(([type, count]) => `<div class="stage-row"><span>${type}</span><span>${count}</span></div>`)
+    .map(([dept, count]) => `<div class="bar"><span>${dept}</span><div class="bar-track"><div class="bar-fill" style="width:${count/max*100}%;--dept-color:${COLORS[dept]?.border||'#ccc'}"></div></div><b>${count}</b></div>`)
     .join('');
 }
 

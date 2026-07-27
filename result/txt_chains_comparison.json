@@ -1,0 +1,64 @@
+{
+  "swiftwren": {
+    "statistics": {
+      "total_events": 256,
+      "unique_participants": 20,
+      "event_types": {
+        "create_file": 1,
+        "read_file": 1,
+        "queue_subordinate_task": 186,
+        "saidit_post_check": 64,
+        "saidit_post": 4
+      },
+      "time_range": {
+        "start": 2409490921.0,
+        "end": 2410168875.0
+      }
+    },
+    "chain_file": "swiftwren_chain_from_original.json"
+  },
+  "hiddenorca": {},
+  "mellowotter": {
+    "events": [
+      {
+        "short_name": "create_file",
+        "parties": [
+          "Agent/person:noah_mariner",
+          "system:file_system"
+        ],
+        "when": 2409577321.0,
+        "details": {
+          "action": "create_file",
+          "target": "MellowOtter.txt",
+          "size_hint": 44879
+        },
+        "id": 27726
+      },
+      {
+        "short_name": "saidit_post",
+        "parties": [
+          "Agent/person:john_windward",
+          "system:saidit"
+        ],
+        "when": 2409612964.0,
+        "details": {
+          "forum": "general",
+          "content_source": "MellowOtter.txt"
+        },
+        "id": 98591
+      }
+    ],
+    "statistics": {
+      "total_events": 2,
+      "unique_participants": 4,
+      "event_types": {
+        "create_file": 1,
+        "saidit_post": 1
+      },
+      "time_range": {
+        "start": 2409577321.0,
+        "end": 2409612964.0
+      }
+    }
+  }
+}

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Q6 · John Windward posting intervention network</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --canvas: #f4f7fb;
+      --surface: #ffffff;
+      --ink: #172033;
+      --muted: #596579;
+      --border: #d7dfeb;
+      --focus: #0b63ce;
+      --swift: #c33c54;
+      --hidden: #246eb9;
+      --mellow: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--canvas); color: var(--ink); font: 16px/1.5 Inter, ui-sans-serif, system-ui, sans-serif; }
+    .page-shell { width: min(1440px, calc(100% - 40px)); margin: 0 auto; padding: 48px 0 64px; }
+    .page-header { max-width: 940px; margin-bottom: 28px; }
+    .eyebrow { margin: 0 0 8px; color: var(--muted); font-size: .78rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+    h1 { max-width: 920px; margin: 0; font-size: clamp(2rem, 4.4vw, 3.6rem); line-height: 1.05; letter-spacing: -.045em; }
+    .summary { max-width: 800px; margin: 16px 0 0; color: var(--muted); }
+    .network-card { overflow: hidden; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); box-shadow: 0 18px 45px rgb(20 35 58 / .08); }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 9px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+    button { min-height: 40px; border: 1px solid #aebbd0; border-radius: 8px; padding: 8px 12px; background: #fff; color: var(--ink); font: inherit; font-size: .9rem; font-weight: 650; cursor: pointer; }
+    button:hover { background: #eff5ff; }
+    button[aria-pressed="true"] { border-color: var(--focus); background: #dcecff; }
+    button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px 20px; padding: 14px 18px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: .875rem; }
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+    .swift { background: var(--swift); } .hidden { background: var(--hidden); } .mellow { background: var(--mellow); }
+    .network-stage { position: relative; min-height: 920px; overflow: clip; background: linear-gradient(160deg, #fbfcfe, #eef4fb); }
+    .edge-canvas, .network-svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+    .network-svg { touch-action: none; }
+    .tooltip, .network-status { position: absolute; z-index: 2; max-width: 260px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--ink); box-shadow: 0 8px 18px rgb(23 32 51 / .16); font-size: .875rem; }
+    .network-status { inset: 16px auto auto 16px; max-width: calc(100% - 32px); border-color: #9b3a3a; }
+    .rule, .scope-note { margin: 0; padding: 16px 18px; }
+    .rule { border-top: 1px solid var(--border); background: #f8fbff; }
+    code { padding: 2px 5px; border-radius: 4px; background: #e8eef7; color: var(--ink); font: .9em ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .scope-note { color: var(--muted); font-size: .9rem; }
+    .event-details { padding: 0 18px 16px; border-top: 1px solid var(--border); }
+    .event-details summary { padding: 12px 0; color: var(--ink); font-weight: 700; cursor: pointer; }
+    .event-detail-list { max-height: 180px; margin: 0; padding: 0 0 0 1.2rem; overflow: auto; }
+    .event-detail-list button { display: block; width: 100%; min-height: 0; margin: 0 0 6px; padding: 6px 8px; text-align: left; font-size: .82rem; font-weight: 500; }
+    .event-detail-list:empty::after { content: "No events match the current selection."; color: var(--muted); font-size: .875rem; }
+    @media (max-width: 640px) {
+      .page-shell { width: min(100% - 24px, 1440px); padding-top: 28px; }
+      .toolbar { align-items: stretch; flex-direction: column; }
+      .toolbar button { width: 100%; }
+      .network-stage { min-height: 920px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <header class="page-header">
+      <p class="eyebrow">VAST Challenge 2026 · MC2 · Question 6</p>
+      <h1>Three observed TXT posting chains converge at John Windward</h1>
+      <p class="summary">All 238 directionally viable event routes remain available. The default view emphasizes the three observed publication paths that reach the proposed validation gate.</p>
+    </header>
+    <section class="network-card" id="q6-network" aria-label="Interactive personnel intervention network">
+      <div class="toolbar" role="group" aria-label="Network controls">
+        <button type="button" data-chain="SwiftWren.txt" aria-pressed="false" disabled>SwiftWren.txt</button>
+        <button type="button" data-chain="HiddenOrca.txt" aria-pressed="false" disabled>HiddenOrca.txt</button>
+        <button type="button" data-chain="MellowOtter.txt" aria-pressed="false" disabled>MellowOtter.txt</button>
+        <button type="button" data-action="reset" disabled>Reset view</button>
+      </div>
+      <div class="legend" aria-label="Legend">
+        <span><i class="swatch swift"></i>SwiftWren.txt</span>
+        <span><i class="swatch hidden"></i>HiddenOrca.txt</span>
+        <span><i class="swatch mellow"></i>MellowOtter.txt</span>
+        <span>Numbers appear for highlighted event routes and mean event order within that chain.</span>
+      </div>
+      <div class="network-stage">
+        <canvas class="edge-canvas" aria-hidden="true"></canvas>
+        <svg class="network-svg" aria-labelledby="network-title network-description">
+          <title id="network-title">Personnel intervention network</title>
+          <desc id="network-description">Three observed TXT posting chains converge at John Windward and a validation gate. Each person is keyboard focusable to reveal its connected events.</desc>
+        </svg>
+        <aside class="tooltip" hidden></aside>
+        <p class="network-status" role="status" aria-live="polite" hidden></p>
+      </div>
+      <p class="rule"><strong>Proposed gate:</strong> <code>content_source exists + content empty → block + audit</code></p>
+      <p class="scope-note">The gate covers all three observed TXT-derived anomalous posting chains. This observed pattern does not establish that every future anomaly will reach John Windward’s publication workflow.</p>
+      <details class="event-details">
+        <summary>Keyboard-accessible event details</summary>
+        <ol class="event-detail-list" aria-label="Event details matching the current network selection"></ol>
+      </details>
+    </section>
+  </main>
+  <script type="module">
+    import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+    import { mountNetwork } from "./q6_john_posting_intervention_network.js";
+    mountNetwork({ d3, root: document.querySelector("#q6-network"), datasetUrl: "../../result/three_txt_posting_chains_dataset.json" });
+  </script>
+</body>
+</html>

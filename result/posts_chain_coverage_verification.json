@@ -1,0 +1,626 @@
+{
+  "posts_analysis": {
+    "direct_posts": [
+      {
+        "id": 17093,
+        "poster": "person:ava_tiller",
+        "when": 2409442510.0
+      },
+      {
+        "id": 17128,
+        "poster": "person:ava_tiller",
+        "when": 2409442882.0
+      },
+      {
+        "id": 18796,
+        "poster": "person:ava_tiller",
+        "when": 2409465566.0
+      },
+      {
+        "id": 21580,
+        "poster": "person:aria_towline",
+        "when": 2409494174.0
+      },
+      {
+        "id": 21604,
+        "poster": "person:aria_towline",
+        "when": 2409494409.0
+      },
+      {
+        "id": 21875,
+        "poster": "person:aria_towline",
+        "when": 2409497366.0
+      },
+      {
+        "id": 341114,
+        "poster": "person:ava_tiller",
+        "when": 2409752966.0
+      },
+      {
+        "id": 343195,
+        "poster": "person:aria_towline",
+        "when": 2409780566.0
+      },
+      {
+        "id": 343285,
+        "poster": "person:aria_towline",
+        "when": 2409781166.0
+      },
+      {
+        "id": 345582,
+        "poster": "person:ava_tiller",
+        "when": 2409805166.0
+      },
+      {
+        "id": 346235,
+        "poster": "person:dylan_hawser",
+        "when": 2409811166.0
+      },
+      {
+        "id": 346772,
+        "poster": "person:ava_tiller",
+        "when": 2409816566.0
+      },
+      {
+        "id": 349631,
+        "poster": "person:john_windward",
+        "when": 2409847766.0
+      },
+      {
+        "id": 355379,
+        "poster": "person:anthony_reef",
+        "when": 2409907166.0
+      },
+      {
+        "id": 380613,
+        "poster": "person:aria_towline",
+        "when": 2410282766.0
+      },
+      {
+        "id": 382633,
+        "poster": "person:ava_tiller",
+        "when": 2410303166.0
+      },
+      {
+        "id": 387073,
+        "poster": "person:dylan_hawser",
+        "when": 2410349848.0
+      },
+      {
+        "id": 387096,
+        "poster": "person:dylan_hawser",
+        "when": 2410350066.0
+      },
+      {
+        "id": 387380,
+        "poster": "person:dylan_hawser",
+        "when": 2410352966.0
+      },
+      {
+        "id": 387387,
+        "poster": "person:dylan_hawser",
+        "when": 2410352980.0
+      },
+      {
+        "id": 398825,
+        "poster": "person:aria_towline",
+        "when": 2410526966.0
+      },
+      {
+        "id": 399104,
+        "poster": "person:aria_towline",
+        "when": 2410529966.0
+      },
+      {
+        "id": 408562,
+        "poster": "person:dylan_hawser",
+        "when": 2410666766.0
+      },
+      {
+        "id": 408738,
+        "poster": "person:dylan_hawser",
+        "when": 2410668566.0
+      },
+      {
+        "id": 410261,
+        "poster": "person:anthony_reef",
+        "when": 2410684166.0
+      },
+      {
+        "id": 411106,
+        "poster": "person:anthony_reef",
+        "when": 2410693766.0
+      },
+      {
+        "id": 411388,
+        "poster": "person:dylan_hawser",
+        "when": 2410696766.0
+      },
+      {
+        "id": 417312,
+        "poster": "person:ava_tiller",
+        "when": 2410760366.0
+      },
+      {
+        "id": 417420,
+        "poster": "person:ava_tiller",
+        "when": 2410761566.0
+      },
+      {
+        "id": 443109,
+        "poster": "person:anthony_reef",
+        "when": 2411102366.0
+      },
+      {
+        "id": 443198,
+        "poster": "person:anthony_reef",
+        "when": 2411103566.0
+      },
+      {
+        "id": 450185,
+        "poster": "person:dylan_hawser",
+        "when": 2411228366.0
+      },
+      {
+        "id": 450312,
+        "poster": "person:dylan_hawser",
+        "when": 2411230166.0
+      },
+      {
+        "id": 452535,
+        "poster": "person:aria_towline",
+        "when": 2411256566.0
+      },
+      {
+        "id": 453534,
+        "poster": "person:aria_towline",
+        "when": 2411266766.0
+      },
+      {
+        "id": 456137,
+        "poster": "person:anthony_reef",
+        "when": 2411294966.0
+      },
+      {
+        "id": 456566,
+        "poster": "person:anthony_reef",
+        "when": 2411299766.0
+      },
+      {
+        "id": 456621,
+        "poster": "person:anthony_reef",
+        "when": 2411300366.0
+      },
+      {
+        "id": 456921,
+        "poster": "person:john_windward",
+        "when": 2411303366.0
+      },
+      {
+        "id": 457936,
+        "poster": "person:anthony_reef",
+        "when": 2411314766.0
+      },
+      {
+        "id": 458687,
+        "poster": "person:ava_tiller",
+        "when": 2411322566.0
+      },
+      {
+        "id": 458835,
+        "poster": "person:ava_tiller",
+        "when": 2411323766.0
+      },
+      {
+        "id": 459090,
+        "poster": "person:john_windward",
+        "when": 2411326766.0
+      },
+      {
+        "id": 459365,
+        "poster": "person:john_windward",
+        "when": 2411329766.0
+      },
+      {
+        "id": 460648,
+        "poster": "person:john_windward",
+        "when": 2411343566.0
+      },
+      {
+        "id": 461140,
+        "poster": "person:john_windward",
+        "when": 2411349566.0
+      },
+      {
+        "id": 489335,
+        "poster": "person:aria_towline",
+        "when": 2411741966.0
+      },
+      {
+        "id": 489613,
+        "poster": "person:john_windward",
+        "when": 2411747366.0
+      },
+      {
+        "id": 489813,
+        "poster": "person:john_windward",
+        "when": 2411749166.0
+      },
+      {
+        "id": 490403,
+        "poster": "person:ava_tiller",
+        "when": 2411755766.0
+      },
+      {
+        "id": 491058,
+        "poster": "person:john_windward",
+        "when": 2411761766.0
+      },
+      {
+        "id": 491863,
+        "poster": "person:aria_towline",
+        "when": 2411770766.0
+      },
+      {
+        "id": 524241,
+        "poster": "person:aria_towline",
+        "when": 2412224366.0
+      },
+      {
+        "id": 524313,
+        "poster": "person:aria_towline",
+        "when": 2412224966.0
+      },
+      {
+        "id": 542951,
+        "poster": "person:john_windward",
+        "when": 2412493510.0
+      },
+      {
+        "id": 542965,
+        "poster": "person:john_windward",
+        "when": 2412493630.0
+      },
+      {
+        "id": 545212,
+        "poster": "person:aria_towline",
+        "when": 2412516566.0
+      },
+      {
+        "id": 545278,
+        "poster": "person:aria_towline",
+        "when": 2412517166.0
+      },
+      {
+        "id": 556590,
+        "poster": "person:anthony_reef",
+        "when": 2412691166.0
+      },
+      {
+        "id": 559683,
+        "poster": "person:anthony_reef",
+        "when": 2412737121.0
+      },
+      {
+        "id": 559687,
+        "poster": "person:anthony_reef",
+        "when": 2412737200.0
+      },
+      {
+        "id": 559767,
+        "poster": "person:anthony_reef",
+        "when": 2412737966.0
+      },
+      {
+        "id": 560537,
+        "poster": "person:anthony_reef",
+        "when": 2412746366.0
+      },
+      {
+        "id": 560582,
+        "poster": "person:anthony_reef",
+        "when": 2412746966.0
+      },
+      {
+        "id": 561331,
+        "poster": "person:anthony_reef",
+        "when": 2412754766.0
+      },
+      {
+        "id": 568875,
+        "poster": "person:john_windward",
+        "when": 2412865166.0
+      },
+      {
+        "id": 569493,
+        "poster": "person:john_windward",
+        "when": 2412873566.0
+      },
+      {
+        "id": 572544,
+        "poster": "person:john_windward",
+        "when": 2412912566.0
+      },
+      {
+        "id": 574617,
+        "poster": "person:john_windward",
+        "when": 2412934166.0
+      },
+      {
+        "id": 593240,
+        "poster": "person:john_windward",
+        "when": 2413183166.0
+      },
+      {
+        "id": 599770,
+        "poster": "person:dylan_hawser",
+        "when": 2413267766.0
+      },
+      {
+        "id": 601641,
+        "poster": "person:dylan_hawser",
+        "when": 2413287419.0
+      },
+      {
+        "id": 601656,
+        "poster": "person:dylan_hawser",
+        "when": 2413287609.0
+      },
+      {
+        "id": 603208,
+        "poster": "person:dylan_hawser",
+        "when": 2413304366.0
+      },
+      {
+        "id": 611450,
+        "poster": "person:anthony_reef",
+        "when": 2413394966.0
+      },
+      {
+        "id": 611625,
+        "poster": "person:anthony_reef",
+        "when": 2413396766.0
+      },
+      {
+        "id": 614579,
+        "poster": "person:aria_towline",
+        "when": 2413430366.0
+      },
+      {
+        "id": 614658,
+        "poster": "person:aria_towline",
+        "when": 2413430966.0
+      },
+      {
+        "id": 615105,
+        "poster": "person:aria_towline",
+        "when": 2413435766.0
+      },
+      {
+        "id": 636974,
+        "poster": "person:ava_tiller",
+        "when": 2413754366.0
+      },
+      {
+        "id": 651088,
+        "poster": "person:john_windward",
+        "when": 2413952366.0
+      },
+      {
+        "id": 651496,
+        "poster": "person:dylan_hawser",
+        "when": 2413957048.0
+      },
+      {
+        "id": 651516,
+        "poster": "person:dylan_hawser",
+        "when": 2413957327.0
+      },
+      {
+        "id": 679859,
+        "poster": "person:ava_tiller",
+        "when": 2414351366.0
+      },
+      {
+        "id": 679909,
+        "poster": "person:ava_tiller",
+        "when": 2414351966.0
+      },
+      {
+        "id": 679974,
+        "poster": "person:ava_tiller",
+        "when": 2414352566.0
+      },
+      {
+        "id": 680132,
+        "poster": "person:ava_tiller",
+        "when": 2414354366.0
+      },
+      {
+        "id": 696966,
+        "poster": "person:aria_towline",
+        "when": 2414573366.0
+      },
+      {
+        "id": 697090,
+        "poster": "person:john_windward",
+        "when": 2414574566.0
+      },
+      {
+        "id": 697401,
+        "poster": "person:aria_towline",
+        "when": 2414577566.0
+      },
+      {
+        "id": 697764,
+        "poster": "person:aria_towline",
+        "when": 2414581166.0
+      },
+      {
+        "id": 698079,
+        "poster": "person:john_windward",
+        "when": 2414584766.0
+      },
+      {
+        "id": 698296,
+        "poster": "person:aria_towline",
+        "when": 2414587166.0
+      },
+      {
+        "id": 700330,
+        "poster": "person:anthony_reef",
+        "when": 2414610566.0
+      },
+      {
+        "id": 700427,
+        "poster": "person:anthony_reef",
+        "when": 2414611766.0
+      },
+      {
+        "id": 700691,
+        "poster": "person:anthony_reef",
+        "when": 2414614166.0
+      },
+      {
+        "id": 701306,
+        "poster": "person:ava_tiller",
+        "when": 2414620766.0
+      },
+      {
+        "id": 701683,
+        "poster": "person:ava_tiller",
+        "when": 2414624966.0
+      },
+      {
+        "id": 730962,
+        "poster": "person:anthony_reef",
+        "when": 2415071966.0
+      },
+      {
+        "id": 748039,
+        "poster": "person:ava_tiller",
+        "when": 2415283166.0
+      },
+      {
+        "id": 749369,
+        "poster": "person:ava_tiller",
+        "when": 2415305966.0
+      },
+      {
+        "id": 749630,
+        "poster": "person:ava_tiller",
+        "when": 2415308739.0
+      },
+      {
+        "id": 749637,
+        "poster": "person:ava_tiller",
+        "when": 2415308847.0
+      },
+      {
+        "id": 749715,
+        "poster": "person:ava_tiller",
+        "when": 2415309566.0
+      },
+      {
+        "id": 750053,
+        "poster": "person:ava_tiller",
+        "when": 2415313166.0
+      }
+    ],
+    "txt_posts": [
+      {
+        "id": 27290,
+        "content_source": "HiddenOrca.txt",
+        "when": 2409569142.0
+      },
+      {
+        "id": 98591,
+        "content_source": "MellowOtter.txt",
+        "when": 2409612964.0
+      },
+      {
+        "id": 373902,
+        "content_source": "SwiftWren.txt",
+        "when": 2410168875.0
+      }
+    ],
+    "total_direct": 105,
+    "total_txt": 3
+  },
+  "txt_coverage": {
+    "HiddenOrca.txt": {
+      "post_id": 27290,
+      "chain_found": true,
+      "saidit_post_in_chain": true,
+      "total_events_in_chain": 42,
+      "statistics": {
+        "total_events": 42,
+        "unique_participants": 18,
+        "event_types": {
+          "queue_subordinate_task": 39,
+          "saidit_post": 1,
+          "delete_file": 2
+        },
+        "base_file_events": 3,
+        "further_instructions_events": 39,
+        "time_range": {
+          "start": 2409429003.0,
+          "end": 2409569144.0
+        },
+        "duration": "1 day, 14:55:41"
+      }
+    },
+    "MellowOtter.txt": {
+      "post_id": 98591,
+      "chain_found": true,
+      "saidit_post_in_chain": true,
+      "total_events_in_chain": 15,
+      "statistics": {
+        "total_events": 15,
+        "unique_participants": 13,
+        "event_types": {
+          "create_file": 1,
+          "read_file": 1,
+          "queue_subordinate_task": 10,
+          "saidit_post": 1,
+          "delete_file": 2
+        },
+        "base_file_events": 3,
+        "further_instructions_events": 12,
+        "time_range": {
+          "start": 2409577321.0,
+          "end": 2409612966.0
+        },
+        "duration": "9:54:05"
+      }
+    },
+    "SwiftWren.txt": {
+      "post_id": 373902,
+      "chain_found": true,
+      "saidit_post_in_chain": true,
+      "total_events_in_chain": 191,
+      "statistics": {
+        "total_events": 191,
+        "unique_participants": 20,
+        "event_types": {
+          "create_file": 1,
+          "read_file": 1,
+          "queue_subordinate_task": 186,
+          "saidit_post": 1,
+          "delete_file": 2
+        },
+        "base_file_events": 3,
+        "further_instructions_events": 188,
+        "time_range": {
+          "start": 2409490921.0,
+          "end": 2410168877.0
+        },
+        "duration": "7 days, 20:19:16"
+      }
+    }
+  },
+  "missing_analysis": {
+    "total_direct_posts": 105,
+    "note": "Direct content posts have no pre-post chain data captured - only txt file posts have chain data"
+  }
+}
