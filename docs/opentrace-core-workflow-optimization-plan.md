@@ -279,14 +279,14 @@ Input FileVersion → Step → Output FileVersion
 
 历史 Step 不允许被覆盖。若异议成立，原 Step 保持 `execution_status=completed`，并通过 `review_status=superseded` 指向纠正 Step。
 
-用户直接在交互式 Claude Code 会话中输入自然语言。`UserPromptSubmit` Hook 保存原始输入，并要求 Agent 在下一次实质性工具调用前将其分类为：
+用户直接在交互式 Claude Code 会话中输入自然语言。`UserPromptSubmit` Hook 保存原始输入并生成 `input_event_id`，要求 Agent 在下一次实质性工具调用前调用 `classify_user_input`，将其分类为：
 
 - `conversation_only`
 - `analysis_guidance`
 - `planning_input`
 - `challenge`
 
-只有后三类进入正式工作流。原始用户文本由 Hook 记录，Agent只补充结构化类型、目标 Step/Plan 和实际 workflow effect。
+只有后三类生成 HumanContribution 并进入正式工作流。`conversation_only` 只关闭待分类事件。原始用户文本由 Hook 记录，Agent只补充结构化类型、目标 Step/Plan 和实际 workflow effect。
 
 处理规则：
 
@@ -339,7 +339,7 @@ Input FileVersion → Step → Output FileVersion
 
 人工介入增加两个工具：
 
-8. `opentrace_register_human_contribution`
+8. `opentrace_classify_user_input`
 9. `opentrace_apply_human_contribution`
 
 执行记录不是 Agent 工具，由 Hook 调用内部接口写入。
@@ -459,10 +459,10 @@ Claude Code 异常退出时，`SessionEnd` 只把 Run/Step 标记为 `interrupte
 
 1. `UserPromptSubmit` Hook 先保存原始文本，创建待分类的输入事件。
 2. Hook 向 Claude 注入一条短上下文，要求在下一次实质性工具调用前处理该输入。
-3. Claude 将其判断为普通对话，或调用 `register_human_contribution` 登记为指导、规划或异议。
-4. 若为普通对话，关闭待分类事件，不进入正式工作流。
+3. Claude 调用 `classify_user_input` 提交 `input_event_id`、类型及可选的目标 Step/Plan。
+4. 若为普通对话，服务端关闭待分类事件，不创建 HumanContribution；否则创建 HumanContribution。
 5. 若影响工作流，Claude 调用 `apply_human_contribution`，明确关联的 Step/Plan 及实际采取的动作。
-6. `PreToolUse` 在仍有未处理且可能影响工作流的人工输入时阻止新的实质性操作。
+6. `PreToolUse` 在仍有未分类输入时阻止新的实质性操作，但允许 OpenTrace 分类工具和只读查询。
 
 人工输入本身不创建 Step：
 
