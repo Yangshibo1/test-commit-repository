@@ -33,6 +33,8 @@ opentrace run `
 
 OpenTrace 会先创建 Run，再启动加载了本仓库 `claude-plugin` 的交互式 Claude Code。之后仍然由用户和 Claude 在原来的终端中完成数据分析。
 
+启动器只在该 Claude 子进程中设置 `ENABLE_TOOL_SEARCH=false`，将少量 OpenTrace MCP 工具直接加载，兼容不支持动态 `tool_reference` 的 Anthropic API 网关；不会修改用户的全局 Claude Code 配置。
+
 开发和自动化测试时，可以只创建 Run、不启动 Claude：
 
 ```powershell

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from opentrace.cli import main
+from opentrace.cli import _claude_environment, main
 from opentrace.workflow_store import WorkflowStore
 
 
@@ -59,3 +59,14 @@ def test_abort_command_keeps_failed_run_history(tmp_path: Path, capsys):
     payload = json.loads(capsys.readouterr().out)
     assert payload["status"] == "aborted"
     assert store.get_state(run["run_id"])["run"]["status"] == "aborted"
+
+
+def test_claude_environment_disables_dynamic_tool_search(tmp_path: Path):
+    project = tmp_path / "project"
+    project.mkdir()
+    store = WorkflowStore(tmp_path / "workflow.sqlite3")
+
+    environment = _claude_environment(store, "run_test", project)
+
+    assert environment["ENABLE_TOOL_SEARCH"] == "false"
+    assert environment["OPENTRACE_RUN_ID"] == "run_test"

@@ -96,6 +96,10 @@ def _claude_environment(
             "OPENTRACE_DB": str(store.db_path),
             "OPENTRACE_PROJECT_ROOT": str(project),
             "OPENTRACE_PYTHON": sys.executable,
+            # Some Anthropic-compatible gateways reject Claude Code's
+            # tool_reference content blocks. Seven small OpenTrace tools fit
+            # comfortably in the initial request, so load them eagerly.
+            "ENABLE_TOOL_SEARCH": "false",
         }
     )
     return environment
