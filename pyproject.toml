@@ -1,12 +1,16 @@
 [project]
 name = "opentrace"
-version = "0.1.0"
+version = "0.2.0"
 description = "数据血缘追踪系统 - 用于追踪 agent 数据分析流程"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "mcp>=0.1.0",
 ]
+
+[project.scripts]
+opentrace = "opentrace.cli:main"
+opentrace-mcp = "opentrace.mcp_stdio:main"
 
 [project.optional-dependencies]
 pandas = [

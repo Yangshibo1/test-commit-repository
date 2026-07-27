@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "opentrace": {
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "-m",
+        "opentrace.mcp_stdio"
+      ]
+    }
+  }
+}

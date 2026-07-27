@@ -7,4 +7,4 @@ OpenTrace - 数据血缘追踪系统
 3. 追溯结果数据的分析来源
 """
 
-__version__ = "0.1.0-mvp"
+__version__ = "0.2.0-prototype"
