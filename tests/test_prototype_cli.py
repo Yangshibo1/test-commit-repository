@@ -61,12 +61,15 @@ def test_abort_command_keeps_failed_run_history(tmp_path: Path, capsys):
     assert store.get_state(run["run_id"])["run"]["status"] == "aborted"
 
 
-def test_claude_environment_disables_dynamic_tool_search(tmp_path: Path):
+def test_claude_environment_configures_cli_recorder_without_tool_search_override(
+    tmp_path: Path,
+):
     project = tmp_path / "project"
     project.mkdir()
     store = WorkflowStore(tmp_path / "workflow.sqlite3")
 
     environment = _claude_environment(store, "run_test", project)
 
-    assert environment["ENABLE_TOOL_SEARCH"] == "false"
     assert environment["OPENTRACE_RUN_ID"] == "run_test"
+    assert environment["OPENTRACE_DB"] == str(store.db_path)
+    assert "ENABLE_TOOL_SEARCH" not in environment

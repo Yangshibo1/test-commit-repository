@@ -33,7 +33,16 @@ opentrace run `
 
 OpenTrace 会先创建 Run，再启动加载了本仓库 `claude-plugin` 的交互式 Claude Code。之后仍然由用户和 Claude 在原来的终端中完成数据分析。
 
-启动器只在该 Claude 子进程中设置 `ENABLE_TOOL_SEARCH=false`，将少量 OpenTrace MCP 工具直接加载，兼容不支持动态 `tool_reference` 的 Anthropic API 网关；不会修改用户的全局 Claude Code 配置。
+默认记录通道是 Claude Code 内置 Bash 工具调用 `python -m opentrace.agent_cli` 命令。插件不会注册 OpenTrace MCP server，因此不会产生动态 `tool_reference` 内容块，可以兼容不支持该协议块的 Anthropic API 网关。MCP server 代码仍作为未来可选通道保留，但当前启动器不会加载它。
+
+该命令只接受结构化 JSON 并写入当前 Run，不读取数据、不运行分析程序。典型记录命令如下：
+
+```bash
+python -m opentrace.agent_cli set-plan --payload '{"nodes":[{"node_id":"n1","objective":"检查数据结构和质量","step_type":"inspect","depends_on":[]}]}'
+python -m opentrace.agent_cli start-step --payload '{"node_id":"n1","objective":"检查数据结构和质量","input_files":["C:/data/input.csv"],"completion_condition":"得到结构、质量问题和关键观察","expected_output_roles":["step_output"]}'
+python -m opentrace.agent_cli complete-step --payload '{"step_id":"step_...","operation_summary":"检查结构并计算质量统计","processing_result":{"rows":100},"analysis_conclusion":{"summary":"发现两个高缺失率字段"}}'
+python -m opentrace.agent_cli finish-run
+```
 
 开发和自动化测试时，可以只创建 Run、不启动 Claude：
 
@@ -52,7 +61,7 @@ opentrace run --project . --task "分析数据质量" --data data.csv --no-launc
 
 人工输入不是 Step。它可以改变当前 Step 的执行、生成 Plan 修订，或者触发后续验证/纠正 Step。
 
-对于后三种输入，Claude 还会调用 `opentrace_apply_user_input` 记录它实际造成的计划或执行变化；仅仅完成分类不能解除实质操作门禁。
+对于后三种输入，Claude 还会运行 `python -m opentrace.agent_cli apply-user-input` 记录它实际造成的计划或执行变化；仅仅完成分类不能解除实质操作门禁。
 
 ## 查看、恢复和导出
 

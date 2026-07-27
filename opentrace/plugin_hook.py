@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from typing import Any, Dict, Tuple
 
@@ -70,9 +71,21 @@ def session_start(payload: Dict[str, Any]) -> Dict[str, Any]:
             "validates the real workflow."
         ),
         "required_flow": (
-            "Set a semantic plan, start one step before material "
-            "Read/Bash/Write/Edit analysis, then complete it truthfully. Do not "
-            "create a step merely because a Python script or intermediate file exists."
+            "Use the built-in Bash tool to run python -m opentrace.agent_cli "
+            "recording commands; do not use OpenTrace MCP tools. First run set-plan "
+            "with a JSON payload, then start-step before material "
+            "Read/Bash/Write/Edit analysis, then complete-step truthfully using the "
+            "returned step_id. Run finish-run only after every semantic step is complete."
+        ),
+        "record_command_contract": (
+            "Syntax: python -m opentrace.agent_cli ACTION --payload '<JSON object>'. "
+            "set-plan fields: nodes[{node_id, objective, step_type, depends_on}], reason. "
+            "start-step fields: node_id, objective, input_files, completion_condition, "
+            "expected_output_roles, target_data. complete-step fields: step_id, "
+            "operation_summary, operation_types, parameters, algorithms, programs, "
+            "output_files[{path,role}], processing_result, analysis_conclusion. "
+            "A semantic step is one independently explainable and verifiable analysis "
+            "objective; a script, command, retry, or intermediate file alone is not a step."
         ),
         "declared_initial_files": [
             item["path"] for item in state["run"]["initial_file_versions"]
@@ -100,15 +113,34 @@ def user_prompt_submit(payload: Dict[str, Any]) -> Dict[str, Any]:
         (
             "OpenTrace captured this human input as "
             f"{event['input_event_id']}. Before the next material analysis tool, "
-            "call opentrace_classify_user_input with conversation_only, "
+            "run python -m opentrace.agent_cli classify-user-input with "
+            "conversation_only, "
             "analysis_guidance, planning_input, or challenge. Human input is not "
             "itself a Step. For the last three types, also call "
-            "opentrace_apply_user_input after recording its real workflow effect."
+            "python -m opentrace.agent_cli apply-user-input after recording its "
+            "real workflow effect."
         ),
     )
 
 
+def _is_recording_command(payload: Dict[str, Any]) -> bool:
+    if payload.get("tool_name") != "Bash":
+        return False
+    command = str((payload.get("tool_input") or {}).get("command") or "").strip()
+    if not re.match(
+        r"^(?:opentrace-agent|python(?:\.exe)?\s+-m\s+opentrace\.agent_cli)\s+",
+        command,
+        re.IGNORECASE,
+    ):
+        return False
+    # A recording command may not be used as a prefix for material shell work.
+    shell_controls = ("\n", "\r", "&&", "||", "|", ">", "<", ";")
+    return not any(token in command for token in shell_controls)
+
+
 def pre_tool_use(payload: Dict[str, Any]) -> Dict[str, Any]:
+    if _is_recording_command(payload):
+        return {}
     store, run_id = _store_and_run()
     reason = store.gate_reason(run_id)
     if reason:
@@ -144,7 +176,8 @@ def stop(payload: Dict[str, Any]) -> Dict[str, Any]:
                 "hookEventName": "Stop",
                 "additionalContext": (
                     "OpenTrace only needs the semantic record; continue the analysis "
-                    "only if required, then call opentrace_complete_step."
+                    "only if required, then run python -m opentrace.agent_cli "
+                    "complete-step."
                 ),
             },
         }

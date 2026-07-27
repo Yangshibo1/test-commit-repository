@@ -80,10 +80,43 @@ def test_initial_launcher_prompt_is_not_human_intervention(tmp_path, monkeypatch
     assert store.get_state(run["run_id"])["pending_user_inputs"] == []
 
 
+def test_recording_bash_command_bypasses_step_gate_but_chaining_does_not(
+    tmp_path, monkeypatch
+):
+    _, _, _ = configured_run(tmp_path, monkeypatch)
+    allowed = plugin_hook.pre_tool_use(
+        {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Bash",
+            "tool_input": {
+                "command": (
+                    "opentrace-agent set-plan --payload "
+                    """'{"nodes":[{"node_id":"n1","objective":"Inspect"}]}'"""
+                )
+            },
+        }
+    )
+    assert allowed == {}
+
+    denied = plugin_hook.pre_tool_use(
+        {
+            "hook_event_name": "PreToolUse",
+            "tool_name": "Bash",
+            "tool_input": {
+                "command": "opentrace-agent state && python analyze.py"
+            },
+        }
+    )
+    assert denied["hookSpecificOutput"]["permissionDecision"] == "deny"
+
+
 def test_plugin_json_files_are_valid():
     root = Path(__file__).resolve().parents[1] / "claude-plugin"
     json.loads((root / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
     hooks = json.loads((root / "hooks" / "hooks.json").read_text(encoding="utf-8"))
-    mcp = json.loads((root / ".mcp.json").read_text(encoding="utf-8"))
     assert "PreToolUse" in hooks["hooks"]
-    assert "opentrace" in mcp["mcpServers"]
+    assert not (root / ".mcp.json").exists()
+    skill = (root / "skills" / "data-analysis" / "SKILL.md").read_text(
+        encoding="utf-8"
+    )
+    assert "python -m opentrace.agent_cli set-plan" in skill

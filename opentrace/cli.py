@@ -96,10 +96,6 @@ def _claude_environment(
             "OPENTRACE_DB": str(store.db_path),
             "OPENTRACE_PROJECT_ROOT": str(project),
             "OPENTRACE_PYTHON": sys.executable,
-            # Some Anthropic-compatible gateways reject Claude Code's
-            # tool_reference content blocks. Seven small OpenTrace tools fit
-            # comfortably in the initial request, so load them eagerly.
-            "ENABLE_TOOL_SEARCH": "false",
         }
     )
     return environment
@@ -154,7 +150,8 @@ def command_run(args: argparse.Namespace) -> int:
         + "\n\n"
         "OpenTrace only records this workflow. You own all data analysis. "
         "Use the declared input files rather than searching for substitutes. "
-        "Use the OpenTrace MCP tools to set a semantic plan before material work."
+        "Use python -m opentrace.agent_cli recording commands to set a semantic "
+        "plan before material work. Do not use MCP for OpenTrace in this Run."
     )
     launch = {
         **result,

@@ -10,6 +10,7 @@ dependencies = [
 
 [project.scripts]
 opentrace = "opentrace.cli:main"
+opentrace-agent = "opentrace.agent_cli:main"
 opentrace-mcp = "opentrace.mcp_stdio:main"
 
 [project.optional-dependencies]
