@@ -62,6 +62,12 @@ opentrace export <run-id> --project C:\path\to\analysis-project
 
 默认数据库位于分析项目的 `.opentrace/workflow.sqlite3`，导出文件位于 `.opentrace/exports/`。
 
+如果 Claude 会话因 API 或工具参数错误而无法恢复，保留历史并终止 Run：
+
+```powershell
+opentrace abort <run-id> --project C:\path\to\analysis-project --reason "Claude API error"
+```
+
 ## Step 边界
 
 Python 脚本、命令或文件创建都不会自动形成 Step。Step 必须表示一个可以独立说明和验收的分析目标。

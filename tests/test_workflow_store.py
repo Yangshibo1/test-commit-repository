@@ -173,3 +173,29 @@ def test_pending_human_input_blocks_new_material_step(tmp_path: Path):
         workflow_effect="当前 Step 使用统一的空字符串和 NA 缺失口径",
     )
     assert store.gate_reason(run["run_id"]).startswith("Start a semantic")
+
+
+def test_abort_preserves_run_and_marks_active_step_interrupted(tmp_path: Path):
+    project = tmp_path / "project"
+    project.mkdir()
+    data = project / "data.csv"
+    data.write_text("x\n1\n", encoding="utf-8")
+    store = WorkflowStore(tmp_path / "workflow.sqlite3")
+    run = store.start_run("分析数据", project, [data])
+    store.set_plan(run["run_id"], [{"node_id": "n1", "objective": "检查数据质量"}])
+    step = store.start_step(
+        run["run_id"], "n1", "检查数据质量", [data], "形成质量结论"
+    )
+
+    result = store.abort_run(run["run_id"], "Claude API parameter error")
+    state = store.get_state(run["run_id"])
+
+    assert result["status"] == "aborted"
+    assert state["run"]["status"] == "aborted"
+    assert state["steps"][0]["step_id"] == step["step_id"]
+    assert state["steps"][0]["status"] == "interrupted"
+    exported = json.loads(store.export_run(run["run_id"]).read_text(encoding="utf-8"))
+    assert any(
+        event["hook_event_name"] == "RunAborted"
+        for event in exported["execution_events"]
+    )

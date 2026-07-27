@@ -67,6 +67,14 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("--db")
     export.add_argument("--output")
 
+    abort = subparsers.add_parser(
+        "abort", help="Mark an unusable Run as aborted without deleting history"
+    )
+    abort.add_argument("run_id")
+    abort.add_argument("--reason", required=True)
+    abort.add_argument("--project", default=".")
+    abort.add_argument("--db")
+
     return parser
 
 
@@ -209,6 +217,13 @@ def command_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_abort(args: argparse.Namespace) -> int:
+    _, store = _project_and_store(args)
+    result = store.abort_run(args.run_id, args.reason)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -221,6 +236,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             return command_state(args)
         if args.command == "export":
             return command_export(args)
+        if args.command == "abort":
+            return command_abort(args)
         parser.error(f"unsupported command: {args.command}")
     except WorkflowError as error:
         parser.exit(2, f"OpenTrace error: {error}\n")

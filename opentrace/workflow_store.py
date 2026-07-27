@@ -648,6 +648,46 @@ class WorkflowStore:
             )
         return {"run_id": run_id, "status": "completed", "completed_at": completed_at}
 
+    def abort_run(self, run_id: str, reason: str) -> Dict[str, Any]:
+        """Abort an unusable Run without deleting its truthful history."""
+
+        reason = reason.strip()
+        if not reason:
+            raise WorkflowError("abort reason cannot be empty")
+        completed_at = utc_now()
+        with self._connection() as connection:
+            self._require_active_run(connection, run_id)
+            connection.execute(
+                """
+                UPDATE steps SET status = 'interrupted', completed_at = ?
+                WHERE run_id = ? AND status = 'active'
+                """,
+                (completed_at, run_id),
+            )
+            connection.execute(
+                """
+                UPDATE runs SET status = 'aborted', completed_at = ?
+                WHERE run_id = ?
+                """,
+                (completed_at, run_id),
+            )
+            event_id = f"event_{uuid.uuid4().hex[:12]}"
+            connection.execute(
+                """
+                INSERT INTO hook_events(
+                    event_id, run_id, step_id, hook_event_name, tool_name,
+                    payload_json, created_at
+                ) VALUES (?, ?, NULL, 'RunAborted', NULL, ?, ?)
+                """,
+                (event_id, run_id, _json({"reason": reason}), completed_at),
+            )
+        return {
+            "run_id": run_id,
+            "status": "aborted",
+            "reason": reason,
+            "completed_at": completed_at,
+        }
+
     def get_state(self, run_id: str) -> Dict[str, Any]:
         with self._connection() as connection:
             run = self._require_run(connection, run_id)

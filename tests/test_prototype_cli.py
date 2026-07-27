@@ -34,3 +34,28 @@ def test_run_no_launch_creates_bound_run(tmp_path: Path, capsys):
     assert state["run"]["claude_session_id"] == payload["claude_session_id"]
     assert payload["launch_command"][1] == "--session-id"
     assert str(data.resolve()) in payload["launch_command"][-1]
+
+
+def test_abort_command_keeps_failed_run_history(tmp_path: Path, capsys):
+    project = tmp_path / "project"
+    project.mkdir()
+    data = project / "data.csv"
+    data.write_text("x\n1\n", encoding="utf-8")
+    store = WorkflowStore(project / ".opentrace" / "workflow.sqlite3")
+    run = store.start_run("分析数据", project, [data])
+
+    result = main(
+        [
+            "abort",
+            run["run_id"],
+            "--project",
+            str(project),
+            "--reason",
+            "Claude API error",
+        ]
+    )
+
+    assert result == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "aborted"
+    assert store.get_state(run["run_id"])["run"]["status"] == "aborted"
