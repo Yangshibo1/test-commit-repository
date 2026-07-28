@@ -1,4 +1,5 @@
 import json
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -6,196 +7,264 @@ import pytest
 from opentrace.workflow_store import WorkflowError, WorkflowStore
 
 
-def test_records_real_semantic_step_chain_and_file_lineage(tmp_path: Path):
+def make_run(tmp_path: Path):
     project = tmp_path / "project"
     project.mkdir()
     raw = project / "raw.csv"
     raw.write_text("value\n1\n2\n", encoding="utf-8")
     store = WorkflowStore(project / ".opentrace" / "workflow.sqlite3")
-
     run = store.start_run("分析数值分布", project, [raw])
+    return project, raw, store, run
+
+
+def test_records_normalized_semantic_chain_and_file_lineage(tmp_path: Path):
+    project, raw, store, run = make_run(tmp_path)
     plan = store.set_plan(
         run["run_id"],
         [
-            {
-                "node_id": "profile",
-                "objective": "建立原始数值数据的质量概况",
-                "step_type": "analyze",
-            },
+            {"node_id": "profile", "objective": "建立原始数据的质量概况"},
             {
                 "node_id": "summarize",
-                "objective": "汇总清洗后数值的分布",
+                "objective": "解释数据的主要分布与异常",
                 "depends_on": ["profile"],
-                "step_type": "analyze",
             },
         ],
     )
-    assert plan["plan_version"] == 1
+    assert plan["trigger"] == "initial"
 
-    first = store.start_step(
-        run_id=run["run_id"],
-        node_id="profile",
-        objective="建立原始数值数据的质量概况",
-        input_files=["raw.csv"],
-        completion_condition="生成可供后续步骤使用的质量概况文件",
-        expected_output_roles=["step_output", "internal_intermediate"],
+    first = store.start_step(run["run_id"], "profile", ["raw.csv"])
+    store.record_hook_event(
+        run["run_id"],
+        "PostToolUse",
+        {
+            "tool_name": "Bash",
+            "tool_input": {"command": "python scripts/profile.py raw.csv"},
+        },
     )
     profile = project / "profile.json"
     profile.write_text('{"rows": 2, "missing": 0}', encoding="utf-8")
-    scratch = project / "scratch.json"
-    scratch.write_text('{"checked": true}', encoding="utf-8")
-    completed = store.complete_step(
+    store.complete_step(
         step_id=first["step_id"],
-        operation_summary="统计记录数和缺失值",
-        operation_types=["profile"],
-        programs=[{"path": "profile.py", "language": "python", "role": "analysis"}],
-        output_files=[
-            {"path": "profile.json", "role": "step_output"},
-            {"path": "scratch.json", "role": "internal_intermediate"},
-        ],
-        processing_result={"status": "success", "input_rows": 2, "output_rows": 2},
-        analysis_conclusion={"summary": "数据完整，可继续分析"},
+        operation_summary="读取原始文件并检查记录数与缺失值",
+        result_summary="两条记录均完整。",
+        analysis_conclusion=None,
+        output_files=["profile.json"],
     )
-    assert completed["status"] == "completed"
 
-    second = store.start_step(
-        run_id=run["run_id"],
-        node_id="summarize",
-        objective="汇总清洗后数值的分布",
-        input_files=["profile.json"],
-        completion_condition="形成明确的分布结论",
-        expected_output_roles=[],
-    )
+    second = store.start_step(run["run_id"], "summarize", ["profile.json"])
     store.complete_step(
         step_id=second["step_id"],
         operation_summary="根据质量概况解释数据规模",
-        processing_result={"status": "success"},
-        analysis_conclusion={"summary": "样本包含两条有效记录"},
+        result_summary="样本包含两条有效记录。",
+        analysis_conclusion="样本过小，分布结论仅适用于描述当前文件。",
     )
     store.finish_run(run["run_id"])
 
-    export_path = store.export_run(run["run_id"])
-    exported = json.loads(export_path.read_text(encoding="utf-8"))
-    assert exported["run"]["status"] == "completed"
-    assert exported["run"]["initial_file_versions"][0]["path"] == str(raw.resolve())
-    assert len(exported["steps"]) == 2
-    assert exported["steps"][1]["input_files"][0]["sha256"] == next(
-        output["sha256"]
-        for output in exported["steps"][0]["output_files"]
-        if output["role"] == "step_output"
+    exported = json.loads(
+        store.export_run(run["run_id"]).read_text(encoding="utf-8")
     )
-    assert {item["role"] for item in exported["steps"][0]["output_files"]} == {
-        "step_output",
-        "internal_intermediate",
+    assert set(exported) == {
+        "schema_version",
+        "run",
+        "plan_revisions",
+        "steps",
+        "human_interventions",
+        "file_lineage",
     }
+    assert exported["run"]["declared_inputs"] == [
+        {"path": "raw.csv", "sha256": exported["steps"][0]["inputs"][0]["sha256"]}
+    ]
+    assert "size" not in exported["run"]["declared_inputs"][0]
+    assert exported["plan_revisions"][0]["nodes"][0] == {
+        "node_id": "profile",
+        "objective": "建立原始数据的质量概况",
+        "depends_on": [],
+    }
+    first_export = exported["steps"][0]
+    assert first_export["plan_version"] == 1
+    assert first_export["operation"]["commands"] == [
+        "python scripts/profile.py raw.csv"
+    ]
+    assert first_export["operation"]["programs"] == [
+        "scripts/profile.py"
+    ]
+    assert first_export["outputs"][0]["path"] == "profile.json"
+    assert exported["steps"][1]["inputs"][0] == first_export["outputs"][0]
+    assert exported["file_lineage"] == [
+        {
+            "step_id": first["step_id"],
+            "inputs": first_export["inputs"],
+            "outputs": first_export["outputs"],
+        }
+    ]
+    serialized = json.dumps(exported, ensure_ascii=False)
+    for removed in (
+        "execution_events",
+        "processing_result",
+        "algorithms",
+        "parameters",
+        "operation_types",
+        "expected_output_roles",
+        '"role"',
+    ):
+        assert removed not in serialized
 
 
-def test_script_name_does_not_create_a_step_and_objective_gets_warning(tmp_path: Path):
-    project = tmp_path / "project"
-    project.mkdir()
-    data = project / "data.csv"
-    data.write_text("x\n1\n", encoding="utf-8")
-    store = WorkflowStore(tmp_path / "workflow.sqlite3")
-    run = store.start_run("分析数据", project, [data])
-    store.set_plan(
-        run["run_id"],
-        [{"node_id": "n1", "objective": "运行脚本", "step_type": "transform"}],
-    )
-
-    step = store.start_step(
-        run_id=run["run_id"],
-        node_id="n1",
-        objective="运行脚本",
-        input_files=["data.csv"],
-        completion_condition="脚本成功",
-    )
-
-    assert step["step_id"].startswith("step_")
-    assert step["granularity_warnings"]
-    assert len(store.get_state(run["run_id"])["steps"]) == 1
-
-
-def test_state_machine_rejects_materially_incomplete_transitions(tmp_path: Path):
-    project = tmp_path / "project"
-    project.mkdir()
-    data = project / "data.csv"
-    data.write_text("x\n1\n", encoding="utf-8")
-    store = WorkflowStore(tmp_path / "workflow.sqlite3")
-    run = store.start_run("分析数据", project, [data])
-
+def test_plan_and_step_invariants_are_enforced(tmp_path: Path):
+    _, raw, store, run = make_run(tmp_path)
     with pytest.raises(WorkflowError, match="plan"):
-        store.start_step(
-            run["run_id"], "n1", "分析数据质量", [data], "得到质量结论"
+        store.start_step(run["run_id"], "n1", [raw])
+    with pytest.raises(WorkflowError, match="acyclic"):
+        store.set_plan(
+            run["run_id"],
+            [
+                {"node_id": "a", "objective": "A", "depends_on": ["b"]},
+                {"node_id": "b", "objective": "B", "depends_on": ["a"]},
+            ],
         )
 
     store.set_plan(
         run["run_id"],
-        [{"node_id": "n1", "objective": "分析数据质量"}],
+        [
+            {"node_id": "a", "objective": "检查数据"},
+            {"node_id": "b", "objective": "解释结果", "depends_on": ["a"]},
+        ],
     )
-    step = store.start_step(
-        run["run_id"], "n1", "分析数据质量", [data], "得到质量结论"
-    )
-    with pytest.raises(WorkflowError, match="already has active step"):
-        store.start_step(
-            run["run_id"], "n1", "再次分析数据质量", [data], "得到另一结论"
-        )
-    with pytest.raises(WorkflowError, match="output files"):
-        store.complete_step(step["step_id"], "检查数据")
+    with pytest.raises(WorkflowError, match="dependencies"):
+        store.start_step(run["run_id"], "b", [raw])
+    with pytest.raises(WorkflowError, match="exactly match"):
+        store.start_step(run["run_id"], "a", [raw], objective="另一个目标")
+
+    step = store.start_step(run["run_id"], "a", [raw])
     with pytest.raises(WorkflowError, match="active step"):
+        store.start_step(run["run_id"], "a", [raw])
+    with pytest.raises(WorkflowError, match="result_summary"):
+        store.complete_step(step["step_id"], "检查数据", "")
+    store.complete_step(step["step_id"], "检查数据", "检查完成")
+
+    with pytest.raises(WorkflowError, match="already has"):
+        store.start_step(run["run_id"], "a", [raw])
+    with pytest.raises(WorkflowError, match="cannot remove"):
+        store.set_plan(
+            run["run_id"],
+            [{"node_id": "b", "objective": "解释结果"}],
+        )
+    with pytest.raises(WorkflowError, match="every node"):
         store.finish_run(run["run_id"])
 
 
-def test_pending_human_input_blocks_new_material_step(tmp_path: Path):
-    project = tmp_path / "project"
-    project.mkdir()
-    data = project / "data.csv"
-    data.write_text("x\n1\n", encoding="utf-8")
-    store = WorkflowStore(tmp_path / "workflow.sqlite3")
-    run = store.start_run("分析数据", project, [data])
-    store.set_plan(run["run_id"], [{"node_id": "n1", "objective": "分析数据质量"}])
+def test_step_input_must_have_file_lineage(tmp_path: Path):
+    project, raw, store, run = make_run(tmp_path)
+    other = project / "undeclared.csv"
+    other.write_text("x\n3\n", encoding="utf-8")
+    store.set_plan(run["run_id"], [{"node_id": "a", "objective": "检查数据"}])
+    with pytest.raises(WorkflowError, match="declared Run inputs"):
+        store.start_step(run["run_id"], "a", [other])
 
-    event = store.capture_user_input(run["run_id"], "请先确认缺失值口径")
-    assert event["input_event_id"] in store.gate_reason(run["run_id"])
-    with pytest.raises(WorkflowError, match="unresolved user input"):
-        store.start_step(
-            run["run_id"], "n1", "分析数据质量", [data], "得到质量结论"
-        )
 
-    result = store.classify_user_input(
-        event["input_event_id"],
-        "analysis_guidance",
-        structured_summary="确认缺失值口径",
+def test_plan_revision_trigger_and_completed_node_preservation(tmp_path: Path):
+    _, raw, store, run = make_run(tmp_path)
+    store.set_plan(run["run_id"], [{"node_id": "a", "objective": "检查数据"}])
+    first = store.start_step(run["run_id"], "a", [raw])
+    store.complete_step(first["step_id"], "检查数据", "检查完成")
+
+    revision = store.set_plan(
+        run["run_id"],
+        [
+            {"node_id": "a", "objective": "检查数据"},
+            {"node_id": "b", "objective": "验证异常", "depends_on": ["a"]},
+        ],
+        trigger="human_intervention",
+        change_reason="用户要求验证异常",
     )
-    assert result["creates_human_contribution"] is True
-    assert "apply_user_input" in store.gate_reason(run["run_id"])
+    assert revision["plan_version"] == 2
+    second = store.start_step(run["run_id"], "b", [raw])
+    assert second["plan_version"] == 2
+
+
+def test_human_intervention_keeps_capture_context_and_filters_chat(tmp_path: Path):
+    _, raw, store, run = make_run(tmp_path)
+    store.set_plan(run["run_id"], [{"node_id": "a", "objective": "检查数据"}])
+    step = store.start_step(run["run_id"], "a", [raw])
+
+    intervention = store.capture_user_input(run["run_id"], "先验证异常")
+    store.classify_user_input(intervention["input_event_id"], "challenge")
     store.apply_user_input(
-        event["input_event_id"],
-        workflow_effect="当前 Step 使用统一的空字符串和 NA 缺失口径",
+        intervention["input_event_id"],
+        "当前 Step 增加异常复核",
     )
-    assert store.gate_reason(run["run_id"]).startswith("Start a semantic")
+    chat = store.capture_user_input(run["run_id"], "谢谢")
+    store.classify_user_input(chat["input_event_id"], "conversation_only")
+    store.complete_step(step["step_id"], "检查并复核异常", "复核完成")
+    store.finish_run(run["run_id"])
 
-
-def test_abort_preserves_run_and_marks_active_step_interrupted(tmp_path: Path):
-    project = tmp_path / "project"
-    project.mkdir()
-    data = project / "data.csv"
-    data.write_text("x\n1\n", encoding="utf-8")
-    store = WorkflowStore(tmp_path / "workflow.sqlite3")
-    run = store.start_run("分析数据", project, [data])
-    store.set_plan(run["run_id"], [{"node_id": "n1", "objective": "检查数据质量"}])
-    step = store.start_step(
-        run["run_id"], "n1", "检查数据质量", [data], "形成质量结论"
+    exported = json.loads(
+        store.export_run(run["run_id"]).read_text(encoding="utf-8")
     )
+    assert len(exported["human_interventions"]) == 1
+    recorded = exported["human_interventions"][0]
+    assert recorded["active_step_id"] == step["step_id"]
+    assert recorded["plan_version"] == 1
+    assert recorded["workflow_effect"] == "当前 Step 增加异常复核"
 
-    result = store.abort_run(run["run_id"], "Claude API parameter error")
-    state = store.get_state(run["run_id"])
 
-    assert result["status"] == "aborted"
-    assert state["run"]["status"] == "aborted"
-    assert state["steps"][0]["step_id"] == step["step_id"]
-    assert state["steps"][0]["status"] == "interrupted"
-    exported = json.loads(store.export_run(run["run_id"]).read_text(encoding="utf-8"))
-    assert any(
-        event["hook_event_name"] == "RunAborted"
-        for event in exported["execution_events"]
+def test_abort_preserves_truth_but_hides_raw_hook_events(tmp_path: Path):
+    _, raw, store, run = make_run(tmp_path)
+    store.set_plan(run["run_id"], [{"node_id": "a", "objective": "检查数据"}])
+    step = store.start_step(run["run_id"], "a", [raw])
+    store.abort_run(run["run_id"], "Claude API parameter error")
+
+    exported = json.loads(
+        store.export_run(run["run_id"]).read_text(encoding="utf-8")
     )
+    assert exported["run"]["status"] == "aborted"
+    assert exported["steps"][0]["step_id"] == step["step_id"]
+    assert exported["steps"][0]["status"] == "interrupted"
+    assert "execution_events" not in exported
+
+
+def test_existing_database_is_migrated_without_deleting_history(tmp_path: Path):
+    database = tmp_path / "old.sqlite3"
+    connection = sqlite3.connect(database)
+    connection.executescript(
+        """
+        CREATE TABLE plan_revisions (
+            run_id TEXT NOT NULL,
+            version INTEGER NOT NULL,
+            nodes_json TEXT NOT NULL,
+            reason TEXT,
+            created_at TEXT NOT NULL,
+            PRIMARY KEY (run_id, version)
+        );
+        CREATE TABLE steps (
+            step_id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL,
+            node_id TEXT NOT NULL,
+            sequence INTEGER NOT NULL,
+            objective TEXT NOT NULL,
+            target_data TEXT,
+            completion_condition TEXT NOT NULL,
+            expected_output_roles_json TEXT NOT NULL,
+            operation_summary TEXT,
+            operation_types_json TEXT,
+            parameters_json TEXT,
+            algorithms_json TEXT,
+            programs_json TEXT,
+            processing_result_json TEXT,
+            analysis_conclusion_json TEXT,
+            warnings_json TEXT NOT NULL,
+            status TEXT NOT NULL,
+            started_at TEXT NOT NULL,
+            completed_at TEXT
+        );
+        """
+    )
+    connection.close()
+
+    WorkflowStore(database)
+    migrated = sqlite3.connect(database)
+    plan_columns = {row[1] for row in migrated.execute("PRAGMA table_info(plan_revisions)")}
+    step_columns = {row[1] for row in migrated.execute("PRAGMA table_info(steps)")}
+    migrated.close()
+    assert "trigger_kind" in plan_columns
+    assert {"plan_version", "commands_json", "result_summary", "analysis_conclusion"} <= step_columns

@@ -9,15 +9,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import re
 import sqlite3
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Union
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
 
-OUTPUT_ROLES = {"step_output", "internal_intermediate", "temporary"}
+PLAN_TRIGGERS = {"initial", "agent_replan", "human_intervention"}
 INPUT_TYPES = {
     "conversation_only",
     "analysis_guidance",
@@ -88,6 +90,7 @@ class WorkflowStore:
                     version INTEGER NOT NULL,
                     nodes_json TEXT NOT NULL,
                     reason TEXT,
+                    trigger_kind TEXT,
                     created_at TEXT NOT NULL,
                     PRIMARY KEY (run_id, version)
                 );
@@ -102,6 +105,7 @@ class WorkflowStore:
                     step_id TEXT PRIMARY KEY,
                     run_id TEXT NOT NULL REFERENCES runs(run_id),
                     node_id TEXT NOT NULL,
+                    plan_version INTEGER,
                     sequence INTEGER NOT NULL,
                     objective TEXT NOT NULL,
                     target_data TEXT,
@@ -112,6 +116,9 @@ class WorkflowStore:
                     parameters_json TEXT,
                     algorithms_json TEXT,
                     programs_json TEXT,
+                    commands_json TEXT,
+                    result_summary TEXT,
+                    analysis_conclusion TEXT,
                     processing_result_json TEXT,
                     analysis_conclusion_json TEXT,
                     warnings_json TEXT NOT NULL,
@@ -171,6 +178,31 @@ class WorkflowStore:
                 );
                 """
             )
+            self._ensure_column(
+                connection, "plan_revisions", "trigger_kind", "TEXT"
+            )
+            self._ensure_column(connection, "steps", "plan_version", "INTEGER")
+            self._ensure_column(connection, "steps", "commands_json", "TEXT")
+            self._ensure_column(connection, "steps", "result_summary", "TEXT")
+            self._ensure_column(
+                connection, "steps", "analysis_conclusion", "TEXT"
+            )
+
+    @staticmethod
+    def _ensure_column(
+        connection: sqlite3.Connection,
+        table: str,
+        column: str,
+        declaration: str,
+    ) -> None:
+        columns = {
+            row["name"]
+            for row in connection.execute(f"PRAGMA table_info({table})").fetchall()
+        }
+        if column not in columns:
+            connection.execute(
+                f"ALTER TABLE {table} ADD COLUMN {column} {declaration}"
+            )
 
     def start_run(
         self,
@@ -228,7 +260,11 @@ class WorkflowStore:
         }
 
     def set_plan(
-        self, run_id: str, nodes: List[Dict[str, Any]], reason: str = "initial plan"
+        self,
+        run_id: str,
+        nodes: List[Dict[str, Any]],
+        trigger: Optional[str] = None,
+        change_reason: Optional[str] = None,
     ) -> Dict[str, Any]:
         if not nodes:
             raise WorkflowError("plan must contain at least one node")
@@ -247,9 +283,7 @@ class WorkflowStore:
                 {
                     "node_id": node_id,
                     "objective": objective,
-                    "step_type": node.get("step_type", "analyze"),
                     "depends_on": list(node.get("depends_on") or []),
-                    "status": node.get("status", "pending"),
                 }
             )
         for node in normalized:
@@ -263,6 +297,7 @@ class WorkflowStore:
                 raise WorkflowError(
                     f"plan node cannot depend on itself: {node['node_id']}"
                 )
+        self._validate_plan_is_acyclic(normalized)
 
         with self._connection() as connection:
             self._require_active_run(connection, run_id)
@@ -272,43 +307,87 @@ class WorkflowStore:
                 (run_id,),
             ).fetchone()
             version = int(row["version"]) + 1
+            effective_trigger = trigger or (
+                "initial" if version == 1 else "agent_replan"
+            )
+            if effective_trigger not in PLAN_TRIGGERS:
+                raise WorkflowError(f"invalid plan trigger: {effective_trigger}")
+            if version == 1 and effective_trigger != "initial":
+                raise WorkflowError("the first plan revision must use trigger 'initial'")
+            if version > 1 and effective_trigger == "initial":
+                raise WorkflowError(
+                    "only the first plan revision may use trigger 'initial'"
+                )
+
+            completed_nodes = {
+                row["node_id"]
+                for row in connection.execute(
+                    """
+                    SELECT DISTINCT node_id FROM steps
+                    WHERE run_id = ? AND status IN ('active', 'completed')
+                    """,
+                    (run_id,),
+                ).fetchall()
+            }
+            missing = sorted(completed_nodes - seen)
+            if missing:
+                raise WorkflowError(
+                    "a plan revision cannot remove nodes already started: "
+                    + ", ".join(missing)
+                )
+            previous = self._latest_plan(connection, run_id)
+            if previous is not None:
+                previous_nodes = {
+                    node["node_id"]: node for node in previous["nodes"]
+                }
+                current_nodes = {node["node_id"]: node for node in normalized}
+                changed_started = [
+                    node_id
+                    for node_id in completed_nodes
+                    if (
+                        current_nodes[node_id]["objective"]
+                        != previous_nodes[node_id]["objective"]
+                        or set(current_nodes[node_id]["depends_on"])
+                        != set(previous_nodes[node_id].get("depends_on") or [])
+                    )
+                ]
+                if changed_started:
+                    raise WorkflowError(
+                        "a plan revision cannot rewrite objectives or dependencies "
+                        "of nodes already started; add a new node instead: "
+                        + ", ".join(sorted(changed_started))
+                    )
             connection.execute(
                 """
-                INSERT INTO plan_revisions(run_id, version, nodes_json, reason, created_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO plan_revisions(
+                    run_id, version, nodes_json, reason, trigger_kind, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (run_id, version, _json(normalized), reason, utc_now()),
+                (
+                    run_id,
+                    version,
+                    _json(normalized),
+                    (change_reason or "").strip() or None,
+                    effective_trigger,
+                    utc_now(),
+                ),
             )
 
-        return {"run_id": run_id, "plan_version": version, "nodes": normalized}
+        return {
+            "run_id": run_id,
+            "plan_version": version,
+            "trigger": effective_trigger,
+            "change_reason": (change_reason or "").strip() or None,
+            "nodes": normalized,
+        }
 
     def start_step(
         self,
         run_id: str,
         node_id: str,
-        objective: str,
         input_files: Iterable[Union[Path, str]],
-        completion_condition: str,
-        expected_output_roles: Optional[List[str]] = None,
-        target_data: str = "",
+        objective: str = "",
     ) -> Dict[str, Any]:
-        objective = objective.strip()
-        completion_condition = completion_condition.strip()
-        if not objective:
-            raise WorkflowError("objective cannot be empty")
-        if not completion_condition:
-            raise WorkflowError("completion_condition cannot be empty")
-
-        roles = (
-            ["step_output"]
-            if expected_output_roles is None
-            else expected_output_roles
-        )
-        invalid_roles = sorted(set(roles) - OUTPUT_ROLES)
-        if invalid_roles:
-            raise WorkflowError(f"invalid output roles: {', '.join(invalid_roles)}")
-
-        warnings = self._granularity_warnings(objective)
         with self._connection() as connection:
             run = self._require_active_run(connection, run_id)
             pending = connection.execute(
@@ -326,8 +405,17 @@ class WorkflowStore:
             plan = self._latest_plan(connection, run_id)
             if plan is None:
                 raise WorkflowError("set a plan before starting a step")
-            if node_id not in {node["node_id"] for node in plan["nodes"]}:
+            plan_nodes = {node["node_id"]: node for node in plan["nodes"]}
+            if node_id not in plan_nodes:
                 raise WorkflowError(f"node_id is not present in current plan: {node_id}")
+            plan_node = plan_nodes[node_id]
+            supplied_objective = objective.strip()
+            if supplied_objective and supplied_objective != plan_node["objective"]:
+                raise WorkflowError(
+                    "step objective must exactly match the current plan node objective"
+                )
+            objective = plan_node["objective"]
+            warnings = self._granularity_warnings(objective)
 
             active = connection.execute(
                 "SELECT step_id FROM steps WHERE run_id = ? AND status = 'active'",
@@ -335,6 +423,59 @@ class WorkflowStore:
             ).fetchone()
             if active:
                 raise WorkflowError(f"run already has active step: {active['step_id']}")
+
+            completed_nodes = {
+                row["node_id"]
+                for row in connection.execute(
+                    """
+                    SELECT node_id FROM steps
+                    WHERE run_id = ? AND status = 'completed'
+                    """,
+                    (run_id,),
+                ).fetchall()
+            }
+            if node_id in completed_nodes:
+                raise WorkflowError(
+                    f"current plan node already has a completed step: {node_id}"
+                )
+            missing_dependencies = sorted(
+                set(plan_node["depends_on"]) - completed_nodes
+            )
+            if missing_dependencies:
+                raise WorkflowError(
+                    "complete plan dependencies before starting this step: "
+                    + ", ".join(missing_dependencies)
+                )
+
+            project = Path(run["project_root"])
+            inputs = [self._resolve_file(path, project) for path in input_files]
+            if not inputs:
+                raise WorkflowError("a step must declare at least one input file")
+            versions = [self._observe_file(connection, path) for path in inputs]
+            allowed_version_ids = {
+                row["file_version_id"]
+                for row in connection.execute(
+                    """
+                    SELECT file_version_id FROM run_inputs WHERE run_id = ?
+                    UNION
+                    SELECT o.file_version_id
+                    FROM step_outputs o
+                    JOIN steps s ON s.step_id = o.step_id
+                    WHERE s.run_id = ? AND s.status = 'completed'
+                    """,
+                    (run_id, run_id),
+                ).fetchall()
+            }
+            untracked = [
+                version["path"]
+                for version in versions
+                if version["file_version_id"] not in allowed_version_ids
+            ]
+            if untracked:
+                raise WorkflowError(
+                    "step inputs must be declared Run inputs or outputs of completed "
+                    "steps: " + ", ".join(untracked)
+                )
 
             sequence = int(
                 connection.execute(
@@ -345,40 +486,26 @@ class WorkflowStore:
             connection.execute(
                 """
                 INSERT INTO steps(
-                    step_id, run_id, node_id, sequence, objective, target_data,
+                    step_id, run_id, node_id, plan_version, sequence, objective, target_data,
                     completion_condition, expected_output_roles_json, warnings_json,
                     status, started_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, '', ?, ?, ?, 'active', ?)
                 """,
                 (
                     step_id,
                     run_id,
                     node_id,
+                    plan["version"],
                     sequence,
                     objective,
-                    target_data,
-                    completion_condition,
-                    _json(roles),
+                    f"Record a truthful result for plan node {node_id}",
+                    _json(["step_output"]),
                     _json(warnings),
                     utc_now(),
                 ),
             )
 
-            project = Path(run["project_root"])
-            inputs = [self._resolve_file(path, project) for path in input_files]
-            if not inputs:
-                raise WorkflowError("a step must declare at least one input file")
-            versions = []
-            for path in inputs:
-                version = self._observe_file(connection, path)
-                versions.append(version)
-                connection.execute(
-                    """
-                    UPDATE step_outputs SET role = 'step_output'
-                    WHERE file_version_id = ? AND role != 'step_output'
-                    """,
-                    (version["file_version_id"],),
-                )
+            for version in versions:
                 connection.execute(
                     "INSERT INTO step_inputs(step_id, file_version_id) VALUES (?, ?)",
                     (step_id, version["file_version_id"]),
@@ -387,6 +514,9 @@ class WorkflowStore:
         return {
             "step_id": step_id,
             "status": "active",
+            "plan_version": plan["version"],
+            "node_id": node_id,
+            "objective": objective,
             "input_file_versions": versions,
             "granularity_warnings": warnings,
         }
@@ -395,21 +525,18 @@ class WorkflowStore:
         self,
         step_id: str,
         operation_summary: str,
-        output_files: Optional[List[Dict[str, str]]] = None,
-        processing_result: Optional[Dict[str, Any]] = None,
-        analysis_conclusion: Optional[Dict[str, Any]] = None,
-        operation_types: Optional[List[str]] = None,
-        parameters: Optional[Dict[str, Any]] = None,
-        algorithms: Optional[List[Dict[str, Any]]] = None,
-        programs: Optional[List[Dict[str, Any]]] = None,
+        result_summary: str,
+        output_files: Optional[List[Union[Path, str, Dict[str, str]]]] = None,
+        analysis_conclusion: Optional[str] = None,
     ) -> Dict[str, Any]:
         operation_summary = operation_summary.strip()
+        result_summary = result_summary.strip()
         if not operation_summary:
             raise WorkflowError("operation_summary cannot be empty")
-        if not output_files and not processing_result and not analysis_conclusion:
-            raise WorkflowError(
-                "a completed step needs output files, processing_result, or analysis_conclusion"
-            )
+        if not result_summary:
+            raise WorkflowError("result_summary cannot be empty")
+        if analysis_conclusion is not None:
+            analysis_conclusion = analysis_conclusion.strip() or None
 
         output_files = output_files or []
         with self._connection() as connection:
@@ -425,42 +552,39 @@ class WorkflowStore:
 
             versions = []
             for output in output_files:
-                role = output.get("role", "step_output")
-                if role not in OUTPUT_ROLES:
-                    raise WorkflowError(f"invalid output role: {role}")
-                path = self._resolve_file(output.get("path", ""), project)
+                raw_path = output.get("path", "") if isinstance(output, dict) else output
+                path = self._resolve_file(raw_path, project)
                 version = self._observe_file(connection, path)
-                versions.append({**version, "role": role})
+                versions.append(version)
                 connection.execute(
                     """
                     INSERT INTO step_outputs(step_id, file_version_id, role)
-                    VALUES (?, ?, ?)
+                    VALUES (?, ?, 'step_output')
                     """,
-                    (step_id, version["file_version_id"], role),
+                    (step_id, version["file_version_id"]),
                 )
 
+            commands, programs = self._observed_operation(
+                connection, step_id, project
+            )
             connection.execute(
                 """
                 UPDATE steps SET
                     operation_summary = ?,
-                    operation_types_json = ?,
-                    parameters_json = ?,
-                    algorithms_json = ?,
                     programs_json = ?,
-                    processing_result_json = ?,
-                    analysis_conclusion_json = ?,
+                    commands_json = ?,
+                    result_summary = ?,
+                    analysis_conclusion = ?,
                     status = 'completed',
                     completed_at = ?
                 WHERE step_id = ?
                 """,
                 (
                     operation_summary,
-                    _json(operation_types or []),
-                    _json(parameters or {}),
-                    _json(algorithms or []),
-                    _json(self._program_records(project, programs or [])),
-                    _json(processing_result or {}),
-                    _json(analysis_conclusion or {}),
+                    _json(programs),
+                    _json(commands),
+                    result_summary,
+                    analysis_conclusion,
                     utc_now(),
                     step_id,
                 ),
@@ -470,6 +594,8 @@ class WorkflowStore:
             "step_id": step_id,
             "status": "completed",
             "output_file_versions": versions,
+            "observed_commands": commands,
+            "observed_programs": programs,
         }
 
     def capture_user_input(
@@ -480,18 +606,28 @@ class WorkflowStore:
         input_event_id = f"input_{uuid.uuid4().hex[:12]}"
         with self._connection() as connection:
             self._require_active_run(connection, run_id)
+            active = connection.execute(
+                """
+                SELECT step_id FROM steps
+                WHERE run_id = ? AND status = 'active'
+                """,
+                (run_id,),
+            ).fetchone()
+            plan = self._latest_plan(connection, run_id)
             connection.execute(
                 """
                 INSERT INTO input_events(
                     input_event_id, run_id, claude_session_id, original_text,
-                    status, created_at
-                ) VALUES (?, ?, ?, ?, 'pending', ?)
+                    target_step_id, target_plan_version, status, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
                 """,
                 (
                     input_event_id,
                     run_id,
                     claude_session_id,
                     original_text,
+                    active["step_id"] if active else None,
+                    plan["version"] if plan else None,
                     utc_now(),
                 ),
             )
@@ -520,7 +656,8 @@ class WorkflowStore:
             connection.execute(
                 """
                 UPDATE input_events SET
-                    type = ?, target_step_id = ?, target_plan_version = ?,
+                    type = ?, target_step_id = COALESCE(?, target_step_id),
+                    target_plan_version = COALESCE(?, target_plan_version),
                     structured_summary = ?, workflow_effect = ?,
                     status = ?, resolved_at = ?
                 WHERE input_event_id = ?
@@ -621,6 +758,9 @@ class WorkflowStore:
     def finish_run(self, run_id: str) -> Dict[str, Any]:
         with self._connection() as connection:
             self._require_active_run(connection, run_id)
+            plan = self._latest_plan(connection, run_id)
+            if plan is None:
+                raise WorkflowError("cannot finish a run without a plan")
             active = connection.execute(
                 "SELECT step_id FROM steps WHERE run_id = ? AND status = 'active'",
                 (run_id,),
@@ -641,6 +781,37 @@ class WorkflowStore:
             ).fetchone()["count"]
             if not step_count:
                 raise WorkflowError("cannot finish a run without completed steps")
+            completed_nodes = {
+                row["node_id"]
+                for row in connection.execute(
+                    """
+                    SELECT node_id FROM steps
+                    WHERE run_id = ? AND status = 'completed'
+                    """,
+                    (run_id,),
+                ).fetchall()
+            }
+            unfinished = [
+                node["node_id"]
+                for node in plan["nodes"]
+                if node["node_id"] not in completed_nodes
+            ]
+            if unfinished:
+                raise WorkflowError(
+                    "complete every node in the current plan before finishing: "
+                    + ", ".join(unfinished)
+                )
+            invalid_steps = connection.execute(
+                """
+                SELECT COUNT(*) AS count FROM steps
+                WHERE run_id = ? AND status != 'completed'
+                """,
+                (run_id,),
+            ).fetchone()["count"]
+            if invalid_steps:
+                raise WorkflowError(
+                    "a successful run cannot contain interrupted or failed steps"
+                )
             completed_at = utc_now()
             connection.execute(
                 "UPDATE runs SET status = 'completed', completed_at = ? WHERE run_id = ?",
@@ -720,7 +891,7 @@ class WorkflowStore:
                     if item["status"] in {"active", "completed"}
                 }
                 plan["nodes"] = [
-                    {**node, "status": statuses.get(node["node_id"], node["status"])}
+                    {**node, "status": statuses.get(node["node_id"], "pending")}
                     for node in plan["nodes"]
                 ]
             return {
@@ -733,31 +904,179 @@ class WorkflowStore:
     def export_run(
         self, run_id: str, output_path: Optional[Union[Path, str]] = None
     ) -> Path:
-        state = self.get_state(run_id)
         with self._connection() as connection:
-            inputs = connection.execute(
-                "SELECT * FROM input_events WHERE run_id = ? ORDER BY created_at",
-                (run_id,),
-            ).fetchall()
-            events = connection.execute(
-                "SELECT * FROM hook_events WHERE run_id = ? ORDER BY created_at",
-                (run_id,),
-            ).fetchall()
-            state["human_inputs"] = [dict(row) for row in inputs]
-            state["execution_events"] = [
-                {
-                    **dict(row),
-                    "payload": _from_json(row["payload_json"], {}),
-                }
-                for row in events
-            ]
+            exported = self._normalized_export(connection, run_id)
 
         if output_path is None:
             output_path = self.db_path.parent / "exports" / f"{run_id}.json"
         destination = Path(output_path).resolve()
         destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_text(_json(state), encoding="utf-8")
+        destination.write_text(_json(exported), encoding="utf-8")
         return destination
+
+    def _normalized_export(
+        self, connection: sqlite3.Connection, run_id: str
+    ) -> Dict[str, Any]:
+        run = self._require_run(connection, run_id)
+        project = Path(run["project_root"])
+        initial_files = connection.execute(
+            """
+            SELECT f.* FROM file_versions f
+            JOIN run_inputs i ON i.file_version_id = f.file_version_id
+            WHERE i.run_id = ? ORDER BY f.path
+            """,
+            (run_id,),
+        ).fetchall()
+        plans = connection.execute(
+            """
+            SELECT * FROM plan_revisions
+            WHERE run_id = ? ORDER BY version
+            """,
+            (run_id,),
+        ).fetchall()
+        step_rows = connection.execute(
+            "SELECT * FROM steps WHERE run_id = ? ORDER BY sequence",
+            (run_id,),
+        ).fetchall()
+        interventions = connection.execute(
+            """
+            SELECT * FROM input_events
+            WHERE run_id = ? AND type IS NOT NULL
+              AND type != 'conversation_only'
+            ORDER BY created_at
+            """,
+            (run_id,),
+        ).fetchall()
+
+        steps: List[Dict[str, Any]] = []
+        lineage: List[Dict[str, Any]] = []
+        for row in step_rows:
+            inputs = self._step_file_refs(connection, row["step_id"], "input", project)
+            outputs = self._step_file_refs(
+                connection, row["step_id"], "output", project
+            )
+            commands = _from_json(row["commands_json"], [])
+            programs = [
+                self._public_path(Path(path), project)
+                for path in _from_json(row["programs_json"], [])
+            ]
+            result_summary = row["result_summary"]
+            if not result_summary:
+                legacy_result = _from_json(row["processing_result_json"], {})
+                result_summary = self._legacy_summary(legacy_result)
+            conclusion = row["analysis_conclusion"]
+            if conclusion is None:
+                legacy_conclusion = _from_json(
+                    row["analysis_conclusion_json"], {}
+                )
+                conclusion = self._legacy_summary(legacy_conclusion) or None
+            steps.append(
+                {
+                    "step_id": row["step_id"],
+                    "sequence": row["sequence"],
+                    "plan_version": row["plan_version"],
+                    "node_id": row["node_id"],
+                    "objective": row["objective"],
+                    "inputs": inputs,
+                    "operation": {
+                        "summary": row["operation_summary"],
+                        "commands": commands,
+                        "programs": programs,
+                    },
+                    "outputs": outputs,
+                    "result_summary": result_summary,
+                    "analysis_conclusion": conclusion,
+                    "status": row["status"],
+                    "started_at": row["started_at"],
+                    "completed_at": row["completed_at"],
+                }
+            )
+            if outputs:
+                lineage.append(
+                    {
+                        "step_id": row["step_id"],
+                        "inputs": inputs,
+                        "outputs": outputs,
+                    }
+                )
+
+        return {
+            "schema_version": "1.0",
+            "run": {
+                "run_id": run["run_id"],
+                "task": run["task_description"],
+                "project_root": run["project_root"],
+                "agent": "claude-code",
+                "session_id": run["claude_session_id"],
+                "status": run["status"],
+                "started_at": run["started_at"],
+                "completed_at": run["completed_at"],
+                "declared_inputs": [
+                    self._public_file_ref(dict(item), project)
+                    for item in initial_files
+                ],
+            },
+            "plan_revisions": [
+                {
+                    "version": row["version"],
+                    "created_at": row["created_at"],
+                    "trigger": row["trigger_kind"]
+                    or ("initial" if row["version"] == 1 else "agent_replan"),
+                    "change_reason": row["reason"],
+                    "nodes": [
+                        {
+                            "node_id": node["node_id"],
+                            "objective": node["objective"],
+                            "depends_on": list(node.get("depends_on") or []),
+                        }
+                        for node in _from_json(row["nodes_json"], [])
+                    ],
+                }
+                for row in plans
+            ],
+            "steps": steps,
+            "human_interventions": [
+                {
+                    "intervention_id": row["input_event_id"],
+                    "original_text": row["original_text"],
+                    "type": row["type"],
+                    "active_step_id": row["target_step_id"],
+                    "plan_version": row["target_plan_version"],
+                    "workflow_effect": row["workflow_effect"],
+                    "created_at": row["created_at"],
+                    "applied_at": row["resolved_at"],
+                }
+                for row in interventions
+            ],
+            "file_lineage": lineage,
+        }
+
+    def _step_file_refs(
+        self,
+        connection: sqlite3.Connection,
+        step_id: str,
+        direction: str,
+        project: Path,
+    ) -> List[Dict[str, str]]:
+        if direction == "input":
+            rows = connection.execute(
+                """
+                SELECT f.* FROM file_versions f
+                JOIN step_inputs i ON i.file_version_id = f.file_version_id
+                WHERE i.step_id = ? ORDER BY f.path
+                """,
+                (step_id,),
+            ).fetchall()
+        else:
+            rows = connection.execute(
+                """
+                SELECT f.* FROM file_versions f
+                JOIN step_outputs o ON o.file_version_id = f.file_version_id
+                WHERE o.step_id = ? ORDER BY f.path
+                """,
+                (step_id,),
+            ).fetchall()
+        return [self._public_file_ref(dict(row), project) for row in rows]
 
     def gate_reason(self, run_id: str) -> Optional[str]:
         """Return why a material Claude tool call should be blocked, if any."""
@@ -782,6 +1101,9 @@ class WorkflowStore:
                     "Classify pending user input with "
                     f"opentrace_classify_user_input: {pending['input_event_id']}"
                 )
+            plan = self._latest_plan(connection, run_id)
+            if plan is None:
+                return "Set an OpenTrace plan before material analysis work"
             active = connection.execute(
                 "SELECT step_id FROM steps WHERE run_id = ? AND status = 'active'",
                 (run_id,),
@@ -798,6 +1120,7 @@ class WorkflowStore:
             "parameters_json",
             "algorithms_json",
             "programs_json",
+            "commands_json",
             "processing_result_json",
             "analysis_conclusion_json",
             "warnings_json",
@@ -842,9 +1165,109 @@ class WorkflowStore:
         return {
             "version": row["version"],
             "nodes": _from_json(row["nodes_json"], []),
-            "reason": row["reason"],
+            "trigger": row["trigger_kind"]
+            or ("initial" if row["version"] == 1 else "agent_replan"),
+            "change_reason": row["reason"],
             "created_at": row["created_at"],
         }
+
+    @staticmethod
+    def _validate_plan_is_acyclic(nodes: List[Dict[str, Any]]) -> None:
+        dependencies = {
+            node["node_id"]: set(node["depends_on"]) for node in nodes
+        }
+        visiting = set()
+        visited = set()
+
+        def visit(node_id: str) -> None:
+            if node_id in visiting:
+                raise WorkflowError("plan dependencies must form an acyclic graph")
+            if node_id in visited:
+                return
+            visiting.add(node_id)
+            for dependency in dependencies[node_id]:
+                visit(dependency)
+            visiting.remove(node_id)
+            visited.add(node_id)
+
+        for node_id in dependencies:
+            visit(node_id)
+
+    def _observed_operation(
+        self,
+        connection: sqlite3.Connection,
+        step_id: str,
+        project: Path,
+    ) -> Tuple[List[str], List[str]]:
+        rows = connection.execute(
+            """
+            SELECT tool_name, payload_json FROM hook_events
+            WHERE step_id = ? AND hook_event_name = 'PostToolUse'
+            ORDER BY created_at
+            """,
+            (step_id,),
+        ).fetchall()
+        commands: List[str] = []
+        program_paths: List[str] = []
+        for row in rows:
+            payload = _from_json(row["payload_json"], {})
+            tool_input = payload.get("tool_input") or {}
+            tool_name = str(row["tool_name"] or payload.get("tool_name") or "")
+            if tool_name in {"Bash", "PowerShell"}:
+                command = str(tool_input.get("command") or "").strip()
+                if command and "opentrace.agent_cli" not in command:
+                    commands.append(command)
+                    for match in re.findall(
+                        r"""(?:"([^"]+\.py)"|'([^']+\.py)'|([^\s"';&|]+\.py))""",
+                        command,
+                        re.IGNORECASE,
+                    ):
+                        program_paths.append(next(value for value in match if value))
+            elif tool_name in {"Write", "Edit", "NotebookEdit"}:
+                raw_path = str(
+                    tool_input.get("file_path")
+                    or tool_input.get("notebook_path")
+                    or ""
+                ).strip()
+                if raw_path.lower().endswith((".py", ".ipynb")):
+                    program_paths.append(raw_path)
+
+        normalized_programs = []
+        seen = set()
+        for raw_path in program_paths:
+            path = Path(raw_path)
+            if not path.is_absolute():
+                path = project / path
+            normalized = str(path.resolve())
+            key = os.path.normcase(normalized)
+            if key not in seen:
+                normalized_programs.append(normalized)
+                seen.add(key)
+        return list(dict.fromkeys(commands)), normalized_programs
+
+    @staticmethod
+    def _legacy_summary(value: Any) -> str:
+        if value in (None, {}, []):
+            return ""
+        if isinstance(value, str):
+            return value
+        if isinstance(value, dict) and isinstance(value.get("summary"), str):
+            return value["summary"]
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+
+    @staticmethod
+    def _public_file_ref(value: Dict[str, Any], project: Path) -> Dict[str, str]:
+        return {
+            "path": WorkflowStore._public_path(Path(value["path"]), project),
+            "sha256": value["sha256"],
+        }
+
+    @staticmethod
+    def _public_path(path: Path, project: Path) -> str:
+        try:
+            return path.relative_to(project).as_posix()
+        except ValueError:
+            return str(path)
 
     def _require_run(self, connection: sqlite3.Connection, run_id: str) -> sqlite3.Row:
         row = connection.execute(

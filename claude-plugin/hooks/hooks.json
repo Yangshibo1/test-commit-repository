@@ -33,7 +33,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash|Write|Edit|NotebookEdit|Read",
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
@@ -49,7 +49,7 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash|Write|Edit|NotebookEdit|Read",
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
@@ -65,7 +65,7 @@
     ],
     "PostToolUseFailure": [
       {
-        "matcher": "Bash|Write|Edit|NotebookEdit|Read",
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",

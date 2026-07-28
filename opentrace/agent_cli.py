@@ -11,7 +11,7 @@ import argparse
 import json
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from opentrace.workflow_store import WorkflowError, WorkflowStore
 
@@ -45,6 +45,14 @@ def _required(payload: Dict[str, Any], name: str) -> Any:
     return value
 
 
+def _only_fields(payload: Dict[str, Any], allowed: Set[str]) -> None:
+    unknown = sorted(set(payload) - allowed)
+    if unknown:
+        raise WorkflowError(
+            "unsupported payload fields: " + ", ".join(unknown)
+        )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="opentrace-agent",
@@ -59,6 +67,7 @@ def build_parser() -> argparse.ArgumentParser:
             "classify-user-input",
             "apply-user-input",
             "state",
+            "status",
             "finish-run",
         ],
     )
@@ -73,70 +82,87 @@ def execute(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     store, run_id = _store_and_run()
 
     if action == "set-plan":
+        _only_fields(payload, {"nodes", "trigger", "change_reason"})
         nodes = _required(payload, "nodes")
         if not isinstance(nodes, list) or not all(
             isinstance(node, dict) for node in nodes
         ):
             raise WorkflowError("payload.nodes must be an array of objects")
         return store.set_plan(
-            run_id,
-            nodes,
-            str(payload.get("reason") or "initial plan"),
+            run_id=run_id,
+            nodes=nodes,
+            trigger=payload.get("trigger"),
+            change_reason=payload.get("change_reason"),
         )
 
     if action == "start-step":
+        _only_fields(payload, {"node_id", "input_files", "objective"})
         input_files = _required(payload, "input_files")
         if not isinstance(input_files, list):
             raise WorkflowError("payload.input_files must be an array")
-        expected_roles = payload.get("expected_output_roles")
-        if expected_roles is not None and not isinstance(expected_roles, list):
-            raise WorkflowError("payload.expected_output_roles must be an array")
         return store.start_step(
             run_id=run_id,
             node_id=str(_required(payload, "node_id")),
-            objective=str(_required(payload, "objective")),
             input_files=input_files,
-            completion_condition=str(_required(payload, "completion_condition")),
-            expected_output_roles=expected_roles,
-            target_data=str(payload.get("target_data") or ""),
+            objective=str(payload.get("objective") or ""),
         )
 
     if action == "complete-step":
-        list_fields = ("output_files", "operation_types", "algorithms", "programs")
-        object_fields = (
-            "processing_result",
-            "analysis_conclusion",
-            "parameters",
+        _only_fields(
+            payload,
+            {
+                "step_id",
+                "operation_summary",
+                "output_files",
+                "result_summary",
+                "analysis_conclusion",
+            },
         )
-        for name in list_fields:
-            if name in payload and not isinstance(payload[name], list):
-                raise WorkflowError(f"payload.{name} must be an array")
-        for name in object_fields:
-            if name in payload and not isinstance(payload[name], dict):
-                raise WorkflowError(f"payload.{name} must be an object")
+        output_files = payload.get("output_files", [])
+        if not isinstance(output_files, list):
+            raise WorkflowError("payload.output_files must be an array")
+        conclusion = payload.get("analysis_conclusion")
+        if conclusion is not None and not isinstance(conclusion, str):
+            raise WorkflowError(
+                "payload.analysis_conclusion must be a string or null"
+            )
         return store.complete_step(
             step_id=str(_required(payload, "step_id")),
             operation_summary=str(_required(payload, "operation_summary")),
-            output_files=payload.get("output_files"),
-            processing_result=payload.get("processing_result"),
-            analysis_conclusion=payload.get("analysis_conclusion"),
-            operation_types=payload.get("operation_types"),
-            parameters=payload.get("parameters"),
-            algorithms=payload.get("algorithms"),
-            programs=payload.get("programs"),
+            result_summary=str(_required(payload, "result_summary")),
+            output_files=output_files,
+            analysis_conclusion=conclusion,
         )
 
     if action == "classify-user-input":
+        _only_fields(
+            payload,
+            {
+                "input_event_id",
+                "input_type",
+                "target_step_id",
+                "target_plan_version",
+                "workflow_effect",
+            },
+        )
         return store.classify_user_input(
             input_event_id=str(_required(payload, "input_event_id")),
             input_type=str(_required(payload, "input_type")),
-            structured_summary=str(payload.get("structured_summary") or ""),
             target_step_id=payload.get("target_step_id"),
             target_plan_version=payload.get("target_plan_version"),
             workflow_effect=str(payload.get("workflow_effect") or ""),
         )
 
     if action == "apply-user-input":
+        _only_fields(
+            payload,
+            {
+                "input_event_id",
+                "workflow_effect",
+                "target_step_id",
+                "target_plan_version",
+            },
+        )
         return store.apply_user_input(
             input_event_id=str(_required(payload, "input_event_id")),
             workflow_effect=str(_required(payload, "workflow_effect")),
@@ -144,11 +170,13 @@ def execute(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
             target_plan_version=payload.get("target_plan_version"),
         )
 
-    if action == "state":
+    if action in {"state", "status"}:
         return store.get_state(run_id)
 
     if action == "finish-run":
-        return store.finish_run(run_id)
+        result = store.finish_run(run_id)
+        result["export_path"] = str(store.export_run(run_id))
+        return result
 
     raise WorkflowError(f"unsupported action: {action}")
 

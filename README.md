@@ -38,9 +38,9 @@ OpenTrace 会先创建 Run，再启动加载了本仓库 `claude-plugin` 的交�
 该命令只接受结构化 JSON 并写入当前 Run，不读取数据、不运行分析程序。典型记录命令如下：
 
 ```bash
-python -m opentrace.agent_cli set-plan --payload '{"nodes":[{"node_id":"n1","objective":"检查数据结构和质量","step_type":"inspect","depends_on":[]}]}'
-python -m opentrace.agent_cli start-step --payload '{"node_id":"n1","objective":"检查数据结构和质量","input_files":["C:/data/input.csv"],"completion_condition":"得到结构、质量问题和关键观察","expected_output_roles":["step_output"]}'
-python -m opentrace.agent_cli complete-step --payload '{"step_id":"step_...","operation_summary":"检查结构并计算质量统计","processing_result":{"rows":100},"analysis_conclusion":{"summary":"发现两个高缺失率字段"}}'
+python -m opentrace.agent_cli set-plan --payload '{"nodes":[{"node_id":"n1","objective":"检查数据结构和质量","depends_on":[]}]}'
+python -m opentrace.agent_cli start-step --payload '{"node_id":"n1","input_files":["C:/data/input.csv"]}'
+python -m opentrace.agent_cli complete-step --payload '{"step_id":"step_...","operation_summary":"检查结构并汇总数据质量","output_files":[],"result_summary":"文件包含100行，两个字段具有较高缺失率。","analysis_conclusion":"建模前需要验证这两个字段是否可用。"}'
 python -m opentrace.agent_cli finish-run
 ```
 
@@ -72,6 +72,8 @@ opentrace export <run-id> --project C:\path\to\analysis-project
 ```
 
 默认数据库位于分析项目的 `.opentrace/workflow.sqlite3`，导出文件位于 `.opentrace/exports/`。
+Claude 成功执行 `finish-run` 时会自动生成最终规范化 JSON；也可以随时使用
+`opentrace export` 手动重新生成。
 
 如果 Claude 会话因 API 或工具参数错误而无法恢复，保留历史并终止 Run：
 
@@ -83,11 +85,11 @@ opentrace abort <run-id> --project C:\path\to\analysis-project --reason "Claude 
 
 Python 脚本、命令或文件创建都不会自动形成 Step。Step 必须表示一个可以独立说明和验收的分析目标。
 
-如果中间结果必须先被 Claude 观察才能决定后续工作，或者中间文件会被另一个语义任务消费，它通常应当作为当前 Step 的 `step_output`。只在当前 Step 内使用的文件是 `internal_intermediate`，缓存和调试文件是 `temporary`。
+如果中间结果必须先被 Claude 观察才能决定后续工作，或者中间文件会被另一个语义任务消费，它通常值得作为正式输出记录。仅在当前 Step 内使用的缓存、调试和临时文件不进入对外 workflow JSON。
 
 ## 原型边界
 
 - 文件血缘只到文件版本级。
 - OpenTrace 不解析 Python 内部的所有读写行为。
-- Step 语义、算法用途、处理结果和结论由 Claude 如实提交；命令和工具事件由 Hook 观察。
+- Step 目标来自 Plan；操作摘要、结果摘要和分析结论由 Claude 如实提交；命令和程序路径由 Hook 观察。
 - 原型不包含多人协作、审批、云同步、细粒度字段血缘或前端重构。

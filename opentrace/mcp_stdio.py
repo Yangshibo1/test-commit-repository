@@ -48,22 +48,16 @@ def _json_list(value: str, field_name: str) -> List[Any]:
     return parsed
 
 
-def _json_object(value: str, field_name: str) -> Dict[str, Any]:
-    try:
-        parsed = json.loads(value)
-    except json.JSONDecodeError as error:
-        raise WorkflowError(f"{field_name} must be valid JSON: {error}") from error
-    if not isinstance(parsed, dict):
-        raise WorkflowError(f"{field_name} must contain a JSON object")
-    return parsed
-
-
 @mcp.tool(name="opentrace_set_plan")
-def set_plan(nodes_json: str, reason: str = "initial plan") -> Dict[str, Any]:
+def set_plan(
+    nodes_json: str,
+    trigger: str = "",
+    change_reason: str = "",
+) -> Dict[str, Any]:
     """Record Claude's current semantic analysis plan.
 
     ``nodes_json`` is a JSON array of objects. Each object contains node_id,
-    objective, step_type, and optional depends_on.
+    objective and optional depends_on.
 
     Calling this again creates a new immutable plan revision.  Nodes describe
     analysis objectives, not commands, Python functions, or individual file reads.
@@ -72,17 +66,18 @@ def set_plan(nodes_json: str, reason: str = "initial plan") -> Dict[str, Any]:
     nodes = _json_list(nodes_json, "nodes_json")
     if not all(isinstance(node, dict) for node in nodes):
         raise WorkflowError("every nodes_json entry must be an object")
-    return _store().set_plan(_run_id(), nodes, reason)
+    return _store().set_plan(
+        _run_id(),
+        nodes,
+        trigger=trigger or None,
+        change_reason=change_reason or None,
+    )
 
 
 @mcp.tool(name="opentrace_start_step")
 def start_step(
     node_id: str,
-    objective: str,
     input_files: List[str],
-    completion_condition: str,
-    expected_output_roles: List[str],
-    target_data: str = "",
 ) -> Dict[str, Any]:
     """Start one real semantic analysis step before material Claude tool use.
 
@@ -94,11 +89,7 @@ def start_step(
     return _store().start_step(
         run_id=_run_id(),
         node_id=node_id,
-        objective=objective,
         input_files=input_files,
-        completion_condition=completion_condition,
-        expected_output_roles=expected_output_roles,
-        target_data=target_data,
     )
 
 
@@ -106,38 +97,23 @@ def start_step(
 def complete_step(
     step_id: str,
     operation_summary: str,
+    result_summary: str,
     output_files_json: str = "[]",
-    processing_result_json: str = "{}",
-    analysis_conclusion_json: str = "{}",
-    operation_types: List[str] = [],
-    parameters_json: str = "{}",
-    algorithms_json: str = "[]",
-    programs_json: str = "[]",
+    analysis_conclusion: str = "",
 ) -> Dict[str, Any]:
     """Complete the active step with a truthful semantic summary.
 
-    Fields ending in ``_json`` contain serialized JSON arrays or objects.
-    Output entries use ``{"path": "...", "role": "..."}``; role is one of
-    step_output, internal_intermediate, or temporary.
+    ``output_files_json`` is a JSON array of file paths. Analysis conclusions
+    are optional for pure transformation steps.
     """
 
     output_files = _json_list(output_files_json, "output_files_json")
-    algorithms = _json_list(algorithms_json, "algorithms_json")
-    programs = _json_list(programs_json, "programs_json")
     return _store().complete_step(
         step_id=step_id,
         operation_summary=operation_summary,
+        result_summary=result_summary,
         output_files=output_files,
-        processing_result=_json_object(
-            processing_result_json, "processing_result_json"
-        ),
-        analysis_conclusion=_json_object(
-            analysis_conclusion_json, "analysis_conclusion_json"
-        ),
-        operation_types=operation_types,
-        parameters=_json_object(parameters_json, "parameters_json"),
-        algorithms=algorithms,
-        programs=programs,
+        analysis_conclusion=analysis_conclusion or None,
     )
 
 
@@ -145,7 +121,6 @@ def complete_step(
 def classify_user_input(
     input_event_id: str,
     input_type: str,
-    structured_summary: str = "",
     target_step_id: str = "",
     target_plan_version: int = 0,
     workflow_effect: str = "",
@@ -155,7 +130,6 @@ def classify_user_input(
     return _store().classify_user_input(
         input_event_id=input_event_id,
         input_type=input_type,
-        structured_summary=structured_summary,
         target_step_id=target_step_id or None,
         target_plan_version=target_plan_version or None,
         workflow_effect=workflow_effect,
