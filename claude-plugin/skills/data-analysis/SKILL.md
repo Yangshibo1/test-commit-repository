@@ -32,7 +32,9 @@ argument. Do not append or pipe another shell command to a recording command.
    Copy the returned `step_id`; it is required when completing the step.
 3. A Step is one independently explainable data-analysis objective. A Python
    script, command, function, retry, or file creation is not automatically a
-   Step.
+   Step. Never create a separate Plan node merely to save, write, export, or
+   confirm a file; record that file as the output of the semantic node that
+   produced it.
 4. Keep implementation details inside the current Step unless you must inspect
    an intermediate result before deciding what analysis comes next, or the
    output becomes the input to another semantic task.

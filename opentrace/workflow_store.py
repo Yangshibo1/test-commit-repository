@@ -276,6 +276,14 @@ class WorkflowStore:
             objective = str(node.get("objective") or "").strip()
             if not objective:
                 raise WorkflowError(f"plan node {node_id} has no objective")
+            implementation_reason = self._implementation_only_reason(objective)
+            if implementation_reason:
+                raise WorkflowError(
+                    f"plan node {node_id} is an implementation action rather than "
+                    f"a semantic analysis objective ({implementation_reason}). "
+                    "Keep it inside the analysis node that produces or consumes "
+                    "the file."
+                )
             if node_id in seen:
                 raise WorkflowError(f"duplicate plan node_id: {node_id}")
             seen.add(node_id)
@@ -549,12 +557,27 @@ class WorkflowStore:
                 raise WorkflowError(f"step is not active: {step_id}")
             run = self._require_active_run(connection, step["run_id"])
             project = Path(run["project_root"])
+            input_version_ids = {
+                row["file_version_id"]
+                for row in connection.execute(
+                    """
+                    SELECT file_version_id FROM step_inputs
+                    WHERE step_id = ?
+                    """,
+                    (step_id,),
+                ).fetchall()
+            }
 
             versions = []
             for output in output_files:
                 raw_path = output.get("path", "") if isinstance(output, dict) else output
                 path = self._resolve_file(raw_path, project)
                 version = self._observe_file(connection, path)
+                if version["file_version_id"] in input_version_ids:
+                    raise WorkflowError(
+                        "an unchanged input file cannot also be recorded as this "
+                        f"step's output: {version['path']}"
+                    )
                 versions.append(version)
                 connection.execute(
                     """
@@ -1114,20 +1137,24 @@ class WorkflowStore:
 
     def _step_dict(self, connection: sqlite3.Connection, row: sqlite3.Row) -> Dict[str, Any]:
         value = dict(row)
-        for key in (
-            "expected_output_roles_json",
-            "operation_types_json",
-            "parameters_json",
-            "algorithms_json",
-            "programs_json",
-            "commands_json",
-            "processing_result_json",
-            "analysis_conclusion_json",
-            "warnings_json",
-        ):
-            output_key = key[:-5] if key.endswith("_json") else key
-            value[output_key] = _from_json(
-                value.pop(key), [] if key.endswith("s_json") else {}
+        json_fields = {
+            "expected_output_roles_json": ("expected_output_roles", []),
+            "operation_types_json": ("operation_types", []),
+            "parameters_json": ("parameters", {}),
+            "algorithms_json": ("algorithms", []),
+            "programs_json": ("programs", []),
+            "commands_json": ("commands", []),
+            "processing_result_json": ("processing_result", {}),
+            "warnings_json": ("warnings", []),
+        }
+        for key, (output_key, default) in json_fields.items():
+            value[output_key] = _from_json(value.pop(key), default)
+        legacy_conclusion = _from_json(
+            value.pop("analysis_conclusion_json"), {}
+        )
+        if value.get("analysis_conclusion") is None:
+            value["analysis_conclusion"] = (
+                self._legacy_summary(legacy_conclusion) or None
             )
 
         inputs = connection.execute(
@@ -1374,3 +1401,66 @@ class WorkflowStore:
                 "Objective may contain multiple semantic goals; consider splitting it."
             )
         return warnings
+
+    @staticmethod
+    def _implementation_only_reason(objective: str) -> Optional[str]:
+        """Reject narrow, unambiguous implementation-only Plan objectives."""
+
+        normalized = objective.strip().lower()
+        always_implementation = (
+            "save ",
+            "write ",
+            "export ",
+            "persist ",
+            "copy ",
+            "move ",
+            "rename ",
+            "run script",
+            "run python",
+            "execute command",
+            "install ",
+            "retry ",
+            "保存",
+            "写入",
+            "导出",
+            "持久化",
+            "复制",
+            "移动",
+            "重命名",
+            "运行脚本",
+            "执行命令",
+            "安装",
+            "重试",
+        )
+        for prefix in always_implementation:
+            if normalized.startswith(prefix):
+                return f"starts with '{prefix.strip()}'"
+
+        read_prefixes = ("read ", "load ", "open ", "读取", "加载", "打开")
+        semantic_markers = (
+            "understand",
+            "inspect",
+            "analyze",
+            "validate",
+            "verify",
+            "assess",
+            "identify",
+            "compare",
+            "summarize",
+            "explain",
+            "check",
+            "理解",
+            "检查",
+            "分析",
+            "验证",
+            "评估",
+            "识别",
+            "比较",
+            "总结",
+            "解释",
+        )
+        if normalized.startswith(read_prefixes) and not any(
+            marker in normalized for marker in semantic_markers
+        ):
+            return "only reads or opens a file"
+        return None

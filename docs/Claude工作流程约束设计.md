@@ -206,6 +206,7 @@ cd "当前项目目录" && python -m opentrace.agent_cli <action> ...
 - Node 不能依赖自身；
 - 依赖图不存在循环；
 - 已完成的实际工作不会因 Plan 修改而被删除或覆盖。
+- 纯保存、写入、导出、运行命令或确认文件等实现动作不能单独成为Node。
 
 ### 7.2 Plan 与 Step 的强制映射
 
@@ -298,6 +299,7 @@ analysis_conclusion
 - 分析 Step 提供真实结论；
 - 纯处理 Step 可以使用 `analysis_conclusion: null`；
 - 声明的输出文件真实存在；
+- 未发生内容变化的输入文件不能同时声明为该Step的输出；
 - 文件 SHA-256 由 OpenTrace 计算；
 - 程序和命令来自真实观察事件；
 - 完成记录与当前 Step 一致；

@@ -89,8 +89,11 @@ def session_start(payload: Dict[str, Any]) -> Dict[str, Any]:
             "result_summary, analysis_conclusion(string or null). "
             "A semantic step is one independently explainable and verifiable analysis "
             "objective. A script, command, retry, or intermediate file alone is not a "
-            "step; keep it inside the current Step unless it has an independent analysis "
-            "goal or its result must be evaluated before deciding the next node."
+            "step. Saving, writing, exporting, or confirming a file is part of the "
+            "semantic node that produces or consumes it, not a separate Plan node. "
+            "Keep implementation actions inside the current Step unless they have an "
+            "independent analysis goal or their result must be evaluated before deciding "
+            "the next node."
         ),
         "declared_initial_files": [
             item["path"] for item in state["run"]["initial_file_versions"]
