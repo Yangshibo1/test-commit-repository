@@ -15,8 +15,8 @@ mcp = FastMCP(
     "OpenTrace",
     instructions=(
         "OpenTrace records data-analysis workflows; it does not perform analysis. "
-        "Claude must set a semantic plan, start one active step before material "
-        "analysis, and complete the step with truthful inputs, operations, outputs, "
+        "Claude must set a semantic plan, start one active node before material "
+        "analysis, and complete the node with truthful inputs, operations, outputs, "
         "processing results, and conclusions."
     ),
 )
@@ -74,15 +74,15 @@ def set_plan(
     )
 
 
-@mcp.tool(name="opentrace_start_step")
-def start_step(
+@mcp.tool(name="opentrace_start_node")
+def start_node(
     node_id: str,
     input_files: List[str],
 ) -> Dict[str, Any]:
-    """Start one real semantic analysis step before material Claude tool use.
+    """Start one real semantic analysis node before material Claude tool use.
 
-    A script or intermediate file alone is not a step.  Keep commands and retries
-    inside the active step unless Claude must inspect a result before deciding the
+    A script or intermediate file alone is not a node. Keep commands and retries
+    inside the active node unless Claude must inspect a result before deciding the
     next semantic action, or an output becomes another step's input.
     """
 
@@ -93,23 +93,24 @@ def start_step(
     )
 
 
-@mcp.tool(name="opentrace_complete_step")
-def complete_step(
-    step_id: str,
+@mcp.tool(name="opentrace_complete_node")
+def complete_node(
+    node_id: str,
     operation_summary: str,
     result_summary: str,
     output_files_json: str = "[]",
     analysis_conclusion: str = "",
 ) -> Dict[str, Any]:
-    """Complete the active step with a truthful semantic summary.
+    """Complete the active node with a truthful semantic summary.
 
     ``output_files_json`` is a JSON array of file paths. Analysis conclusions
     are optional for pure transformation steps.
     """
 
     output_files = _json_list(output_files_json, "output_files_json")
-    return _store().complete_step(
-        step_id=step_id,
+    return _store().complete_node(
+        run_id=_run_id(),
+        node_id=node_id,
         operation_summary=operation_summary,
         result_summary=result_summary,
         output_files=output_files,
@@ -121,7 +122,6 @@ def complete_step(
 def classify_user_input(
     input_event_id: str,
     input_type: str,
-    target_step_id: str = "",
     target_plan_version: int = 0,
     workflow_effect: str = "",
 ) -> Dict[str, Any]:
@@ -130,7 +130,6 @@ def classify_user_input(
     return _store().classify_user_input(
         input_event_id=input_event_id,
         input_type=input_type,
-        target_step_id=target_step_id or None,
         target_plan_version=target_plan_version or None,
         workflow_effect=workflow_effect,
     )
@@ -140,7 +139,6 @@ def classify_user_input(
 def apply_user_input(
     input_event_id: str,
     workflow_effect: str,
-    target_step_id: str = "",
     target_plan_version: int = 0,
 ) -> Dict[str, Any]:
     """Record how a classified human contribution actually changed the workflow."""
@@ -148,21 +146,20 @@ def apply_user_input(
     return _store().apply_user_input(
         input_event_id=input_event_id,
         workflow_effect=workflow_effect,
-        target_step_id=target_step_id or None,
         target_plan_version=target_plan_version or None,
     )
 
 
 @mcp.tool(name="opentrace_get_state")
 def get_state() -> Dict[str, Any]:
-    """Return the current Run, latest plan, steps, and pending user inputs."""
+    """Return the current Run, latest plan, nodes, and pending user inputs."""
 
     return _store().get_state(_run_id())
 
 
 @mcp.tool(name="opentrace_finish_run")
 def finish_run() -> Dict[str, Any]:
-    """Finish the Run after all real semantic steps are complete."""
+    """Finish the Run after all real semantic nodes are complete."""
 
     return _store().finish_run(_run_id())
 

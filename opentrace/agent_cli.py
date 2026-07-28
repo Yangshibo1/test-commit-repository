@@ -62,6 +62,8 @@ def build_parser() -> argparse.ArgumentParser:
         "action",
         choices=[
             "set-plan",
+            "start-node",
+            "complete-node",
             "start-step",
             "complete-step",
             "classify-user-input",
@@ -95,23 +97,27 @@ def execute(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
             change_reason=payload.get("change_reason"),
         )
 
-    if action == "start-step":
+    if action in {"start-node", "start-step"}:
         _only_fields(payload, {"node_id", "input_files", "objective"})
         input_files = _required(payload, "input_files")
         if not isinstance(input_files, list):
             raise WorkflowError("payload.input_files must be an array")
-        return store.start_step(
+        result = store.start_step(
             run_id=run_id,
             node_id=str(_required(payload, "node_id")),
             input_files=input_files,
             objective=str(payload.get("objective") or ""),
         )
+        if action == "start-node":
+            result.pop("step_id", None)
+        return result
 
-    if action == "complete-step":
+    if action in {"complete-node", "complete-step"}:
+        identity_field = "node_id" if action == "complete-node" else "step_id"
         _only_fields(
             payload,
             {
-                "step_id",
+                identity_field,
                 "operation_summary",
                 "output_files",
                 "result_summary",
@@ -126,12 +132,23 @@ def execute(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
             raise WorkflowError(
                 "payload.analysis_conclusion must be a string or null"
             )
+        values = {
+            "operation_summary": str(_required(payload, "operation_summary")),
+            "result_summary": str(_required(payload, "result_summary")),
+            "output_files": output_files,
+            "analysis_conclusion": conclusion,
+        }
+        if action == "complete-node":
+            result = store.complete_node(
+                run_id=run_id,
+                node_id=str(_required(payload, "node_id")),
+                **values,
+            )
+            result.pop("step_id", None)
+            return result
         return store.complete_step(
             step_id=str(_required(payload, "step_id")),
-            operation_summary=str(_required(payload, "operation_summary")),
-            result_summary=str(_required(payload, "result_summary")),
-            output_files=output_files,
-            analysis_conclusion=conclusion,
+            **values,
         )
 
     if action == "classify-user-input":
@@ -140,7 +157,6 @@ def execute(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
             {
                 "input_event_id",
                 "input_type",
-                "target_step_id",
                 "target_plan_version",
                 "workflow_effect",
             },
@@ -148,7 +164,6 @@ def execute(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         return store.classify_user_input(
             input_event_id=str(_required(payload, "input_event_id")),
             input_type=str(_required(payload, "input_type")),
-            target_step_id=payload.get("target_step_id"),
             target_plan_version=payload.get("target_plan_version"),
             workflow_effect=str(payload.get("workflow_effect") or ""),
         )
@@ -159,14 +174,12 @@ def execute(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
             {
                 "input_event_id",
                 "workflow_effect",
-                "target_step_id",
                 "target_plan_version",
             },
         )
         return store.apply_user_input(
             input_event_id=str(_required(payload, "input_event_id")),
             workflow_effect=str(_required(payload, "workflow_effect")),
-            target_step_id=payload.get("target_step_id"),
             target_plan_version=payload.get("target_plan_version"),
         )
 

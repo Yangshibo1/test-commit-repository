@@ -1,7 +1,7 @@
 """SQLite-backed recorder for Claude Code data-analysis workflows.
 
 This module deliberately contains no data-analysis logic.  Claude Code owns the
-analysis; OpenTrace only stores declared semantic steps, observes file versions,
+analysis; OpenTrace only stores declared semantic nodes, observes file versions,
 and enforces a small workflow state machine.
 """
 
@@ -430,7 +430,11 @@ class WorkflowStore:
                 (run_id,),
             ).fetchone()
             if active:
-                raise WorkflowError(f"run already has active step: {active['step_id']}")
+                active_node = connection.execute(
+                    "SELECT node_id FROM steps WHERE step_id = ?",
+                    (active["step_id"],),
+                ).fetchone()["node_id"]
+                raise WorkflowError(f"run already has active node: {active_node}")
 
             completed_nodes = {
                 row["node_id"]
@@ -481,8 +485,8 @@ class WorkflowStore:
             ]
             if untracked:
                 raise WorkflowError(
-                    "step inputs must be declared Run inputs or outputs of completed "
-                    "steps: " + ", ".join(untracked)
+                    "node inputs must be declared Run inputs or outputs of completed "
+                    "nodes: " + ", ".join(untracked)
                 )
 
             sequence = int(
@@ -552,9 +556,9 @@ class WorkflowStore:
                 "SELECT * FROM steps WHERE step_id = ?", (step_id,)
             ).fetchone()
             if step is None:
-                raise WorkflowError(f"step does not exist: {step_id}")
+                raise WorkflowError(f"internal node execution does not exist: {step_id}")
             if step["status"] != "active":
-                raise WorkflowError(f"step is not active: {step_id}")
+                raise WorkflowError(f"node is not active: {step['node_id']}")
             run = self._require_active_run(connection, step["run_id"])
             project = Path(run["project_root"])
             input_version_ids = {
@@ -615,11 +619,43 @@ class WorkflowStore:
 
         return {
             "step_id": step_id,
+            "node_id": step["node_id"],
             "status": "completed",
             "output_file_versions": versions,
             "observed_commands": commands,
             "observed_programs": programs,
         }
+
+    def complete_node(
+        self,
+        run_id: str,
+        node_id: str,
+        operation_summary: str,
+        result_summary: str,
+        output_files: Optional[List[Union[Path, str, Dict[str, str]]]] = None,
+        analysis_conclusion: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Complete the active execution of a public workflow Node."""
+
+        with self._connection() as connection:
+            self._require_active_run(connection, run_id)
+            row = connection.execute(
+                """
+                SELECT step_id FROM steps
+                WHERE run_id = ? AND node_id = ? AND status = 'active'
+                """,
+                (run_id, node_id),
+            ).fetchone()
+            if row is None:
+                raise WorkflowError(f"node is not active: {node_id}")
+            step_id = row["step_id"]
+        return self.complete_step(
+            step_id=step_id,
+            operation_summary=operation_summary,
+            result_summary=result_summary,
+            output_files=output_files,
+            analysis_conclusion=analysis_conclusion,
+        )
 
     def capture_user_input(
         self, run_id: str, original_text: str, claude_session_id: Optional[str] = None
@@ -789,7 +825,11 @@ class WorkflowStore:
                 (run_id,),
             ).fetchone()
             if active:
-                raise WorkflowError(f"complete active step first: {active['step_id']}")
+                node = connection.execute(
+                    "SELECT node_id FROM steps WHERE step_id = ?",
+                    (active["step_id"],),
+                ).fetchone()
+                raise WorkflowError(f"complete active node first: {node['node_id']}")
             pending = connection.execute(
                 "SELECT COUNT(*) AS count FROM input_events "
                 "WHERE run_id = ? AND status IN ('pending', 'classified')",
@@ -803,7 +843,7 @@ class WorkflowStore:
                 (run_id,),
             ).fetchone()["count"]
             if not step_count:
-                raise WorkflowError("cannot finish a run without completed steps")
+                raise WorkflowError("cannot finish a run without completed nodes")
             completed_nodes = {
                 row["node_id"]
                 for row in connection.execute(
@@ -906,11 +946,11 @@ class WorkflowStore:
                 """,
                 (run_id,),
             ).fetchall()
-            step_values = [self._step_dict(connection, row) for row in steps]
+            node_values = [self._state_node_dict(connection, row) for row in steps]
             if plan:
                 statuses = {
                     item["node_id"]: item["status"]
-                    for item in step_values
+                    for item in node_values
                     if item["status"] in {"active", "completed"}
                 }
                 plan["nodes"] = [
@@ -920,7 +960,7 @@ class WorkflowStore:
             return {
                 "run": {**dict(run), "initial_file_versions": [dict(row) for row in initial_files]},
                 "plan": plan,
-                "steps": step_values,
+                "nodes": node_values,
                 "pending_user_inputs": [dict(row) for row in pending_inputs],
             }
 
@@ -971,7 +1011,7 @@ class WorkflowStore:
             (run_id,),
         ).fetchall()
 
-        steps: List[Dict[str, Any]] = []
+        nodes: List[Dict[str, Any]] = []
         lineage: List[Dict[str, Any]] = []
         for row in step_rows:
             inputs = self._step_file_refs(connection, row["step_id"], "input", project)
@@ -993,12 +1033,11 @@ class WorkflowStore:
                     row["analysis_conclusion_json"], {}
                 )
                 conclusion = self._legacy_summary(legacy_conclusion) or None
-            steps.append(
+            nodes.append(
                 {
-                    "step_id": row["step_id"],
+                    "node_id": row["node_id"],
                     "sequence": row["sequence"],
                     "plan_version": row["plan_version"],
-                    "node_id": row["node_id"],
                     "objective": row["objective"],
                     "inputs": inputs,
                     "operation": {
@@ -1017,14 +1056,14 @@ class WorkflowStore:
             if outputs:
                 lineage.append(
                     {
-                        "step_id": row["step_id"],
+                        "node_id": row["node_id"],
                         "inputs": inputs,
                         "outputs": outputs,
                     }
                 )
 
         return {
-            "schema_version": "1.0",
+            "schema_version": "1.1",
             "run": {
                 "run_id": run["run_id"],
                 "task": run["task_description"],
@@ -1057,13 +1096,15 @@ class WorkflowStore:
                 }
                 for row in plans
             ],
-            "steps": steps,
+            "nodes": nodes,
             "human_interventions": [
                 {
                     "intervention_id": row["input_event_id"],
                     "original_text": row["original_text"],
                     "type": row["type"],
-                    "active_step_id": row["target_step_id"],
+                    "active_node_id": self._node_id_for_step(
+                        connection, row["target_step_id"]
+                    ),
                     "plan_version": row["target_plan_version"],
                     "workflow_effect": row["workflow_effect"],
                     "created_at": row["created_at"],
@@ -1117,12 +1158,13 @@ class WorkflowStore:
                 if pending["status"] == "classified":
                     return (
                         "Record how the classified human input affected the workflow "
-                        "with opentrace_apply_user_input: "
+                        "with python -m opentrace.agent_cli apply-user-input: "
                         f"{pending['input_event_id']}"
                     )
                 return (
-                    "Classify pending user input with "
-                    f"opentrace_classify_user_input: {pending['input_event_id']}"
+                    "Classify pending user input with python -m "
+                    "opentrace.agent_cli classify-user-input: "
+                    f"{pending['input_event_id']}"
                 )
             plan = self._latest_plan(connection, run_id)
             if plan is None:
@@ -1132,7 +1174,7 @@ class WorkflowStore:
                 (run_id,),
             ).fetchone()
             if not active:
-                return "Start a semantic OpenTrace step before material analysis work"
+                return "Start a semantic OpenTrace node before material analysis work"
         return None
 
     def _step_dict(self, connection: sqlite3.Connection, row: sqlite3.Row) -> Dict[str, Any]:
@@ -1176,6 +1218,25 @@ class WorkflowStore:
         value["input_files"] = [dict(item) for item in inputs]
         value["output_files"] = [dict(item) for item in outputs]
         return value
+
+    def _state_node_dict(
+        self, connection: sqlite3.Connection, row: sqlite3.Row
+    ) -> Dict[str, Any]:
+        value = self._step_dict(connection, row)
+        value.pop("step_id", None)
+        return value
+
+    @staticmethod
+    def _node_id_for_step(
+        connection: sqlite3.Connection, step_id: Optional[str]
+    ) -> Optional[str]:
+        if not step_id:
+            return None
+        row = connection.execute(
+            "SELECT node_id FROM steps WHERE step_id = ?",
+            (step_id,),
+        ).fetchone()
+        return row["node_id"] if row else None
 
     def _latest_plan(
         self, connection: sqlite3.Connection, run_id: str

@@ -183,7 +183,7 @@ def test_powershell_and_unknown_tools_are_gated(tmp_path, monkeypatch):
     )
 
 
-def test_stop_requires_plan_steps_and_finished_run(tmp_path, monkeypatch):
+def test_stop_requires_plan_nodes_and_finished_run(tmp_path, monkeypatch):
     project, store, run = configured_run(tmp_path, monkeypatch)
     assert plugin_hook.stop({})["decision"] == "block"
 
@@ -191,7 +191,7 @@ def test_stop_requires_plan_steps_and_finished_run(tmp_path, monkeypatch):
     assert "Complete every node" in plugin_hook.stop({})["reason"]
 
     step = store.start_step(run["run_id"], "n1", [project / "data.csv"])
-    assert step["step_id"] in plugin_hook.stop({})["reason"]
+    assert "n1" in plugin_hook.stop({})["reason"]
     store.complete_step(step["step_id"], "检查数据", "检查完成")
     assert "finish-run" in plugin_hook.stop({})["reason"]
 

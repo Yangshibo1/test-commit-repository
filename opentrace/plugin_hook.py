@@ -1,7 +1,7 @@
 """Claude Code hook bridge for the OpenTrace prototype.
 
-Hooks observe Claude Code.  They never execute data analysis or manufacture
-semantic step descriptions.
+Hooks observe Claude Code. They never execute data analysis or manufacture
+semantic Node descriptions.
 """
 
 from __future__ import annotations
@@ -63,7 +63,7 @@ def session_start(payload: Dict[str, Any]) -> Dict[str, Any]:
     store, run_id = _store_and_run()
     state = store.get_state(run_id)
     active = next(
-        (step for step in state["steps"] if step["status"] == "active"), None
+        (node for node in state["nodes"] if node["status"] == "active"), None
     )
     context = {
         "opentrace_run_id": run_id,
@@ -74,24 +74,24 @@ def session_start(payload: Dict[str, Any]) -> Dict[str, Any]:
         "required_flow": (
             "Use the built-in Bash tool to run python -m opentrace.agent_cli "
             "recording commands; do not use OpenTrace MCP tools. First run set-plan "
-            "with a JSON payload. Every real Step must match a node in the current "
+            "with a JSON payload. Every executed Node must match a node in the current "
             "Plan Revision, and changed objectives or dependencies require a revised "
-            "Plan first. Run start-step before material "
-            "Read/Bash/Write/Edit analysis, then complete-step truthfully using the "
-            "returned step_id. Run finish-run only after every node in the current "
-            "Plan has a completed Step."
+            "Plan first. Run start-node before material "
+            "Read/Bash/Write/Edit analysis, then complete-node truthfully using the "
+            "same node_id. Run finish-run only after every node in the current "
+            "Plan is completed."
         ),
         "record_command_contract": (
             "Syntax: python -m opentrace.agent_cli ACTION --payload '<JSON object>'. "
             "set-plan fields: nodes[{node_id, objective, depends_on}], optional trigger "
-            "and change_reason. start-step fields: node_id, input_files. "
-            "complete-step fields: step_id, operation_summary, output_files[path], "
+            "and change_reason. start-node fields: node_id, input_files. "
+            "complete-node fields: node_id, operation_summary, output_files[path], "
             "result_summary, analysis_conclusion(string or null). "
-            "A semantic step is one independently explainable and verifiable analysis "
+            "A semantic Node is one independently explainable and verifiable analysis "
             "objective. A script, command, retry, or intermediate file alone is not a "
-            "step. Saving, writing, exporting, or confirming a file is part of the "
+            "Node. Saving, writing, exporting, or confirming a file is part of the "
             "semantic node that produces or consumes it, not a separate Plan node. "
-            "Keep implementation actions inside the current Step unless they have an "
+            "Keep implementation actions inside the current Node unless they have an "
             "independent analysis goal or their result must be evaluated before deciding "
             "the next node."
         ),
@@ -99,7 +99,7 @@ def session_start(payload: Dict[str, Any]) -> Dict[str, Any]:
             item["path"] for item in state["run"]["initial_file_versions"]
         ],
         "plan": state["plan"],
-        "active_step": active,
+        "active_node": active,
         "pending_user_inputs": state["pending_user_inputs"],
     }
     store.record_hook_event(run_id, "SessionStart", _trim(payload))
@@ -124,7 +124,7 @@ def user_prompt_submit(payload: Dict[str, Any]) -> Dict[str, Any]:
             "run python -m opentrace.agent_cli classify-user-input with "
             "conversation_only, "
             "analysis_guidance, planning_input, or challenge. Human input is not "
-            "itself a Step. For the last three types, also call "
+            "itself a Node. For the last three types, also call "
             "python -m opentrace.agent_cli apply-user-input after recording its "
             "real workflow effect."
         ),
@@ -136,6 +136,8 @@ _RECORDER_EXECUTABLE = (
 )
 _PAYLOAD_ACTIONS = (
     "set-plan",
+    "start-node",
+    "complete-node",
     "start-step",
     "complete-step",
     "classify-user-input",
@@ -280,13 +282,13 @@ def stop(payload: Dict[str, Any]) -> Dict[str, Any]:
             "reason": "Set the OpenTrace semantic plan before ending this task.",
         }
     active = next(
-        (step for step in state["steps"] if step["status"] == "active"), None
+        (node for node in state["nodes"] if node["status"] == "active"), None
     )
     if active:
         return {
             "decision": "block",
             "reason": (
-                f"OpenTrace step {active['step_id']} is still active. Complete it "
+                f"OpenTrace node {active['node_id']} is still active. Complete it "
                 "with the real result before ending this turn."
             ),
             "hookSpecificOutput": {
@@ -294,7 +296,7 @@ def stop(payload: Dict[str, Any]) -> Dict[str, Any]:
                 "additionalContext": (
                     "OpenTrace only needs the semantic record; continue the analysis "
                     "only if required, then run python -m opentrace.agent_cli "
-                    "complete-step."
+                    "complete-node."
                 ),
             },
         }
@@ -308,7 +310,7 @@ def stop(payload: Dict[str, Any]) -> Dict[str, Any]:
             ),
         }
     completed_nodes = {
-        step["node_id"] for step in state["steps"] if step["status"] == "completed"
+        node["node_id"] for node in state["nodes"] if node["status"] == "completed"
     }
     unfinished = [
         node["node_id"]

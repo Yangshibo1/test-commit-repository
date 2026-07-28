@@ -40,7 +40,7 @@ def test_agent_cli_records_complete_semantic_workflow(
 
     assert main(
         [
-            "start-step",
+            "start-node",
             "--payload",
             json.dumps(
                 {"node_id": "n1", "input_files": [str(data)]},
@@ -49,15 +49,15 @@ def test_agent_cli_records_complete_semantic_workflow(
         ]
     ) == 0
     started = json.loads(capsys.readouterr().out)
-    step_id = started["result"]["step_id"]
+    assert started["result"]["node_id"] == "n1"
 
     assert main(
         [
-            "complete-step",
+            "complete-node",
             "--payload",
             json.dumps(
                 {
-                    "step_id": step_id,
+                    "node_id": "n1",
                     "operation_summary": "读取并汇总数据",
                     "result_summary": "读取到一条完整记录。",
                     "analysis_conclusion": "未发现明显异常。",
@@ -73,8 +73,8 @@ def test_agent_cli_records_complete_semantic_workflow(
     finished = json.loads(capsys.readouterr().out)
     assert finished["result"]["status"] == "completed"
     state = store.get_state(run["run_id"])
-    assert state["steps"][0]["operation_summary"] == "读取并汇总数据"
-    assert state["steps"][0]["result_summary"] == "读取到一条完整记录。"
+    assert state["nodes"][0]["operation_summary"] == "读取并汇总数据"
+    assert state["nodes"][0]["result_summary"] == "读取到一条完整记录。"
 
 
 def test_agent_cli_rejects_legacy_complete_step_shape(

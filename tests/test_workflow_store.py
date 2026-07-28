@@ -67,12 +67,12 @@ def test_records_normalized_semantic_chain_and_file_lineage(tmp_path: Path):
         "schema_version",
         "run",
         "plan_revisions",
-        "steps",
+        "nodes",
         "human_interventions",
         "file_lineage",
     }
     assert exported["run"]["declared_inputs"] == [
-        {"path": "raw.csv", "sha256": exported["steps"][0]["inputs"][0]["sha256"]}
+        {"path": "raw.csv", "sha256": exported["nodes"][0]["inputs"][0]["sha256"]}
     ]
     assert "size" not in exported["run"]["declared_inputs"][0]
     assert exported["plan_revisions"][0]["nodes"][0] == {
@@ -80,7 +80,7 @@ def test_records_normalized_semantic_chain_and_file_lineage(tmp_path: Path):
         "objective": "建立原始数据的质量概况",
         "depends_on": [],
     }
-    first_export = exported["steps"][0]
+    first_export = exported["nodes"][0]
     assert first_export["plan_version"] == 1
     assert first_export["operation"]["commands"] == [
         "python scripts/profile.py raw.csv"
@@ -89,10 +89,10 @@ def test_records_normalized_semantic_chain_and_file_lineage(tmp_path: Path):
         "scripts/profile.py"
     ]
     assert first_export["outputs"][0]["path"] == "profile.json"
-    assert exported["steps"][1]["inputs"][0] == first_export["outputs"][0]
+    assert exported["nodes"][1]["inputs"][0] == first_export["outputs"][0]
     assert exported["file_lineage"] == [
         {
-            "step_id": first["step_id"],
+            "node_id": "profile",
             "inputs": first_export["inputs"],
             "outputs": first_export["outputs"],
         }
@@ -136,7 +136,7 @@ def test_plan_and_step_invariants_are_enforced(tmp_path: Path):
         store.start_step(run["run_id"], "a", [raw], objective="另一个目标")
 
     step = store.start_step(run["run_id"], "a", [raw])
-    with pytest.raises(WorkflowError, match="active step"):
+    with pytest.raises(WorkflowError, match="active node"):
         store.start_step(run["run_id"], "a", [raw])
     with pytest.raises(WorkflowError, match="result_summary"):
         store.complete_step(step["step_id"], "检查数据", "")
@@ -203,7 +203,7 @@ def test_human_intervention_keeps_capture_context_and_filters_chat(tmp_path: Pat
     )
     assert len(exported["human_interventions"]) == 1
     recorded = exported["human_interventions"][0]
-    assert recorded["active_step_id"] == step["step_id"]
+    assert recorded["active_node_id"] == "a"
     assert recorded["plan_version"] == 1
     assert recorded["workflow_effect"] == "当前 Step 增加异常复核"
 
@@ -218,8 +218,8 @@ def test_abort_preserves_truth_but_hides_raw_hook_events(tmp_path: Path):
         store.export_run(run["run_id"]).read_text(encoding="utf-8")
     )
     assert exported["run"]["status"] == "aborted"
-    assert exported["steps"][0]["step_id"] == step["step_id"]
-    assert exported["steps"][0]["status"] == "interrupted"
+    assert exported["nodes"][0]["node_id"] == "a"
+    assert exported["nodes"][0]["status"] == "interrupted"
     assert "execution_events" not in exported
 
 

@@ -5,11 +5,11 @@ OpenTrace 是一个面向 Coding Agent 的数据分析工作流记录器。
 当前快速原型以 Claude Code 为宿主。Claude Code 独立完成全部数据分析，包括读取数据、编写和运行 Python、选择方法、解释结果以及决定下一步。OpenTrace 不执行分析，只负责：
 
 - 创建并绑定 Run 与 Claude Code session。
-- 记录 Claude 声明的语义 Plan 和 Step。
+- 记录 Claude 声明并实际执行的语义 Node。
 - 通过 Hook 记录真实的 Read、Bash、Write、Edit 和 NotebookEdit 事件。
 - 对输入和输出文件计算 SHA-256，形成文件级血缘。
 - 记录和分类分析过程中的人工指导、规划建议与异议。
-- 在没有 active Step 或存在未分类人工输入时阻止新的实质性操作。
+- 在没有 active Node 或存在未分类人工输入时阻止新的实质性操作。
 - 将完整 Run 导出为 JSON。
 
 ## 快速安装
@@ -39,8 +39,8 @@ OpenTrace 会先创建 Run，再启动加载了本仓库 `claude-plugin` 的交�
 
 ```bash
 python -m opentrace.agent_cli set-plan --payload '{"nodes":[{"node_id":"n1","objective":"检查数据结构和质量","depends_on":[]}]}'
-python -m opentrace.agent_cli start-step --payload '{"node_id":"n1","input_files":["C:/data/input.csv"]}'
-python -m opentrace.agent_cli complete-step --payload '{"step_id":"step_...","operation_summary":"检查结构并汇总数据质量","output_files":[],"result_summary":"文件包含100行，两个字段具有较高缺失率。","analysis_conclusion":"建模前需要验证这两个字段是否可用。"}'
+python -m opentrace.agent_cli start-node --payload '{"node_id":"n1","input_files":["C:/data/input.csv"]}'
+python -m opentrace.agent_cli complete-node --payload '{"node_id":"n1","operation_summary":"检查结构并汇总数据质量","output_files":[],"result_summary":"文件包含100行，两个字段具有较高缺失率。","analysis_conclusion":"建模前需要验证这两个字段是否可用。"}'
 python -m opentrace.agent_cli finish-run
 ```
 
@@ -59,7 +59,7 @@ opentrace run --project . --task "分析数据质量" --data data.csv --no-launc
 - `planning_input`
 - `challenge`
 
-人工输入不是 Step。它可以改变当前 Step 的执行、生成 Plan 修订，或者触发后续验证/纠正 Step。
+人工输入不是 Node。它可以改变当前 Node 的执行、生成 Plan 修订，或者触发后续验证/纠正 Node。
 
 对于后三种输入，Claude 还会运行 `python -m opentrace.agent_cli apply-user-input` 记录它实际造成的计划或执行变化；仅仅完成分类不能解除实质操作门禁。
 
@@ -81,15 +81,15 @@ Claude 成功执行 `finish-run` 时会自动生成最终规范化 JSON；也可
 opentrace abort <run-id> --project C:\path\to\analysis-project --reason "Claude API error"
 ```
 
-## Step 边界
+## Node 边界
 
-Python 脚本、命令或文件创建都不会自动形成 Step。Step 必须表示一个可以独立说明和验收的分析目标。
+Python 脚本、命令或文件创建都不会自动形成 Node。Node 必须表示一个可以独立说明和验收的分析目标。
 
-如果中间结果必须先被 Claude 观察才能决定后续工作，或者中间文件会被另一个语义任务消费，它通常值得作为正式输出记录。仅在当前 Step 内使用的缓存、调试和临时文件不进入对外 workflow JSON。
+如果中间结果必须先被 Claude 观察才能决定后续工作，或者中间文件会被另一个语义任务消费，它通常值得作为正式输出记录。仅在当前 Node 内使用的缓存、调试和临时文件不进入对外 workflow JSON。
 
 ## 原型边界
 
 - 文件血缘只到文件版本级。
 - OpenTrace 不解析 Python 内部的所有读写行为。
-- Step 目标来自 Plan；操作摘要、结果摘要和分析结论由 Claude 如实提交；命令和程序路径由 Hook 观察。
+- Node 目标来自 Plan；操作摘要、结果摘要和分析结论由 Claude 如实提交；命令和程序路径由 Hook 观察。
 - 原型不包含多人协作、审批、云同步、细粒度字段血缘或前端重构。
