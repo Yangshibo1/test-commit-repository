@@ -120,7 +120,12 @@ if not exist "%FRONTEND_DIR%\node_modules" (
 )
 
 echo Stopping previous AgentVAST services on ports 8765 and 3000 ...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ports = @(8765, 3000); Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue ^| Where-Object { $ports -contains $_.LocalPort } ^| Select-Object -ExpandProperty OwningProcess -Unique ^| ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$ports = @(8765, 3000); Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $ports -contains $_.LocalPort } | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }"
+if errorlevel 1 (
+    echo [ERROR] Could not inspect or stop the previous AgentVAST services.
+    echo Close the existing backend/frontend windows, then run this script again.
+    goto :failed
+)
 timeout /t 1 /nobreak >nul
 
 echo Starting AgentVAST backend at http://127.0.0.1:8765 ...
@@ -128,7 +133,8 @@ start "AgentVAST Backend" /D "%ROOT_DIR%" cmd.exe /k python -m agentvast.cli web
 
 timeout /t 3 /nobreak >nul
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "try { $response = Invoke-RestMethod -Uri 'http://127.0.0.1:8765/api/health' -TimeoutSec 3; if (-not $response) { exit 1 } } catch { exit 1 }"
+set "AGENTVAST_LAUNCH_PROJECT=%PROJECT_DIR%"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "try { $response = Invoke-RestMethod -Uri 'http://127.0.0.1:8765/api/health' -TimeoutSec 3; if (-not $response -or [int]$response.api_version -lt 2) { exit 1 }; $actual = [IO.Path]::GetFullPath([string]$response.default_project).TrimEnd('\'); $expected = [IO.Path]::GetFullPath($env:AGENTVAST_LAUNCH_PROJECT).TrimEnd('\'); if ($actual -ine $expected) { Write-Error ('Backend project mismatch. Expected: ' + $expected + '; actual: ' + $actual); exit 2 } } catch { Write-Error $_; exit 1 }"
 if errorlevel 1 (
     echo [ERROR] Backend health check failed.
     echo Review the "AgentVAST Backend" window for the complete error.
