@@ -1,4 +1,3 @@
-import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -7,9 +6,7 @@ from unittest.mock import MagicMock, patch
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-sys.path.insert(0, str(Path(__file__).parent))
-
-from draw_saidit_posts_and_txt_chains_timeline import (
+from VAST_Challenge_2026_MC2.src.draw_saidit_posts_and_txt_chains_timeline import (
     CHAIN_COLORS,
     CHAIN_ORDER,
     DEPARTMENT_LABEL_X,
@@ -31,6 +28,8 @@ from draw_saidit_posts_and_txt_chains_timeline import (
     render_timeline,
     stack_legends,
 )
+
+MODULE = "VAST_Challenge_2026_MC2.src.draw_saidit_posts_and_txt_chains_timeline"
 
 
 class OrganizationMappingTests(unittest.TestCase):
@@ -229,11 +228,11 @@ class TimelineOutputTests(unittest.TestCase):
         legends = [MagicMock(), MagicMock(), MagicMock()]
         axis.legend.side_effect = legends
         with patch(
-            "draw_saidit_posts_and_txt_chains_timeline.plt.subplots",
+            f"{MODULE}.plt.subplots",
             return_value=(figure, axis),
         ) as subplots:
-            with patch("draw_saidit_posts_and_txt_chains_timeline.stack_legends") as stack:
-                with patch("draw_saidit_posts_and_txt_chains_timeline.plt.close"):
+            with patch(f"{MODULE}.stack_legends") as stack:
+                with patch(f"{MODULE}.plt.close"):
                     render_timeline(events, rows, Path("timeline.png"))
 
         subplots.assert_called_once_with(figsize=(FIGURE_WIDTH, FIGURE_HEIGHT))

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 
-PROJECT_ROOT = Path(__file__).parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CHAIN_ORDER = ("SwiftWren.txt", "HiddenOrca.txt", "MellowOtter.txt")
 SEQUENCE_TICK_INTERVAL = 25
 DEPARTMENT_LABEL_X = 1.005

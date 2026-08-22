@@ -1,115 +1,45 @@
-# AgentVAST 数据血缘追踪指南
+# AgentVAST 开发与分析约定
 
-## 项目说明
+AgentVAST 是面向 Coding Agent 数据分析任务的本地工作流记录与约束系统。Claude Code
+负责真实的数据读取、程序执行、分析和结论；AgentVAST 负责 Plan/Node 边界、Hook 观察、
+产物校验、文件级血缘和 schema 1.3 导出。
 
-本项目实现 **双粒度数据血缘追踪**：
-- **元素级追踪**: 记录 JSON/CSV 数据字段的处理链路
-- **文件级追踪**: 使用 PROV 标准记录数据集/文件的流转关系
+## 当前事实来源
 
-## 核心组件
+按以下优先级理解系统：
 
-### 1. 数据元素追踪 (`tracker.py`)
-追踪单个数据字段的处理历史
+1. `claude-plugin/skills/data-analysis/SKILL.md`：被记录的数据分析 Run 的执行规则。
+2. `docs/记录字段设计.md`：schema 1.3 字段规范。
+3. `docs/Claude工作流程约束设计.md`：Plan、Node、人工介入和 Hook 门禁。
+4. `docs/AgentVAST系统设计总览.md`：产品边界和总体架构。
+5. `README.md`：安装、启动和用户命令。
 
-### 2. PROV DAG (`prov_dag.py`)
-基于 W3C PROV 标准的文件级血缘图谱
+`docs/archive/` 中的内容只用于历史复核，不是当前操作说明。
 
-### 3. 服务接口 (`mcp_server.py`)
-统一的调用接口（支持多实例管理）
+## 当前运行架构
 
-## 在数据分析中的使用
+- 内部事实源：`<analysis-project>/.agentvast/workflow.sqlite3`。
+- 对外记录：`<analysis-project>/result/<run_id>/workflow.json`。
+- 用户入口：`agentvast run/resume/state/export/review/abort/web`。
+- Agent 记录入口：`python -m agentvast.agent_cli <action>`。
+- 默认 Claude 集成：`claude-plugin` 的 SessionStart、PreToolUse、PostToolUse、
+  UserPromptSubmit 和 Stop Hook。
+- `agentvast.mcp_stdio` 是可选通道，默认启动器不依赖 MCP。
 
-### 初始化会话
+## 开发规则
 
-```python
-from agentvast.mcp_server import get_server
+- 使用 Run、Plan Revision、Node、Artifact、Human Intervention 术语。
+- SQLite 内部兼容字段可以继续使用 `steps/step_id`，对外文档和 JSON 使用 `nodes/node_id`。
+- 不把 Read、Write、Bash 等单次工具调用直接当作语义 Node。
+- 不记录或要求 chain-of-thought。
+- 新功能应优先扩展 `WorkflowStore`、CLI、Plugin/Hook 和规范化 JSON，不应重新依赖旧的
+  `AgentVASTServer`、`LineageTracker` 或 PROV 多文件 Session。
+- 正式 Python 测试放在 `tests/`，VAST 专项测试放在 `tests/vast/`。
+- 临时验证文件放在 `scratch/`，不要在仓库根目录或 `test/` 新建临时脚本。
+- 运行产物放在 `result/<run_id>/`，不提交 `result/run_*`、缓存或临时 worktree 备份。
 
-# 获取服务器实例（默认使用项目根目录 .agentvast/）
-server = get_server()
+## 兼容模块
 
-# 创建新会话
-result = server.init_session(
-    task_description="销售数据分析",
-    data_path="sales.csv",
-    data_type="csv"
-)
-session_id = result["session_id"]
-```
-
-### 记录数据处理步骤
-
-**重要**: 每个实体、活动、代理必须提供临时 `id` 字段
-
-```python
-# 正确示例 - 包含临时 ID
-server.record_prov_relation(
-    session_id=session_id,
-    entities=[
-        {"id": "input", "entity_type": "dataset", "location": "sales.csv", "attributes": {"rows": 1000}},
-        {"id": "output", "entity_type": "dataset", "location": "filtered.csv", "attributes": {"rows": 750}}
-    ],
-    activities=[
-        {"id": "activity", "activity_type": "filter", "description": "移除无效记录", "attributes": {}}
-    ],
-    agents=[
-        {"id": "agent", "agent_type": "python_code", "name": "step1", "attributes": {}}
-    ],
-    relations=[
-        ("activity", "input", "used"),              # 活动 → 实体
-        ("output", "activity", "wasGeneratedBy"),   # 实体 → 活动
-        ("activity", "agent", "wasAssociatedWith"), # 活动 → 代理
-        ("output", "input", "wasDerivedFrom")       # 实体 → 实体
-    ]
-)
-```
-
-### 关系方向规则
-
-| 关系 | 方向 | 示例 |
-|------|------|------|
-| `used` | Activity → Entity | filter → sales.csv |
-| `wasGeneratedBy` | Entity → Activity | output.csv → filter |
-| `wasAssociatedWith` | Activity → Agent | filter → step1 |
-| `wasDerivedFrom` | Entity → Entity | output → input |
-
-## 重要原则
-
-1. **显式提供参数**: 所有关系由 Claude Code 明确提供，不解析代码
-2. **独立存储**: DAG 数据存储在独立文件中（prov_dag.json, prov_nodes.json, prov_edges.json）
-3. **支持复杂场景**: 支持聚合（多输入→单输出）和分叉（单输入→多输出）
-4. **临时 ID 必填**: 实体/活动/代理必须提供临时 ID 用于引用
-5. **工具失败处理**: 同一类工具调用连续失败 3 次后，必须停止重复尝试并向用户询问下一步，不要继续盲目重试
-6. **测试文件归档**: 后续生成的临时测试文件和测试数据统一放入 `test/` 文件夹，不要散落在项目根目录
-7. **VAST 数据归档**: VAST Challenge 相关测试数据分别存放在对应的数据目录中，不要与核心 AgentVAST 源码或通用测试文件混放
-8. **统一会话存储**: 除非显式设置 `AGENTVAST_BASE_DIR` 或传入 `get_server(base_dir)`，所有 AgentVAST session 统一写入项目根目录 `.agentvast/`，不要写入 VAST 子目录或 `agentvast/` 包目录
-
-## 服务器实例管理
-
-```python
-from agentvast.mcp_server import get_server, list_all_servers
-
-# 默认实例（使用 agentvast 项目目录）
-default_server = get_server()
-
-# 自定义存储位置
-custom_server = get_server("/path/to/storage")
-
-# 列出所有活跃的服务器实例
-servers_info = list_all_servers()
-```
-
-## 数据分析工作流
-
-当用户要求数据分析时：
-1. 初始化会话（或获取现有会话）
-2. 每个处理步骤记录 PROV 关系（包含临时 ID）
-3. 分析完成后生成可视化
-4. 向用户展示数据流图
-
-## 常见错误
-
-| 错误 | 原因 | 解决方案 |
-|------|------|----------|
-| "源节点不存在" | 临时 ID 未提供 | 在 entities/activities/agents 中添加 `id` 字段 |
-| "无效的关系类型" | 关系方向错误 | 检查关系方向是否符合 PROV 标准 |
-| "会话不存在" | session_id 错误 | 使用 `server.list_sessions()` 查看现有会话 |
+`agentvast/mcp_server.py`、`tracker.py`、`prov_dag.py` 和 `step_details.py` 属于旧 Tracker
+兼容层。除非任务明确要求维护兼容接口，否则不要用它们设计新的工作流功能。对应旧文档位于
+`docs/archive/legacy-tracker/`。

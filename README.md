@@ -14,6 +14,16 @@ AgentVAST 是一个面向 Coding Agent 的数据分析工作流记录器。
 - 在没有 active Node 或存在未分类人工输入时阻止新的实质性操作。
 - 将完整 Run 导出为 JSON。
 
+## 文档入口
+
+- [文档索引](docs/README.md)
+- [系统设计总览](docs/AgentVAST系统设计总览.md)
+- [schema 1.3 记录字段](docs/记录字段设计.md)
+- [Claude 工作流程约束](docs/Claude工作流程约束设计.md)
+
+`docs/archive/` 保存旧 Tracker/PROV 文档和阶段性实施记录，不应作为当前 API 或 Agent
+执行说明。
+
 ## 快速安装
 
 在 AgentVAST 仓库中执行：

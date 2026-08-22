@@ -39,6 +39,6 @@ VAST_Challenge_2026_MC2/*.DS_Store
 VAST_Challenge_2026_MC2/__MACOSX/
 
 # Temporary test data and outputs
-test/
+scratch/
 result/run_*/
 result/*_manual_profile.json

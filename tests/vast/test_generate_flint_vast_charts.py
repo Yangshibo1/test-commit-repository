@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 CHALLENGE_DIR = REPO_ROOT / "VAST_Challenge_2026_MC2"
 MODULE_PATH = CHALLENGE_DIR / "src" / "generate_flint_vast_charts.py"
 
