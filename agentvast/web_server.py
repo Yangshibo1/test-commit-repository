@@ -16,7 +16,7 @@ from collections import deque
 from pathlib import Path
 from typing import Any, Deque, Dict, List, Optional, Set, Tuple
 
-from agentvast.paths import workflow_database
+from agentvast.paths import resolve_user_path, workflow_database
 from agentvast.workflow_store import WorkflowError, WorkflowStore
 
 
@@ -53,10 +53,20 @@ def _load_web_dependencies() -> Tuple[Any, Any, Any, Any, Any, Any, Any]:
 
 
 def _resolve_claude(command: str) -> str:
-    resolved = shutil.which(command)
+    value = str(command or "").strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+        value = value[1:-1].strip()
+    if not value:
+        raise FileNotFoundError("Claude Code executable path is empty")
+    expanded = os.path.expandvars(value)
+    candidate = Path(expanded).expanduser()
+    if candidate.is_file():
+        return str(candidate.resolve())
+    resolved = shutil.which(expanded)
     if resolved is None:
         raise FileNotFoundError(
-            "Claude Code executable was not found: {0}".format(command)
+            "Claude Code executable was not found: {0}. Enter 'claude' or an "
+            "existing full path to claude.exe/claude.cmd.".format(value)
         )
     return resolved
 
@@ -366,7 +376,7 @@ class TerminalManager:
                 await self.current.close()
 
             project = (
-                Path(project_root).expanduser().resolve()
+                resolve_user_path(project_root)
                 if project_root
                 else self.default_project
             )
@@ -395,6 +405,7 @@ class TerminalManager:
                 ) from error
 
             command = claude_command or self.default_claude_command
+            resolved_command = _resolve_claude(command)
             database_path = workflow_database(project)
             store = WorkflowStore(database_path)
             recovery_state: Optional[Dict[str, Any]] = None
@@ -415,7 +426,7 @@ class TerminalManager:
                 claude_session_id = str(uuid.uuid4())
                 resume = False
             arguments = _pty_arguments(
-                command,
+                resolved_command,
                 full_permissions,
                 claude_session_id,
                 self.plugin_dir,
@@ -444,16 +455,24 @@ class TerminalManager:
             environment.pop("AGENTVAST_RUN_ID", None)
             environment.pop("AGENTVAST_RESULT_ROOT", None)
             environment.pop("DISABLE_AUTO_COMPACT", None)
-            process = PtyProcess.spawn(
-                arguments,
-                cwd=str(project),
-                env=environment,
-                dimensions=(max(2, min(rows, 500)), max(10, min(cols, 1000))),
-            )
+            try:
+                process = PtyProcess.spawn(
+                    arguments,
+                    cwd=str(project),
+                    env=environment,
+                    dimensions=(max(2, min(rows, 500)), max(10, min(cols, 1000))),
+                )
+            except OSError as error:
+                raise RuntimeError(
+                    "Claude Code executable was resolved but could not start. "
+                    "Executable: {0}; project: {1}; error: {2}".format(
+                        resolved_command, project, error
+                    )
+                ) from error
             self.current = TerminalSession(
                 process=process,
                 project_root=project,
-                claude_command=command,
+                claude_command=resolved_command,
                 full_permissions=full_permissions,
                 claude_session_id=claude_session_id,
                 database_path=database_path,
@@ -630,6 +649,8 @@ def create_app(
             "api_version": 2,
             "capabilities": ["finish_trace", "reviewer_assets"],
             "default_project": str(manager.default_project),
+            "default_claude_command": manager.default_claude_command,
+            "plugin_dir": str(manager.plugin_dir),
             "platform": sys.platform,
         }
 
@@ -651,7 +672,7 @@ def create_app(
                 resume_claude_session_id=request.resume_claude_session_id,
                 fresh_run_id=request.fresh_run_id,
             )
-        except (FileNotFoundError, WebDependencyError) as error:
+        except (FileNotFoundError, ValueError, WebDependencyError) as error:
             raise HTTPException(status_code=400, detail=str(error))
         except RuntimeError as error:
             raise HTTPException(status_code=409, detail=str(error))

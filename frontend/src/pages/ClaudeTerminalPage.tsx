@@ -61,7 +61,9 @@ function ClaudeTerminalPage() {
   const trackedRunIdRef = useRef<string | null>(null);
   const displayedRunIdRef = useRef<string | null>(null);
   const planScrollRef = useRef<HTMLDivElement | null>(null);
+  const projectRootEditedRef = useRef(false);
   const [projectRoot, setProjectRoot] = useState(FALLBACK_PROJECT);
+  const [defaultProjectRoot, setDefaultProjectRoot] = useState(FALLBACK_PROJECT);
   const [claudeCommand, setClaudeCommand] = useState('claude');
   const [fullPermissions, setFullPermissions] = useState(true);
   const [backendState, setBackendState] = useState<'checking' | 'online' | 'offline'>('checking');
@@ -109,7 +111,13 @@ function ClaudeTerminalPage() {
         throw new Error('后端版本过旧，请关闭旧服务后重新运行“启动AgentVAST.bat”');
       }
       setBackendState('online');
-      setProjectRoot((current) => current === FALLBACK_PROJECT ? health.default_project : current);
+      const backendDefaultProject = String(health.default_project || '').trim();
+      setDefaultProjectRoot(backendDefaultProject);
+      setProjectRoot((current) => (
+        !projectRootEditedRef.current || !current.trim()
+          ? backendDefaultProject
+          : current
+      ));
       const status = await responseJson(await fetch('/api/terminal'));
       setProcess(status.session ?? null);
       const current = await responseJson(await fetch('/api/runs/current'));
@@ -202,9 +210,13 @@ function ClaudeTerminalPage() {
     setBusy(true);
     setError(null);
     try {
+      const normalizedProjectRoot = projectRoot.trim();
+      if (!normalizedProjectRoot) {
+        throw new Error('项目目录为空；请使用后端默认路径或输入一个存在的目录。');
+      }
       const request: Record<string, unknown> = {
-        project_root: projectRoot,
-        claude_command: claudeCommand,
+        project_root: normalizedProjectRoot,
+        claude_command: claudeCommand.trim() || 'claude',
         full_permissions: fullPermissions,
         rows: 36,
         cols: 120,
@@ -650,8 +662,29 @@ function ClaudeTerminalPage() {
         {!running && (
           <div className="mt-5 space-y-3">
             <label className="block">
-              <span className="block text-[10px] font-mono text-muted mb-1">PROJECT DIRECTORY</span>
-              <input value={projectRoot} onChange={(event) => setProjectRoot(event.target.value)} className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs font-mono outline-none focus:border-accent" />
+              <span className="flex items-center justify-between gap-2 text-[10px] font-mono text-muted mb-1">
+                <span>PROJECT DIRECTORY</span>
+                <button
+                  type="button"
+                  disabled={!defaultProjectRoot}
+                  onClick={() => {
+                    projectRootEditedRef.current = false;
+                    setProjectRoot(defaultProjectRoot);
+                  }}
+                  className="text-accent disabled:opacity-40"
+                >
+                  使用后端默认路径
+                </button>
+              </span>
+              <input
+                value={projectRoot}
+                onChange={(event) => {
+                  projectRootEditedRef.current = true;
+                  setProjectRoot(event.target.value);
+                }}
+                placeholder={defaultProjectRoot || 'C:\\path\\to\\analysis-project'}
+                className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs font-mono outline-none focus:border-accent"
+              />
             </label>
             <label className="block">
               <span className="block text-[10px] font-mono text-muted mb-1">CLAUDE COMMAND</span>
