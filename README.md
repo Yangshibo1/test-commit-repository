@@ -37,7 +37,7 @@ python -m pip install -e .
 ## 一键启动 Web 前后端
 
 Windows 下双击仓库根目录的 `启动AgentVAST.bat`。脚本默认使用
-`VAST_Challenge_2026_MC2（1）\VAST_Challenge_2026_MC2` 作为分析项目，并分别启动：
+`VAST_Challenge_2026_MC2` 作为分析项目，并分别启动：
 
 - AgentVAST Web 后端：`http://127.0.0.1:8765`
 - 前端：`http://localhost:3000`
@@ -47,6 +47,16 @@ Windows 下双击仓库根目录的 `启动AgentVAST.bat`。脚本默认使用
 ```powershell
 .\启动AgentVAST.bat "C:\path\to\analysis-project"
 ```
+
+如果启动失败，先在仓库根目录运行只检查、不启动服务的诊断模式：
+
+```powershell
+.\启动AgentVAST.bat --diagnose
+```
+
+诊断会依次检查分析目录、AgentVAST 源码、FastAPI/Uvicorn/WinPTY、Node.js/npm 和
+Claude Code。启动器直接使用 `python -m agentvast.cli`，不要求预先安装 `agentvast`
+控制台命令。后端或前端启动失败时，对应终端窗口会保持打开以显示完整错误。
 
 Web 功能依赖尚未安装时，先执行：
 
