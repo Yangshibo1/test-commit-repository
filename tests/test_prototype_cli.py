@@ -76,6 +76,7 @@ def test_claude_environment_configures_cli_recorder_without_tool_search_override
 
     assert environment["AGENTVAST_RUN_ID"] == run["run_id"]
     assert environment["AGENTVAST_DB"] == str(store.db_path)
+    assert str(Path(__file__).resolve().parents[1]) in environment["PYTHONPATH"]
     assert "ENABLE_TOOL_SEARCH" not in environment
     assert environment["CLAUDE_CODE_AUTO_COMPACT_WINDOW"] == "200000"
     assert environment["CLAUDE_AUTOCOMPACT_PCT_OVERRIDE"] == "80"

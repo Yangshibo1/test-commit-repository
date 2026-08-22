@@ -18,6 +18,11 @@ if errorlevel 1 (
     echo %ROOT_DIR%
     goto :failed
 )
+if defined PYTHONPATH (
+    set "PYTHONPATH=%ROOT_DIR%;%PYTHONPATH%"
+) else (
+    set "PYTHONPATH=%ROOT_DIR%"
+)
 
 if /I "%~1"=="--diagnose" (
     set "DIAGNOSE_ONLY=1"
@@ -65,6 +70,16 @@ echo [CHECK] AgentVAST source import...
 python -c "import agentvast; print(agentvast.__file__)"
 if errorlevel 1 (
     echo [ERROR] AgentVAST cannot be imported from this repository.
+    goto :failed
+)
+
+echo [CHECK] AgentVAST Hook import from analysis project...
+pushd "%PROJECT_DIR%"
+python -c "import agentvast.plugin_hook; print(agentvast.plugin_hook.__file__)"
+set "HOOK_IMPORT_ERROR=%ERRORLEVEL%"
+popd
+if not "%HOOK_IMPORT_ERROR%"=="0" (
+    echo [ERROR] AgentVAST Hook cannot be imported from the analysis project.
     goto :failed
 )
 

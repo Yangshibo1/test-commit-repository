@@ -16,7 +16,11 @@ from collections import deque
 from pathlib import Path
 from typing import Any, Deque, Dict, List, Optional, Set, Tuple
 
-from agentvast.paths import resolve_user_path, workflow_database
+from agentvast.paths import (
+    expose_repository_to_python,
+    resolve_user_path,
+    workflow_database,
+)
 from agentvast.workflow_store import WorkflowError, WorkflowStore
 
 
@@ -438,6 +442,7 @@ class TerminalManager:
             environment["PATH"] = (
                 python_directory + os.pathsep + environment.get("PATH", "")
             )
+            expose_repository_to_python(environment)
             environment.update(
                 {
                     "AGENTVAST_DB": str(database_path),

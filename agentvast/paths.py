@@ -4,13 +4,30 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Union
+from typing import MutableMapping, Optional, Union
 
 
 STATE_DIRECTORY_NAME = ".agentvast"
 # Read-only naming compatibility for Runs created before the AgentVAST rename.
 LEGACY_STATE_DIRECTORY_NAME = ".opentrace"
 WORKFLOW_DATABASE_NAME = "workflow.sqlite3"
+REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
+
+
+def expose_repository_to_python(
+    environment: MutableMapping[str, str],
+    repository_root: Optional[Union[Path, str]] = None,
+) -> MutableMapping[str, str]:
+    """Make the AgentVAST source importable from an external analysis project."""
+
+    root = str(Path(repository_root or REPOSITORY_ROOT).resolve())
+    existing = environment.get("PYTHONPATH", "")
+    entries = [entry for entry in existing.split(os.pathsep) if entry]
+    normalized = {os.path.normcase(os.path.abspath(entry)) for entry in entries}
+    if os.path.normcase(os.path.abspath(root)) not in normalized:
+        entries.insert(0, root)
+    environment["PYTHONPATH"] = os.pathsep.join(entries)
+    return environment
 
 
 def resolve_user_path(value: Union[Path, str]) -> Path:

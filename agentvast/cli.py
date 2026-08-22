@@ -12,7 +12,7 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from agentvast.paths import workflow_database
+from agentvast.paths import expose_repository_to_python, workflow_database
 from agentvast.workflow_store import WorkflowError, WorkflowStore
 
 
@@ -170,6 +170,7 @@ def _claude_environment(
     run = store.get_state(run_id)["run"]
     python_directory = str(Path(sys.executable).resolve().parent)
     environment["PATH"] = python_directory + os.pathsep + environment.get("PATH", "")
+    expose_repository_to_python(environment)
     environment.update(
         {
             "AGENTVAST_RUN_ID": run_id,
