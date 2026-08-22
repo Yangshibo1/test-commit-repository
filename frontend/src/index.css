@@ -12,3 +12,38 @@ body {
     #fbf7f2;
   background-size: auto, auto, 30px 30px, auto;
 }
+
+/* Record-page typography tokens. Keep content text predictable across panels. */
+.record-page {
+  font-family: Candara, Aptos, "Microsoft YaHei", sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.record-page .ot-page-title {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.record-page .ot-section-title {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
+.record-page .ot-body {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.record-page .ot-meta {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.record-page .ot-stat {
+  font-size: 24px;
+  line-height: 28px;
+  font-weight: 600;
+}

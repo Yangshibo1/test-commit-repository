@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from opentrace.cli import _claude_environment, main
-from opentrace.workflow_store import WorkflowStore
+from agentvast.cli import _claude_environment, main
+from agentvast.workflow_store import WorkflowStore
 
 
 def test_run_no_launch_creates_bound_run(tmp_path: Path, capsys):
@@ -32,7 +32,8 @@ def test_run_no_launch_creates_bound_run(tmp_path: Path, capsys):
     store = WorkflowStore(payload["database"])
     state = store.get_state(payload["run_id"])
     assert state["run"]["claude_session_id"] == payload["claude_session_id"]
-    assert payload["launch_command"][1] == "--session-id"
+    assert "--dangerously-skip-permissions" in payload["launch_command"]
+    assert "--session-id" in payload["launch_command"]
     assert str(data.resolve()) in payload["launch_command"][-1]
 
 
@@ -41,7 +42,7 @@ def test_abort_command_keeps_failed_run_history(tmp_path: Path, capsys):
     project.mkdir()
     data = project / "data.csv"
     data.write_text("x\n1\n", encoding="utf-8")
-    store = WorkflowStore(project / ".opentrace" / "workflow.sqlite3")
+    store = WorkflowStore(project / ".agentvast" / "workflow.sqlite3")
     run = store.start_run("分析数据", project, [data])
 
     result = main(
@@ -68,8 +69,13 @@ def test_claude_environment_configures_cli_recorder_without_tool_search_override
     project.mkdir()
     store = WorkflowStore(tmp_path / "workflow.sqlite3")
 
-    environment = _claude_environment(store, "run_test", project)
+    run = store.start_run("测试环境变量", project, [], checkpoint_mode="none")
+    environment = _claude_environment(
+        store, run["run_id"], project, compact_window=200_000, compact_percent=80
+    )
 
-    assert environment["OPENTRACE_RUN_ID"] == "run_test"
-    assert environment["OPENTRACE_DB"] == str(store.db_path)
+    assert environment["AGENTVAST_RUN_ID"] == run["run_id"]
+    assert environment["AGENTVAST_DB"] == str(store.db_path)
     assert "ENABLE_TOOL_SEARCH" not in environment
+    assert environment["CLAUDE_CODE_AUTO_COMPACT_WINDOW"] == "200000"
+    assert environment["CLAUDE_AUTOCOMPACT_PCT_OVERRIDE"] == "80"

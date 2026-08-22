@@ -345,7 +345,7 @@ def generate_json_ids(json_obj, prefix=""):
 ## 存储结构
 
 ```
-.opentrace/
+.agentvast/
 ├── sessions/
 │   └── {session_id}/
 │       ├── meta.json              # 会话元信息

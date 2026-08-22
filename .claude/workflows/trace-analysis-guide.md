@@ -2,7 +2,7 @@
 
 ## 概述
 
-这个工作流定义了一种标准的数据分析方法，确保每一步数据操作都被记录到 OpenTrace 系统中，形成完整的数据血缘图谱。
+这个工作流定义了一种标准的数据分析方法，确保每一步数据操作都被记录到 AgentVAST 系统中，形成完整的数据血缘图谱。
 
 ## 核心原则
 
@@ -27,7 +27,7 @@
 ### 方法1: 使用 Agent 迭代模板
 
 ```python
-from opentrace.mcp_server import get_server
+from agentvast.mcp_server import get_server
 import json
 from pathlib import Path
 

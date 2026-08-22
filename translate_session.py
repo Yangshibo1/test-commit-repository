@@ -2,7 +2,7 @@ import json
 import os
 import re
 
-SESSION_DIR = r"C:\Users\83734\Desktop\opentrace\test-commit-repository\.opentrace\session_20260630_172421_en"
+SESSION_DIR = r"C:\Users\83734\Desktop\opentrace\test-commit-repository\.agentvast\session_20260630_172421_en"
 
 # Ordered by length descending for accurate replacement
 REPLACEMENTS = [

@@ -1,8 +1,8 @@
-# OpenTrace Agent Prompt 模板
+# AgentVAST Agent Prompt 模板
 
 ## 基础使用说明
 
-当使用 OpenTrace 追踪数据分析流程时，请按以下方式操作：
+当使用 AgentVAST 追踪数据分析流程时，请按以下方式操作：
 
 ---
 

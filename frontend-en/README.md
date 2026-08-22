@@ -1,6 +1,6 @@
-# OpenTrace Frontend (English Version)
+# AgentVAST Frontend (English Version)
 
-OpenTrace data lineage visualization frontend based on React + React Flow + Dagre.
+AgentVAST data lineage visualization frontend based on React + React Flow + Dagre.
 
 ## Tech Stack
 
@@ -35,7 +35,7 @@ npm run build
 
 ## Features
 
-- Load OpenTrace session folder
+- Load AgentVAST session folder
 - Display PROV DAG (using Dagre automatic layout)
 - Timeline showing analysis steps
 - Inspector for viewing node details
@@ -44,7 +44,7 @@ npm run build
 
 ## Design Principles
 
-Refer to `opentrace/visualization/vis-guide.md`:
+Refer to `agentvast/visualization/vis-guide.md`:
 - Don't reimplement DAG rendering
 - Focus on converting execution process into semantic, explainable Provenance Graph
 - Use existing layout libraries (Dagre/ELK)

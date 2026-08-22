@@ -1,4 +1,4 @@
-// OpenTrace PROV Types
+// AgentVAST PROV Types
 export interface ArtifactMatchResult {
   artifact: LlmArtifact | null;
   matchedKey: string | null;
@@ -49,6 +49,98 @@ export interface StepDetail {
   parameters?: Record<string, unknown>;
   index?: number;
   operation?: string;
+  status?: string;
+  plan_version?: number;
+  started_at?: string;
+  completed_at?: string;
+  result_summary?: string;
+  analysis_conclusion?: string;
+  analysis_outcome?: string;
+  recording_warnings?: string[];
+  operation_summary?: string;
+  input_versions?: FileVersion[];
+  output_versions?: FileVersion[];
+}
+
+export interface FileVersion {
+  path: string;
+  sha256: string;
+}
+
+export interface WorkflowRun {
+  run_id: string;
+  task: string;
+  agent: string;
+  session_id: string;
+  project_root: string;
+  result_root: string;
+  status: string;
+  analysis_outcome: string;
+  started_at: string;
+  completed_at: string | null;
+  declared_inputs: FileVersion[];
+}
+
+export interface WorkflowPlanNode {
+  node_id: string;
+  objective: string;
+  depends_on: string[];
+  required_artifacts: string[];
+}
+
+export interface WorkflowPlanRevision {
+  version: number;
+  trigger: string;
+  change_reason: string | null;
+  created_at: string;
+  nodes: WorkflowPlanNode[];
+}
+
+export interface WorkflowNodeRecord {
+  node_id: string;
+  sequence: number;
+  plan_version: number;
+  objective: string;
+  status: string;
+  started_at: string;
+  completed_at: string | null;
+  inputs: FileVersion[];
+  outputs: FileVersion[];
+  operation: {
+    summary?: string;
+    commands?: string[];
+    programs?: string[];
+  };
+  result_summary: string;
+  analysis_conclusion: string | null;
+  analysis_outcome: string;
+  recording_warnings: string[];
+}
+
+export interface WorkflowIntervention {
+  intervention_id: string;
+  type: string;
+  original_text: string;
+  active_node_id: string | null;
+  plan_version: number | null;
+  workflow_effect: string;
+  created_at: string;
+  applied_at: string | null;
+}
+
+export interface WorkflowLineage {
+  node_id: string;
+  inputs: FileVersion[];
+  outputs: FileVersion[];
+}
+
+export interface WorkflowDocument {
+  schema_version: string;
+  run: WorkflowRun;
+  plan_revisions: WorkflowPlanRevision[];
+  nodes: WorkflowNodeRecord[];
+  human_interventions: WorkflowIntervention[];
+  file_lineage: WorkflowLineage[];
 }
 
 export interface StepDetails {
@@ -80,6 +172,7 @@ export interface MetaData {
 
 // Session Files
 export interface SessionFiles {
+  'workflow.json'?: WorkflowDocument;
   'step_details.json'?: StepDetails;
   'prov_nodes.json'?: { nodes: Record<string, ProvNode> };
   'prov_edges.json'?: { edges: ProvEdge[] };
@@ -109,6 +202,12 @@ export interface TraceData {
     ok: boolean;
     warnings: string[];
   };
+  sourceFormat?: 'workflow' | 'legacy';
+  schemaVersion?: string;
+  run?: WorkflowRun;
+  planRevisions?: WorkflowPlanRevision[];
+  humanInterventions?: WorkflowIntervention[];
+  fileLineage?: WorkflowLineage[];
 }
 
 // React Flow Types

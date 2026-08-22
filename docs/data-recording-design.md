@@ -92,7 +92,7 @@ def record_step(
 **设计**: 自动捕获函数执行信息
 
 ```python
-@opentrace.step(session_id="xxx")
+@agentvast.step(session_id="xxx")
 def filter_data(data):
     """过滤数据"""
     return [x for x in data if x['value'] > 0]
@@ -110,7 +110,7 @@ def filter_data(data):
 **设计**: 自动管理步骤上下文
 
 ```python
-with opentrace.Step(session_id, "filter_data") as step:
+with agentvast.Step(session_id, "filter_data") as step:
     # 读取输入
     data = step.read_input("data.json")
     
@@ -132,7 +132,7 @@ with opentrace.Step(session_id, "filter_data") as step:
 
 ```python
 # 智能推断输入输出关系
-advisor = OpenTraceAdvisor()
+advisor = AgentVASTAdvisor()
 advisor.analyze_step(
     code="filtered = data.filter(lambda x: x.value > 0)",
     variables={"data": "data.json"}

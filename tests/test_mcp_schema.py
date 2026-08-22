@@ -1,7 +1,7 @@
 import asyncio
 import json
 
-from opentrace.mcp_stdio import mcp
+from agentvast.mcp_stdio import mcp
 
 
 def test_tool_schemas_avoid_gateway_incompatible_constructs():
@@ -22,17 +22,17 @@ def test_set_plan_accepts_serialized_nodes(tmp_path, monkeypatch):
     data = project / "data.csv"
     data.write_text("x\n1\n", encoding="utf-8")
 
-    from opentrace.workflow_store import WorkflowStore
+    from agentvast.workflow_store import WorkflowStore
 
     database = tmp_path / "workflow.sqlite3"
     store = WorkflowStore(database)
     run = store.start_run("分析数据", project, [data])
-    monkeypatch.setenv("OPENTRACE_DB", str(database))
-    monkeypatch.setenv("OPENTRACE_RUN_ID", run["run_id"])
+    monkeypatch.setenv("AGENTVAST_DB", str(database))
+    monkeypatch.setenv("AGENTVAST_RUN_ID", run["run_id"])
 
     asyncio.run(
         mcp.call_tool(
-            "opentrace_set_plan",
+            "agentvast_set_plan",
             {
                 "nodes_json": json.dumps(
                     [{"node_id": "profile", "objective": "检查数据质量"}],

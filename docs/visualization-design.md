@@ -161,7 +161,7 @@ timeline.show()
 #### 自动发现问题
 
 ```python
-insights = OpenTraceInsights(session_id)
+insights = AgentVASTInsights(session_id)
 
 # 问题检测
 issues = insights.detect_issues()
@@ -294,7 +294,7 @@ class VisualizationAPI:
 
 ```
 ┌────────────────────────────────────────────────────┐
-│  OpenTrace - 数据分析工作流可视化                  │
+│  AgentVAST - 数据分析工作流可视化                  │
 ├──────────────┬─────────────────────────────────────┤
 │              │                                      │
 │  📊 概览     │         📈 工作流图                 │

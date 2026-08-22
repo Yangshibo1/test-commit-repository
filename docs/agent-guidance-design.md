@@ -2,7 +2,7 @@
 
 ## 设计目标
 
-让Agent能够正确、高效地使用OpenTrace，无需深入学习复杂的文档。
+让Agent能够正确、高效地使用AgentVAST，无需深入学习复杂的文档。
 
 ---
 
@@ -12,7 +12,7 @@
 
 Agent需要同时理解：
 - 数据分析任务本身
-- OpenTrace API
+- AgentVAST API
 - PROV数据模型
 - 正确的工作流程
 
@@ -38,7 +38,7 @@ Agent需要同时理解：
 
 ```python
 # 最简单的使用方式
-@opentrace.auto_record
+@agentvast.auto_record
 def analyze_data(data_path):
     data = load(data_path)
     filtered = filter(data)
@@ -56,13 +56,13 @@ def analyze_data(data_path):
 
 ```python
 # 提供关键信息
-with opentrace.recording("filter_data"):
+with agentvast.recording("filter_data"):
     data = load("input.json")
     filtered = [x for x in data if condition(x)]
     save(filtered, "output.json")
     
     # 手动确认关键信息
-    opentrace.confirm(
+    agentvast.confirm(
         description="过滤无效数据",
         code="filtered = [x for x in data if condition(x)]"
     )
@@ -85,7 +85,7 @@ server.record_step_details(...)
 #### 即时检查
 
 ```python
-validator = OpenTraceValidator()
+validator = AgentVASTValidator()
 
 # 每步后检查
 validator.check_last_step(session_id)
@@ -113,7 +113,7 @@ if validator.has_warnings():
 #### 下一步建议
 
 ```python
-advisor = OpenTraceAdvisor()
+advisor = AgentVASTAdvisor()
 
 # 基于当前状态建议
 suggestions = advisor.suggest_next_steps(session_id)
@@ -137,10 +137,10 @@ for suggestion in suggestions:
 #### 对话式助手
 
 ```python
-guide = OpenTraceGuide()
+guide = AgentVASTGuide()
 guide.start()
 
-# Guide: 你好！我是OpenTrace引导助手。
+# Guide: 你好！我是AgentVAST引导助手。
 # Guide: 请告诉我你想做什么？
 
 # User: 分析销售数据
@@ -225,7 +225,7 @@ guide.show_all()
 └─────────────────────────────────────┘
            ↓
 ┌─────────────────────────────────────┐
-│      OpenTrace服务                  │
+│      AgentVAST服务                  │
 │  - 简化API                          │
 │  - 自动记录                         │
 │  - 数据存储                         │

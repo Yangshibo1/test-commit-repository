@@ -20,12 +20,15 @@ const CustomNode = ({ data, selected }: NodeProps<CustomNodeData>) => {
   const getNodeCategory = (): string => {
     // 检查是否为 Code 节点（Python 脚本 - Agent 节点）
     if (nodeType === 'agent') {
+      if (provNode?.agent_type === 'semantic_node') return 'semantic';
       return 'code';
     }
 
     // 检查是否为 Report 节点（报告或可视化）
     const location = provNode?.location || '';
     if (nodeType === 'entity') {
+      if (provNode?.entity_type === 'code') return 'code';
+      if (provNode?.entity_type === 'report' || provNode?.entity_type === 'visualization') return 'report';
       // 扩展 report 匹配模式，包含更多 report 相关关键词
       if (location.match(/(final_report|visualization|validation_result|analysis_report|investigation_report|\.txt$|report\.json)/i)) {
         return 'report';
@@ -42,6 +45,8 @@ const CustomNode = ({ data, selected }: NodeProps<CustomNodeData>) => {
 
   const getBorderColor = () => {
     const category = getNodeCategory();
+
+    if (category === 'semantic') return 'border-l-4 border-[#d97745] border-2 border-[#d97745]';
 
     // Code: 蓝紫色边框
     if (category === 'code') return 'border-l-4 border-[#8b5cf6] border-2 border-[#8b5cf6]';
@@ -65,6 +70,9 @@ const CustomNode = ({ data, selected }: NodeProps<CustomNodeData>) => {
 
   const getDescription = () => {
     if (nodeType === 'agent') {
+      if (provNode?.agent_type === 'semantic_node') {
+        return (provNode?.description || '语义分析 Node').slice(0, 96);
+      }
       return (provNode?.name || provNode?.agent_type || 'processing agent').replace(/_/g, ' ').slice(0, 72);
     }
     if (nodeType === 'activity') {
@@ -95,13 +103,13 @@ const CustomNode = ({ data, selected }: NodeProps<CustomNodeData>) => {
       `}
       style={{ width: 220, minHeight: 96 }}
     >
-      <div className="text-[9px] text-muted font-mono uppercase tracking-wider mb-1">
+      <div className="ot-meta text-muted font-mono uppercase tracking-wider mb-1">
         {getSubtype()}
       </div>
-      <div className="font-bold text-sm leading-tight overflow-hidden line-clamp-2">
+      <div className="font-semibold ot-body overflow-hidden line-clamp-2">
         {nodeData.label}
       </div>
-      <div className="text-[11px] text-[#6b5b4f] mt-1 leading-tight overflow-hidden line-clamp-2">
+      <div className="ot-meta text-[#6b5b4f] mt-1 overflow-hidden line-clamp-2">
         {getDescription()}
       </div>
 

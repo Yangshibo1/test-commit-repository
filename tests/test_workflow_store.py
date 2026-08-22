@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from opentrace.workflow_store import WorkflowError, WorkflowStore
+from agentvast.workflow_store import WorkflowError, WorkflowStore
 
 
 def make_run(tmp_path: Path):
@@ -12,8 +12,8 @@ def make_run(tmp_path: Path):
     project.mkdir()
     raw = project / "raw.csv"
     raw.write_text("value\n1\n2\n", encoding="utf-8")
-    store = WorkflowStore(project / ".opentrace" / "workflow.sqlite3")
-    run = store.start_run("分析数值分布", project, [raw])
+    store = WorkflowStore(project / ".agentvast" / "workflow.sqlite3")
+    run = store.start_run("分析数值分布", project, [raw], checkpoint_mode="none")
     return project, raw, store, run
 
 
@@ -31,8 +31,10 @@ def test_records_normalized_semantic_chain_and_file_lineage(tmp_path: Path):
         ],
     )
     assert plan["trigger"] == "initial"
+    profile_id = plan["node_mapping"]["profile"]
+    summarize_id = plan["node_mapping"]["summarize"]
 
-    first = store.start_step(run["run_id"], "profile", ["raw.csv"])
+    first = store.start_step(run["run_id"], profile_id)
     store.record_hook_event(
         run["run_id"],
         "PostToolUse",
@@ -41,19 +43,21 @@ def test_records_normalized_semantic_chain_and_file_lineage(tmp_path: Path):
             "tool_input": {"command": "python scripts/profile.py raw.csv"},
         },
     )
-    profile = project / "profile.json"
+    profile = Path(run["result_root"]) / "data" / f"{profile_id}_profile.json"
     profile.write_text('{"rows": 2, "missing": 0}', encoding="utf-8")
     store.complete_step(
         step_id=first["step_id"],
+        input_files=["raw.csv"],
         operation_summary="读取原始文件并检查记录数与缺失值",
         result_summary="两条记录均完整。",
         analysis_conclusion=None,
-        output_files=["profile.json"],
+        output_files=[profile],
     )
 
-    second = store.start_step(run["run_id"], "summarize", ["profile.json"])
+    second = store.start_step(run["run_id"], summarize_id)
     store.complete_step(
         step_id=second["step_id"],
+        input_files=[profile],
         operation_summary="根据质量概况解释数据规模",
         result_summary="样本包含两条有效记录。",
         analysis_conclusion="样本过小，分布结论仅适用于描述当前文件。",
@@ -75,24 +79,23 @@ def test_records_normalized_semantic_chain_and_file_lineage(tmp_path: Path):
         {"path": "raw.csv", "sha256": exported["nodes"][0]["inputs"][0]["sha256"]}
     ]
     assert "size" not in exported["run"]["declared_inputs"][0]
-    assert exported["plan_revisions"][0]["nodes"][0] == {
-        "node_id": "profile",
-        "objective": "建立原始数据的质量概况",
-        "depends_on": [],
-    }
+    first_plan_node = exported["plan_revisions"][0]["nodes"][0]
+    assert first_plan_node["node_id"] == profile_id
+    assert first_plan_node["objective"] == "建立原始数据的质量概况"
+    assert first_plan_node["depends_on"] == []
     first_export = exported["nodes"][0]
     assert first_export["plan_version"] == 1
     assert first_export["operation"]["commands"] == [
         "python scripts/profile.py raw.csv"
     ]
-    assert first_export["operation"]["programs"] == [
-        "scripts/profile.py"
-    ]
-    assert first_export["outputs"][0]["path"] == "profile.json"
+    assert first_export["operation"]["programs"] == []
+    assert first_export["outputs"][0]["path"].endswith(
+        f"data/{profile_id}_profile.json"
+    )
     assert exported["nodes"][1]["inputs"][0] == first_export["outputs"][0]
     assert exported["file_lineage"] == [
         {
-            "node_id": "profile",
+            "node_id": profile_id,
             "inputs": first_export["inputs"],
             "outputs": first_export["outputs"],
         }
@@ -113,79 +116,88 @@ def test_records_normalized_semantic_chain_and_file_lineage(tmp_path: Path):
 def test_plan_and_step_invariants_are_enforced(tmp_path: Path):
     _, raw, store, run = make_run(tmp_path)
     with pytest.raises(WorkflowError, match="plan"):
-        store.start_step(run["run_id"], "n1", [raw])
+        store.start_step(run["run_id"], "n1")
     with pytest.raises(WorkflowError, match="acyclic"):
         store.set_plan(
             run["run_id"],
             [
-                {"node_id": "a", "objective": "A", "depends_on": ["b"]},
-                {"node_id": "b", "objective": "B", "depends_on": ["a"]},
+                {"node_id": "a", "objective": "检查甲数据", "depends_on": ["b"]},
+                {"node_id": "b", "objective": "检查乙数据", "depends_on": ["a"]},
             ],
         )
 
-    store.set_plan(
+    plan = store.set_plan(
         run["run_id"],
         [
             {"node_id": "a", "objective": "检查数据"},
             {"node_id": "b", "objective": "解释结果", "depends_on": ["a"]},
         ],
     )
+    a_id = plan["node_mapping"]["a"]
+    b_id = plan["node_mapping"]["b"]
     with pytest.raises(WorkflowError, match="dependencies"):
-        store.start_step(run["run_id"], "b", [raw])
+        store.start_step(run["run_id"], b_id)
     with pytest.raises(WorkflowError, match="exactly match"):
-        store.start_step(run["run_id"], "a", [raw], objective="另一个目标")
+        store.start_step(run["run_id"], a_id, objective="另一个目标")
 
-    step = store.start_step(run["run_id"], "a", [raw])
+    step = store.start_step(run["run_id"], a_id)
     with pytest.raises(WorkflowError, match="active node"):
-        store.start_step(run["run_id"], "a", [raw])
+        store.start_step(run["run_id"], a_id)
     with pytest.raises(WorkflowError, match="result_summary"):
-        store.complete_step(step["step_id"], "检查数据", "")
-    store.complete_step(step["step_id"], "检查数据", "检查完成")
+        store.complete_step(step["step_id"], [raw], "检查数据", "")
+    store.complete_step(step["step_id"], [raw], "检查数据", "检查完成")
 
-    with pytest.raises(WorkflowError, match="already has"):
-        store.start_step(run["run_id"], "a", [raw])
-    with pytest.raises(WorkflowError, match="cannot remove"):
+    with pytest.raises(WorkflowError, match="already completed"):
+        store.start_step(run["run_id"], a_id)
+    with pytest.raises(WorkflowError, match="cannot be removed"):
         store.set_plan(
             run["run_id"],
-            [{"node_id": "b", "objective": "解释结果"}],
+            [{"node_id": b_id, "objective": "解释结果"}],
         )
     with pytest.raises(WorkflowError, match="every node"):
         store.finish_run(run["run_id"])
 
 
-def test_step_input_must_have_file_lineage(tmp_path: Path):
+def test_external_input_is_discovered_at_completion(tmp_path: Path):
     project, raw, store, run = make_run(tmp_path)
     other = project / "undeclared.csv"
     other.write_text("x\n3\n", encoding="utf-8")
-    store.set_plan(run["run_id"], [{"node_id": "a", "objective": "检查数据"}])
-    with pytest.raises(WorkflowError, match="declared Run inputs"):
-        store.start_step(run["run_id"], "a", [other])
+    plan = store.set_plan(
+        run["run_id"], [{"node_id": "a", "objective": "检查数据"}]
+    )
+    step = store.start_step(run["run_id"], plan["node_mapping"]["a"])
+    completed = store.complete_step(
+        step["step_id"], [other], "读取新增输入", "新增输入包含一条记录"
+    )
+    assert completed["input_file_versions"][0]["path"] == str(other.resolve())
 
 
 def test_plan_revision_trigger_and_completed_node_preservation(tmp_path: Path):
     _, raw, store, run = make_run(tmp_path)
-    store.set_plan(run["run_id"], [{"node_id": "a", "objective": "检查数据"}])
-    first = store.start_step(run["run_id"], "a", [raw])
-    store.complete_step(first["step_id"], "检查数据", "检查完成")
+    plan = store.set_plan(run["run_id"], [{"node_id": "a", "objective": "检查数据"}])
+    a_id = plan["node_mapping"]["a"]
+    first = store.start_step(run["run_id"], a_id)
+    store.complete_step(first["step_id"], [raw], "检查数据", "检查完成")
 
     revision = store.set_plan(
         run["run_id"],
         [
-            {"node_id": "a", "objective": "检查数据"},
-            {"node_id": "b", "objective": "验证异常", "depends_on": ["a"]},
+            {"node_id": a_id, "objective": "检查数据"},
+            {"node_id": "b", "objective": "验证异常", "depends_on": [a_id]},
         ],
         trigger="human_intervention",
         change_reason="用户要求验证异常",
     )
     assert revision["plan_version"] == 2
-    second = store.start_step(run["run_id"], "b", [raw])
+    second = store.start_step(run["run_id"], revision["node_mapping"]["b"])
     assert second["plan_version"] == 2
 
 
 def test_human_intervention_keeps_capture_context_and_filters_chat(tmp_path: Path):
     _, raw, store, run = make_run(tmp_path)
-    store.set_plan(run["run_id"], [{"node_id": "a", "objective": "检查数据"}])
-    step = store.start_step(run["run_id"], "a", [raw])
+    plan = store.set_plan(run["run_id"], [{"node_id": "a", "objective": "检查数据"}])
+    a_id = plan["node_mapping"]["a"]
+    step = store.start_step(run["run_id"], a_id)
 
     intervention = store.capture_user_input(run["run_id"], "先验证异常")
     store.classify_user_input(intervention["input_event_id"], "challenge")
@@ -195,7 +207,7 @@ def test_human_intervention_keeps_capture_context_and_filters_chat(tmp_path: Pat
     )
     chat = store.capture_user_input(run["run_id"], "谢谢")
     store.classify_user_input(chat["input_event_id"], "conversation_only")
-    store.complete_step(step["step_id"], "检查并复核异常", "复核完成")
+    store.complete_step(step["step_id"], [raw], "检查并复核异常", "复核完成")
     store.finish_run(run["run_id"])
 
     exported = json.loads(
@@ -203,22 +215,23 @@ def test_human_intervention_keeps_capture_context_and_filters_chat(tmp_path: Pat
     )
     assert len(exported["human_interventions"]) == 1
     recorded = exported["human_interventions"][0]
-    assert recorded["active_node_id"] == "a"
+    assert recorded["active_node_id"] == a_id
     assert recorded["plan_version"] == 1
     assert recorded["workflow_effect"] == "当前 Step 增加异常复核"
 
 
 def test_abort_preserves_truth_but_hides_raw_hook_events(tmp_path: Path):
     _, raw, store, run = make_run(tmp_path)
-    store.set_plan(run["run_id"], [{"node_id": "a", "objective": "检查数据"}])
-    step = store.start_step(run["run_id"], "a", [raw])
+    plan = store.set_plan(run["run_id"], [{"node_id": "a", "objective": "检查数据"}])
+    a_id = plan["node_mapping"]["a"]
+    step = store.start_step(run["run_id"], a_id)
     store.abort_run(run["run_id"], "Claude API parameter error")
 
     exported = json.loads(
         store.export_run(run["run_id"]).read_text(encoding="utf-8")
     )
     assert exported["run"]["status"] == "aborted"
-    assert exported["nodes"][0]["node_id"] == "a"
+    assert exported["nodes"][0]["node_id"] == a_id
     assert exported["nodes"][0]["status"] == "interrupted"
     assert "execution_events" not in exported
 

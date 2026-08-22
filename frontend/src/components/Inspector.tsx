@@ -11,8 +11,10 @@ interface InspectorProps {
   onToggleExpand?: () => void;
 }
 
+type InspectorTab = 'overview' | 'files' | 'code' | 'visualization' | 'report' | 'parameters' | 'run' | 'plan' | 'interventions';
+
 export default function Inspector({ selectedProvNode, selectedStep, trace, isExpanded = false, onToggleExpand }: InspectorProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'files' | 'code' | 'visualization' | 'report' | 'parameters'>('overview');
+  const [activeTab, setActiveTab] = useState<InspectorTab>('overview');
   const [chartRef, setChartRef] = useState<HTMLDivElement | null>(null);
 
   const matchResult: ArtifactMatchResult | null = trace ? findLlmArtifactWithDiagnostics(trace, { step: selectedStep, node: selectedProvNode }) : null;
@@ -44,7 +46,10 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
   };
 
   // 根据是否有 artifact 和 step 来决定显示哪些 tabs
-  const getAvailableTabs = (): Array<'overview' | 'files' | 'code' | 'visualization' | 'report' | 'parameters'> => {
+  const getAvailableTabs = (): InspectorTab[] => {
+    if (trace?.sourceFormat === 'workflow') {
+      return ['overview', 'files', 'code', 'run', 'plan', 'interventions'];
+    }
     // 优先使用 artifactKind，如果没有则回退到节点类型
     const effectiveKind = artifactKind || getNodeType();
 
@@ -63,6 +68,10 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
   };
 
   const tabs = getAvailableTabs();
+
+  useEffect(() => {
+    if (!tabs.includes(activeTab)) setActiveTab('overview');
+  }, [activeTab, selectedStep?.step_id, trace?.sourceFormat]);
 
   useEffect(() => {
     if (activeTab === 'visualization' && artifactKind === 'dataset' && chartRef && artifact?.echarts_chart) {
@@ -107,7 +116,7 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
       </div>
 
       {/* Match Diagnostics */}
-      {matchResult && (
+      {matchResult && trace?.sourceFormat !== 'workflow' && (
         <div className={`px-4 py-2 border-b border-[rgba(184,165,143,0.38)] text-[10px] font-mono flex items-center justify-between ${
           matchResult.matchType === 'exact' ? 'bg-green-50' :
           matchResult.matchType === 'fuzzy' ? 'bg-yellow-50' :
@@ -159,7 +168,17 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
               }
             `}
           >
-            {tab}
+            {{
+              overview: '概览',
+              files: '文件',
+              code: '执行',
+              visualization: '可视化',
+              report: '报告',
+              parameters: '参数',
+              run: 'Run',
+              plan: 'Plan',
+              interventions: '人工介入',
+            }[tab]}
           </button>
         ))}
       </div>
@@ -170,6 +189,16 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
           <div className="min-w-0">
             <h2 className="font-serif text-2xl mb-2.5 break-words">{title}</h2>
             <p className="text-muted leading-relaxed break-words">{summary}</p>
+
+            {trace?.sourceFormat === 'workflow' && selectedStep && (
+              <div className="mt-4 space-y-3">
+                <Field label="Node 状态" value={`${selectedStep.status || 'unknown'} · Plan Revision ${selectedStep.plan_version ?? '—'}`} />
+                <Field label="操作说明" value={selectedStep.operation_summary || '未记录'} />
+                <Field label="处理结果" value={selectedStep.result_summary || '未记录'} />
+                <Field label="分析结论" value={selectedStep.analysis_conclusion || '未记录'} />
+                <Field label="执行时间" value={`${selectedStep.started_at || '—'} → ${selectedStep.completed_at || '—'}`} mono />
+              </div>
+            )}
 
             {artifact && artifactKind === 'dataset' && (
               <>
@@ -368,19 +397,17 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
           <div>
             <div className="border-t border-[rgba(184,165,143,0.36)] py-3">
               <b className="block text-accent font-mono text-xs mb-2">input files</b>
-              {(selectedStep?.input_files || []).map((f) => (
-                <span key={f} className="text-ink block">
-                  {baseName(f)}
-                </span>
-              )) || <span className="text-muted">—</span>}
+              {(selectedStep?.input_versions?.length ? selectedStep.input_versions : (selectedStep?.input_files || []).map((path) => ({ path, sha256: '' }))).map((file) => (
+                <FileVersionRow key={`${file.path}-${file.sha256}`} path={file.path} sha256={file.sha256} />
+              ))}
+              {!selectedStep?.input_files.length && <span className="text-muted">—</span>}
             </div>
             <div className="border-t border-[rgba(184,165,143,0.36)] py-3">
               <b className="block text-accent font-mono text-xs mb-2">output files</b>
-              {(selectedStep?.output_files || []).map((f) => (
-                <span key={f} className="text-ink block">
-                  {baseName(f)}
-                </span>
-              )) || <span className="text-muted">—</span>}
+              {(selectedStep?.output_versions?.length ? selectedStep.output_versions : (selectedStep?.output_files || []).map((path) => ({ path, sha256: '' }))).map((file) => (
+                <FileVersionRow key={`${file.path}-${file.sha256}`} path={file.path} sha256={file.sha256} />
+              ))}
+              {!selectedStep?.output_files.length && <span className="text-muted">—</span>}
             </div>
           </div>
         )}
@@ -552,7 +579,82 @@ export default function Inspector({ selectedProvNode, selectedStep, trace, isExp
             )}
           </>
         )}
+
+        {activeTab === 'run' && trace?.run && (
+          <div>
+            <Field label="Run ID" value={trace.run.run_id} mono />
+            <Field label="任务" value={trace.run.task} />
+            <Field label="状态" value={trace.run.status} />
+            <Field label="Agent / Session" value={`${trace.run.agent} / ${trace.run.session_id}`} mono />
+            <Field label="项目目录" value={trace.run.project_root} mono />
+            <Field label="结果目录" value={trace.run.result_root} mono />
+            <Field label="开始与完成时间" value={`${trace.run.started_at} → ${trace.run.completed_at || '—'}`} mono />
+            <div className="border-t border-[rgba(184,165,143,0.36)] py-3">
+              <b className="block text-accent font-mono text-xs mb-2">声明输入文件</b>
+              {trace.run.declared_inputs.map((file) => <FileVersionRow key={`${file.path}-${file.sha256}`} path={file.path} sha256={file.sha256} />)}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'plan' && (
+          <div className="space-y-3">
+            {(trace?.planRevisions || []).slice().reverse().map((revision) => (
+              <div key={revision.version} className="rounded-xl border border-[rgba(184,165,143,0.42)] bg-white p-3">
+                <div className="flex justify-between gap-2 text-xs font-mono">
+                  <b className="text-accent">Revision {revision.version}</b>
+                  <span className="text-muted">{revision.trigger}</span>
+                </div>
+                <p className="mt-1 text-xs text-muted">{revision.change_reason || '初始计划'}</p>
+                <p className="mt-1 text-[10px] font-mono text-muted">{revision.created_at}</p>
+                <div className="mt-2 space-y-2">
+                  {revision.nodes.map((node) => (
+                    <div key={node.node_id} className="border-t border-[rgba(184,165,143,0.3)] pt-2">
+                      <div className="text-xs"><b className="font-mono text-accent">{node.node_id}</b> · {node.objective}</div>
+                      <div className="mt-1 text-[10px] font-mono text-muted">依赖：{node.depends_on.join(', ') || '无'} · 产物：{node.required_artifacts.join(', ') || '未指定'}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            {!trace?.planRevisions?.length && <p className="text-muted text-sm">没有 Plan Revision 记录。</p>}
+          </div>
+        )}
+
+        {activeTab === 'interventions' && (
+          <div className="space-y-3">
+            {(trace?.humanInterventions || []).map((item) => (
+              <div key={item.intervention_id} className="rounded-xl border border-[rgba(184,165,143,0.42)] bg-white p-3">
+                <div className="flex justify-between gap-2 text-[10px] font-mono">
+                  <b className="text-accent">{item.type}</b>
+                  <span className="text-muted">Plan {item.plan_version ?? '—'}</span>
+                </div>
+                <p className="mt-2 text-sm leading-5">{item.original_text}</p>
+                <div className="mt-2 rounded-lg bg-[#fffaf6] p-2 text-xs leading-5"><b>工作流影响：</b>{item.workflow_effect || '未记录'}</div>
+                <p className="mt-2 text-[10px] font-mono text-muted">{item.created_at} → {item.applied_at || '待应用'}</p>
+              </div>
+            ))}
+            {!trace?.humanInterventions?.length && <p className="text-muted text-sm">该 Run 没有人工介入记录。</p>}
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+function Field({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="border-t border-[rgba(184,165,143,0.36)] py-3">
+      <b className="block text-accent font-mono text-xs mb-2">{label}</b>
+      <span className={`text-ink break-words whitespace-pre-wrap ${mono ? 'font-mono text-xs break-all' : ''}`}>{value}</span>
+    </div>
+  );
+}
+
+function FileVersionRow({ path, sha256 }: { path: string; sha256: string }) {
+  return (
+    <div className="mb-2 rounded-lg border border-[rgba(184,165,143,0.3)] bg-white px-2.5 py-2">
+      <div className="text-xs break-all">{path}</div>
+      {sha256 && <div className="mt-1 text-[9px] font-mono text-muted break-all">SHA-256 · {sha256}</div>}
     </div>
   );
 }

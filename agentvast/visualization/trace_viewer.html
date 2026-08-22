@@ -1,0 +1,1361 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgentVAST Trace Workbench</title>
+  <style>
+    :root {
+      --bg: #fbf7f2;
+      --paper: #ffffff;
+      --panel: rgba(255, 255, 255, 0.94);
+      --panel-strong: #ffffff;
+      --ink: #2f2a24;
+      --muted: #82766a;
+      --line: #eadfd4;
+      --line-strong: #d9c4b4;
+      --accent: #d97745;
+      --accent-soft: #fff0e6;
+      --accent-line: #e7b08d;
+      --green: #6f8f52;
+      --amber: #d97745;
+      --red: #b85c5c;
+      --violet: #a4765c;
+      --shadow: 0 20px 70px rgba(91, 64, 42, 0.11);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: Candara, "Aptos", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(217, 119, 69, 0.12), transparent 25rem),
+        radial-gradient(circle at 88% 12%, rgba(255, 240, 230, 0.92), transparent 26rem),
+        linear-gradient(135deg, rgba(47, 42, 36, 0.035) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, auto, 30px 30px, auto;
+      overflow: hidden;
+    }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 92px 1fr;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1.2fr auto;
+      gap: 18px;
+      align-items: center;
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid rgba(184, 165, 143, 0.55);
+      background: rgba(255, 250, 240, 0.78);
+      backdrop-filter: blur(16px);
+    }
+
+    .brand { display: flex; gap: 16px; align-items: center; }
+
+    .mark {
+      width: 46px;
+      height: 46px;
+      border: 1px solid rgba(217, 119, 69, 0.42);
+      border-radius: 15px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #fff, #fff6ef);
+      box-shadow: inset 0 0 0 4px rgba(217, 119, 69, 0.05), 0 12px 26px rgba(217, 119, 69, 0.14);
+      color: var(--accent);
+      font: 700 20px Consolas, monospace;
+      transform: rotate(-4deg);
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Cambria, Georgia, serif;
+      letter-spacing: 0.01em;
+      font-size: 29px;
+      line-height: 1;
+    }
+
+    .subtitle { margin-top: 7px; color: var(--muted); font: 13px Consolas, "Microsoft YaHei", monospace; }
+
+    .loader { display: flex; align-items: center; gap: 10px; }
+
+    .loader label, button {
+      border: 1px solid rgba(217, 119, 69, 0.28);
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.78);
+      border-radius: 999px;
+      padding: 11px 14px;
+      cursor: pointer;
+      font: 12px Consolas, monospace;
+      transition: 180ms ease;
+      box-shadow: 0 8px 20px rgba(76, 55, 32, 0.06);
+    }
+
+    .loader label:hover, button:hover { border-color: var(--accent); transform: translateY(-1px); }
+    input[type=file] { display: none; }
+
+    .follow-panel {
+      position: fixed;
+      right: 18px;
+      top: 104px;
+      width: min(560px, calc(100vw - 36px));
+      max-height: calc(100vh - 124px);
+      overflow: auto;
+      z-index: 20;
+      border: 1px solid rgba(184, 165, 143, 0.58);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: 0 24px 80px rgba(91, 64, 42, 0.18);
+      padding: 16px;
+      backdrop-filter: blur(16px);
+    }
+    .follow-panel.hidden { display: none; }
+    .follow-panel h3 { margin: 0 0 8px; font-family: Cambria, Georgia, serif; font-size: 22px; }
+    .follow-panel p { margin: 0 0 14px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .follow-form { display: grid; gap: 10px; }
+    .follow-form label { color: var(--accent); font: 11px Consolas, monospace; text-transform: uppercase; letter-spacing: .08em; }
+    .follow-form input, .follow-form textarea {
+      width: 100%;
+      border: 1px solid rgba(184,165,143,.48);
+      border-radius: 14px;
+      padding: 10px 12px;
+      color: var(--ink);
+      background: rgba(255, 250, 245, 0.76);
+      font: 12px Consolas, "Microsoft YaHei", monospace;
+      outline: none;
+    }
+    .follow-form textarea { min-height: 112px; resize: vertical; line-height: 1.45; }
+    .follow-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px; }
+    .follow-output { margin-top: 12px; }
+    .follow-output pre { max-height: 180px; }
+    .copy-status { color: var(--green); font: 11px Consolas, monospace; }
+
+    .status-pill {
+      border: 1px solid rgba(61, 143, 96, 0.32);
+      color: var(--green);
+      border-radius: 999px;
+      padding: 10px 13px;
+      background: rgba(61, 143, 96, 0.08);
+      font: 12px Consolas, monospace;
+    }
+
+    .shell {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(250px, 320px) minmax(620px, 1fr) minmax(330px, 420px);
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .app.inspector-expanded .shell {
+      grid-template-columns: minmax(250px, 320px) minmax(720px, 1fr);
+    }
+
+    .app.inspector-expanded .center { display: none; }
+
+    .app.inspector-expanded [data-testid="inspector-panel"] { min-width: 0; }
+
+    .inspector-toggle {
+      border-radius: 10px;
+      padding: 6px 9px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .panel {
+      min-height: 0;
+      border: 1px solid rgba(184, 165, 143, 0.48);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(14px);
+    }
+
+    .panel-title {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid rgba(184, 165, 143, 0.38);
+      color: var(--accent);
+      font: 12px Consolas, monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      background: rgba(255, 255, 255, 0.42);
+    }
+
+    .timeline { height: calc(100% - 48px); overflow: auto; padding: 14px; }
+
+    .step-card {
+      position: relative;
+      border: 1px solid rgba(184, 165, 143, 0.5);
+      background: linear-gradient(145deg, #ffffff, #fbf3e6);
+      border-radius: 18px;
+      padding: 14px;
+      margin: 0 0 12px;
+      cursor: pointer;
+      transition: 180ms ease;
+    }
+
+    .step-card:hover, .step-card.active {
+      border-color: rgba(217, 119, 69, 0.62);
+      box-shadow: 0 14px 34px rgba(217, 119, 69, 0.11);
+    }
+
+    .step-kicker { display: flex; justify-content: space-between; color: var(--muted); font: 11px Consolas, monospace; margin-bottom: 8px; }
+    .step-name { font-weight: 700; font-size: 15px; }
+    .step-desc { color: var(--muted); font-size: 12px; line-height: 1.45; margin-top: 7px; }
+    .node-meta { color: var(--muted); font: 11px Consolas, monospace; margin-top: 9px; overflow-wrap: anywhere; }
+
+    .center {
+      display: grid;
+      grid-template-rows: 124px 1fr;
+      gap: 14px;
+      min-height: 0;
+    }
+
+    .funnel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 14px; align-items: stretch; }
+    .metric { border: 1px solid rgba(184, 165, 143, 0.42); border-radius: 18px; padding: 14px; background: rgba(255,255,255,0.7); }
+    .metric .value { font: 700 24px Cambria, Georgia, serif; color: var(--ink); }
+    .metric .label { margin-top: 6px; color: var(--muted); font: 11px Consolas, monospace; }
+
+    .graph-wrap { position: relative; min-height: 0; }
+    .graph-stage {
+      height: calc(100% - 48px);
+      overflow: auto;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(217, 119, 69, 0.06), transparent 24rem),
+        radial-gradient(circle at 82% 18%, rgba(255, 248, 241, 0.92), transparent 28rem),
+        linear-gradient(135deg, rgba(217,119,69,.035) 1px, transparent 1px),
+        #fffaf5;
+      background-size: auto, auto, 28px 28px, auto;
+    }
+    .graph-toolbar { display: flex; gap: 8px; align-items: center; color: var(--muted); font: 11px Consolas, monospace; }
+    .graph-toolbar button { padding: 6px 9px; border-radius: 10px; }
+    .flow-grid { position: relative; min-width: 100%; min-height: 100%; transform-origin: top left; }
+    .side-lane-label {
+      position: absolute;
+      top: 10px;
+      color: #b08a70;
+      font: 10px Consolas, monospace;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      writing-mode: vertical-rl;
+      pointer-events: none;
+    }
+    .side-lane-label.left { left: 14px; }
+    .side-lane-label.right { right: 14px; }
+    .dag-svg { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+    .dag-edge { fill: none; stroke: rgba(217, 119, 69, 0.42); stroke-width: 2.2; marker-end: url(#arrow); }
+    .dag-edge.generated { stroke: rgba(111, 143, 82, 0.46); }
+    .dag-edge.long-edge { stroke: rgba(164, 118, 92, 0.58); stroke-dasharray: 7 5; }
+
+    .dag-node {
+      position: absolute;
+      width: 220px;
+      height: 96px;
+      border: 1px solid rgba(184, 165, 143, 0.58);
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 16px 35px rgba(76, 55, 32, 0.09);
+      cursor: pointer;
+      transition: 180ms ease;
+      overflow: hidden;
+    }
+
+    .dag-node:hover, .dag-node.selected { border-color: var(--accent); box-shadow: 0 18px 42px rgba(217, 119, 69, 0.16); transform: translateY(-1px); }
+    .dag-node.entity { border-left: 4px solid var(--green); }
+    .dag-node.activity { border-left: 4px solid var(--amber); }
+    .dag-node.agent { border-left: 4px solid var(--violet); }
+    .dag-node.report { border-left-color: var(--accent); }
+    .node-label { font-weight: 800; font-size: 13px; line-height: 1.24; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .node-kind { color: var(--muted); font: 9px Consolas, monospace; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .08em; }
+    .node-desc { color: #6b5b4f; font-size: 11px; line-height: 1.32; margin-top: 6px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .node-meta { color: var(--muted); font: 10px Consolas, monospace; margin-top: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+    .edge-label {
+      font: 10px Consolas, monospace;
+      fill: #8b5a3c;
+      paint-order: stroke;
+      stroke: rgba(255,255,255,.92);
+      stroke-width: 4px;
+      stroke-linejoin: round;
+    }
+
+    .inspector-body { height: calc(100% - 48px); overflow: auto; padding: 16px; }
+    .chart-host {
+      width: 100%;
+      height: 360px;
+      min-height: 320px;
+      border: 1px solid rgba(184,165,143,.42);
+      border-radius: 14px;
+      background: rgba(255,255,255,.78);
+      margin-top: 10px;
+    }
+    .app.inspector-expanded .chart-host { height: 520px; }
+    .chart-note { color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .tab { border: 1px solid rgba(184,165,143,.58); color: var(--muted); padding: 8px 10px; border-radius: 999px; font: 11px Consolas, monospace; cursor: pointer; background: #fff; }
+    .tab.active { color: var(--accent); border-color: rgba(37,118,184,.55); }
+    .detail h2 { margin: 0 0 10px; font-family: Cambria, Georgia, serif; font-size: 25px; }
+    .detail p { color: var(--muted); line-height: 1.55; }
+    .kv { border-top: 1px solid rgba(184,165,143,.36); padding: 12px 0; }
+    .kv b { display: block; color: var(--accent); font: 11px Consolas, monospace; margin-bottom: 8px; }
+    .kv span, .kv code { color: var(--ink); overflow-wrap: anywhere; }
+    code, pre { font-family: Consolas, "Cascadia Mono", monospace; }
+    pre {
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(184,165,143,.42);
+      border-radius: 14px;
+      padding: 12px;
+      overflow: auto;
+      max-height: 360px;
+      color: #34444e;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+    .app.inspector-expanded pre { max-height: 560px; }
+    .empty { height: 100%; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 30px; }
+
+    @media (max-width: 1100px) {
+      body { overflow: auto; }
+      .app { height: auto; min-height: 100vh; }
+      .shell { grid-template-columns: 1fr; }
+      .panel { min-height: 360px; }
+      .center { grid-template-rows: auto 680px; }
+      .funnel { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar" data-testid="session-header">
+      <div class="brand">
+        <div class="mark">AV</div>
+        <div>
+          <h1>AgentVAST Workbench</h1>
+          <div class="subtitle" id="sessionSubtitle">加载任意 AgentVAST session 文件夹，按 PROV DAG 展示流程并融合分析结果</div>
+        </div>
+      </div>
+      <div class="loader" data-testid="session-loader">
+        <span class="status-pill" id="validationBadge">WAITING FOR SESSION</span>
+        <label>
+          Choose session folder
+          <input id="fileInput" type="file" webkitdirectory directory multiple />
+        </label>
+        <button id="followButton">Ask follow-up</button>
+        <button id="clearButton">Clear</button>
+      </div>
+    </header>
+
+    <section class="shell">
+      <aside class="panel">
+        <div class="panel-title">Trace Timeline <span id="stepCount">0</span></div>
+        <div class="timeline" id="timeline" data-testid="step-timeline">
+          <div class="empty">选择一个完整的 AgentVAST session 文件夹，页面会自动读取需要的 JSON 文件。</div>
+        </div>
+      </aside>
+
+      <section class="center">
+        <div class="panel funnel" id="funnel" data-testid="evidence-funnel">
+          <div class="metric"><div class="value" id="metricSteps">0</div><div class="label">analysis steps</div></div>
+          <div class="metric"><div class="value" id="metricEntities">0</div><div class="label">PROV entities</div></div>
+          <div class="metric"><div class="value" id="metricActivities">0</div><div class="label">PROV activities</div></div>
+          <div class="metric"><div class="value" id="metricArtifacts">0</div><div class="label">analysis artifacts</div></div>
+        </div>
+
+        <div class="panel graph-wrap" data-testid="trace-graph">
+          <div class="panel-title">PROV DAG + Analysis Results <span class="graph-toolbar"><button id="zoom-out">−</button><span id="zoomLabel">100%</span><button id="zoom-in">+</button><span>top-to-bottom</span></span></div>
+          <div class="graph-stage" id="graphStage">
+            <div class="empty">Graph 会在加载 session 后从 prov_nodes.json + prov_edges.json 构建，并尝试融合 final report / report 参数中的分析结果。</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel" data-testid="inspector-panel">
+        <div class="panel-title">Inspector <span id="selectedLabel">none</span></div>
+        <div class="inspector-body" id="inspector">
+          <div class="empty">点击左侧步骤或中间 DAG 节点查看输入、输出、代码、命令、参数、PROV关系和分析结果。</div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <section class="follow-panel hidden" id="followPanel" aria-label="Ask Claude follow-up">
+    <h3>Ask Claude follow-up</h3>
+    <p>填写问题、工作空间和历史 Claude session id。页面会生成可复制命令，用于继承历史问答继续任务。</p>
+    <div class="follow-form">
+      <div>
+        <label for="followQuestion">Question</label>
+        <textarea id="followQuestion" placeholder="输入你希望继续追问的问题或任务..."></textarea>
+      </div>
+      <div>
+        <label for="followWorkspace">Workspace</label>
+        <input id="followWorkspace" placeholder="例如: C:\path\to\analysis-project" />
+      </div>
+      <div>
+        <label for="followSessionId">Inherited Claude session id</label>
+        <input id="followSessionId" placeholder="例如: 31671665-2cb5-4def-ab0a-dc0060d0c065" />
+      </div>
+      <div class="follow-actions">
+        <button id="buildFollowCommand">Build command</button>
+        <button id="copyFollowCommand">Copy command</button>
+        <button id="closeFollowPanel">Close</button>
+        <span class="copy-status" id="copyStatus"></span>
+      </div>
+    </div>
+    <div class="follow-output">
+      <pre id="followCommandPreview">填写后生成 claude -p --resume 命令。</pre>
+    </div>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <script>
+    const REQUIRED_FILES = ["step_details.json", "prov_nodes.json", "prov_edges.json", "prov_dag.json"];
+    const DEFAULT_WORKSPACE = "C:\\path\\to\\analysis-project";
+    const state = { files: {}, trace: null, selectedStepId: null, selectedProvId: null, activeTab: "overview", graphScale: 1, inspectorExpanded: false };
+
+    const $ = (id) => document.getElementById(id);
+    const baseName = (path = "") => String(path).split(/[\\/]/).pop() || path || "unknown";
+    const shellQuote = (value = "") => `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+    const normalizeSessionFileName = (file) => baseName(file.webkitRelativePath || file.name);
+    const shortValue = (value) => {
+      if (Array.isArray(value)) return `${value.length} items`;
+      if (value && typeof value === "object") return `${Object.keys(value).length} keys`;
+      return value == null ? "—" : String(value);
+    };
+
+    $("fileInput").addEventListener("change", async (event) => {
+      const loaded = {};
+      for (const file of event.target.files) {
+        const name = normalizeSessionFileName(file);
+        if (!name.endsWith(".json")) continue;
+        if (name === "working_data.json") continue;
+        const text = await file.text();
+        loaded[name] = JSON.parse(text);
+      }
+      state.files = loaded;
+      state.trace = adaptSession(loaded);
+      state.selectedStepId = state.trace.steps[0]?.id || null;
+      state.selectedProvId = null;
+      state.activeTab = "overview";
+      render();
+    });
+
+    $("clearButton").addEventListener("click", () => {
+      state.files = {};
+      state.trace = null;
+      state.selectedStepId = null;
+      state.selectedProvId = null;
+      $("fileInput").value = "";
+      render();
+    });
+
+    function selectedContextText() {
+      const trace = state.trace;
+      if (!trace) return "";
+      const step = state.selectedStepId ? trace.steps.find(s => s.id === state.selectedStepId) : trace.steps[0];
+      const provNode = state.selectedProvId ? (trace.prov.nodes[state.selectedProvId] || findMergedNodeById(buildProvDAGFlow(trace).nodes, state.selectedProvId)) : null;
+      const artifact = findLlmArtifact(trace, { step, node: provNode });
+      const context = {
+        agentvast_session: trace.sessionId,
+        selected_step: step ? { id: step.id, name: step.name, input_files: step.inputFiles, output_files: step.outputFiles, code_files: step.codeFiles } : null,
+        selected_node: provNode ? { id: provNode.id, type: provNode.type, location: provNode.location, name: provNode.name, description: provNode.description } : null,
+        analysis_artifact: artifact || null,
+      };
+      return JSON.stringify(context, null, 2);
+    }
+
+    function buildFollowPrompt() {
+      const question = $("followQuestion").value.trim();
+      const context = selectedContextText();
+      return `${question}\n\n当前前端选择上下文如下，如相关请结合它继续分析：\n${context}`.trim();
+    }
+
+    function buildFollowCommand() {
+      const workspace = $("followWorkspace").value.trim() || DEFAULT_WORKSPACE;
+      const sessionId = $("followSessionId").value.trim();
+      const prompt = buildFollowPrompt();
+      const resumePart = sessionId ? ` --resume ${shellQuote(sessionId)}` : "";
+      return `cd ${shellQuote(workspace)} && claude -p ${shellQuote(prompt)}${resumePart}`;
+    }
+
+    function updateFollowCommandPreview() {
+      $("followCommandPreview").textContent = buildFollowCommand();
+      $("copyStatus").textContent = "";
+    }
+
+    $("followButton").addEventListener("click", () => {
+      $("followWorkspace").value = $("followWorkspace").value || DEFAULT_WORKSPACE;
+      $("followPanel").classList.toggle("hidden");
+      if (!$("followPanel").classList.contains("hidden")) updateFollowCommandPreview();
+    });
+    $("closeFollowPanel").addEventListener("click", () => $("followPanel").classList.add("hidden"));
+    $("buildFollowCommand").addEventListener("click", updateFollowCommandPreview);
+    $("copyFollowCommand").addEventListener("click", async () => {
+      updateFollowCommandPreview();
+      const command = $("followCommandPreview").textContent;
+      try {
+        await navigator.clipboard.writeText(command);
+        $("copyStatus").textContent = "Copied";
+      } catch (error) {
+        $("copyStatus").textContent = "Copy failed; please select manually";
+      }
+    });
+    ["followQuestion", "followWorkspace", "followSessionId"].forEach(id => $(id).addEventListener("input", updateFollowCommandPreview));
+
+    function adaptSession(files) {
+      const stepDetails = files["step_details.json"] || { steps: [] };
+      const provNodes = files["prov_nodes.json"]?.nodes || {};
+      const provEdges = files["prov_edges.json"]?.edges || [];
+      const dag = files["prov_dag.json"] || {};
+      const meta = files["meta.json"] || {};
+      const nodes = Object.values(provNodes);
+      const entities = nodes.filter(n => n.type === "entity");
+      const activities = nodes.filter(n => n.type === "activity");
+      const agents = nodes.filter(n => n.type === "agent");
+      const llmArtifacts = collectLlmArtifacts(files);
+
+      const steps = (stepDetails.steps || []).map((step, index) => ({
+        id: step.step_id || `step_${String(index + 1).padStart(3, "0")}`,
+        index: index + 1,
+        name: step.step_name || "unnamed_step",
+        operation: step.parameters?.operation || inferOperation(step),
+        description: step.description || "",
+        timestamp: step.timestamp || "",
+        inputFiles: step.input_files || [],
+        outputFiles: step.output_files || [],
+        codeFiles: step.code_files || [],
+        codeGenerated: step.code_generated || [],
+        commands: step.commands_run || [],
+        parameters: step.parameters || {},
+      }));
+
+      return {
+        sessionId: stepDetails.session_id || meta.session_id || dag.session_id || "unidentified_session",
+        createdAt: meta.created_at || stepDetails.created_at || dag.created_at || "unknown",
+        steps,
+        prov: { nodes: provNodes, edges: provEdges },
+        raw: { meta, stepDetails, provNodes, provEdges, dag },
+        llmArtifacts,
+        counts: {
+          entities: entities.length,
+          activities: activities.length,
+          agents: agents.length,
+          edges: provEdges.length,
+          artifacts: Object.keys(llmArtifacts).length,
+        },
+        consistency: checkConsistency(files, steps, meta),
+      };
+    }
+
+    function inferOperation(step) {
+      const joined = `${step.step_name || ""} ${step.description || ""}`.toLowerCase();
+      for (const key of ["load", "filter", "trace", "aggregate", "visualize", "validate", "transform", "analyze"]) {
+        if (joined.includes(key)) return key;
+      }
+      return "analysis_node";
+    }
+
+    function artifactBaseName(name = "") {
+      return baseName(name)
+        .replace(/\.analysis\.json$/i, "")
+        .replace(/\.(py|json|txt)$/i, "")
+        .toLowerCase();
+    }
+
+    function collectLlmArtifacts(files) {
+      const artifacts = {};
+      for (const [name, data] of Object.entries(files)) {
+        if (!/\.analysis\.json$/i.test(name) || !data || typeof data !== "object") continue;
+        artifacts[artifactBaseName(name)] = data;
+      }
+      return artifacts;
+    }
+
+    function getArtifactKind(artifact) {
+      if (!artifact || typeof artifact !== "object") return null;
+      if ("algorithm_purpose" in artifact || "algorithm_logic" in artifact || "data_flow" in artifact) return "script";
+      if ("sample_data" in artifact || "echarts_chart" in artifact) return "dataset";
+      if ("key_findings" in artifact || "answers" in artifact) return "report";
+      return null;
+    }
+
+    function findLlmArtifact(trace, { step, node } = {}) {
+      const artifacts = trace.llmArtifacts || {};
+      const candidates = [];
+      const pushCandidate = (value) => {
+        if (!value) return;
+        candidates.push(artifactBaseName(value));
+      };
+
+      pushCandidate(node?.location);
+      pushCandidate(node?.name);
+      pushCandidate(node?.description);
+      for (const file of step?.codeFiles || []) pushCandidate(file);
+      for (const file of step?.outputFiles || []) pushCandidate(file);
+      for (const file of step?.inputFiles || []) pushCandidate(file);
+      pushCandidate(step?.name);
+      pushCandidate(step?.id);
+
+      for (const key of candidates) {
+        if (artifacts[key]) return artifacts[key];
+      }
+      for (const key of candidates) {
+        const foundKey = Object.keys(artifacts).find(artifactKey => key && (artifactKey.includes(key) || key.includes(artifactKey)));
+        if (foundKey) return artifacts[foundKey];
+      }
+      return null;
+    }
+
+    function formatArtifactOverview(artifact, kind) {
+      if (!artifact) return "";
+      if (kind === "script") {
+        return `${artifact.algorithm_purpose ? `<div class="kv"><b>algorithm_purpose</b><span>${escapeHtml(artifact.algorithm_purpose)}</span></div>` : ""}
+          ${artifact.data_flow ? `<div class="kv"><b>data_flow</b><span>${escapeHtml(artifact.data_flow)}</span></div>` : ""}`;
+      }
+      if (kind === "dataset") {
+        return `${artifact.description ? `<div class="kv"><b>description</b><span>${escapeHtml(artifact.description)}</span></div>` : ""}
+          <div class="kv"><b>sample_data</b><pre>${escapeHtml(JSON.stringify(artifact.sample_data ?? "—", null, 2))}</pre></div>`;
+      }
+      if (kind === "report") {
+        return `${artifact.key_findings ? `<div class="kv"><b>key_findings</b><pre>${escapeHtml(JSON.stringify(artifact.key_findings, null, 2))}</pre></div>` : ""}
+          ${artifact.answers ? `<div class="kv"><b>answers</b><pre>${escapeHtml(JSON.stringify(artifact.answers, null, 2))}</pre></div>` : ""}`;
+      }
+      return `<pre>${escapeHtml(JSON.stringify(artifact, null, 2))}</pre>`;
+    }
+
+    function formatAlgorithmLogic(artifact) {
+      const logic = artifact?.algorithm_logic;
+      if (!logic) return "—";
+      if (Array.isArray(logic)) return `<ol>${logic.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ol>`;
+      return `<pre>${escapeHtml(JSON.stringify(logic, null, 2))}</pre>`;
+    }
+
+    function formatDatasetChart(artifact) {
+      if (!artifact?.echarts_chart) {
+        return `<div class="kv"><b>chart</b><p class="chart-note">大数据集或不适合可视化，已跳过图表配置。</p></div>`;
+      }
+      return `<div class="kv"><b>chart</b><div id="artifactChart" class="chart-host"></div></div>`;
+    }
+
+    function renderDatasetChart(artifact) {
+      const container = $("artifactChart");
+      if (!container || !artifact?.echarts_chart) return;
+      if (!window.echarts) {
+        container.innerHTML = '<div class="empty">ECharts 加载失败，无法渲染图表。</div>';
+        return;
+      }
+      try {
+        const chart = echarts.init(container);
+        chart.setOption(artifact.echarts_chart, true);
+        setTimeout(() => chart.resize(), 0);
+      } catch (error) {
+        container.innerHTML = `<pre>${escapeHtml(String(error))}</pre>`;
+      }
+    }
+
+    function checkConsistency(files, steps, meta) {
+      const missing = REQUIRED_FILES.filter(name => !files[name]);
+      const warnings = [];
+      if (missing.length) warnings.push(`missing: ${missing.join(", ")}`);
+      if (meta.total_steps && Number(meta.total_steps) !== steps.length) warnings.push(`meta total_steps (${meta.total_steps}) differs from step_details (${steps.length})`);
+      return { ok: warnings.length === 0, warnings };
+    }
+
+    function normalizeArtifactLocation(location = "") {
+      return String(location)
+        .replace(/\\/g, "/")
+        .replace(/\/\.\//g, "/")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+    }
+
+    function mergeAgentByName(agent, agentKeyToNode) {
+      const key = (agent.name || agent.id || "agent").trim().toLowerCase();
+      if (!agentKeyToNode[key]) {
+        agentKeyToNode[key] = { ...agent, id: `agent_merged_${Object.keys(agentKeyToNode).length}`, original_ids: [] };
+      }
+      agentKeyToNode[key].original_ids.push(agent.id);
+      return agentKeyToNode[key];
+    }
+
+    function dedupeRelationKey(from, to, relation) {
+      return `${from}|${to}|${relation}`;
+    }
+
+    function buildProvDAGFlow(trace) {
+      const nodes = trace.prov.nodes || {};
+      const edges = trace.prov.edges || [];
+      const activities = Object.values(nodes).filter(n => n.type === "activity");
+
+      // 与 prov_visualizer.py 的 Mermaid 设计一致：
+      // 1. 相同 location 的 entity 合并为一个 artifact 节点
+      // 2. agent 作为处理节点
+      // 3. 展示 artifact → agent → artifact 的用户可读数据流
+      // 4. 相同两点之间的相同关系只保留一条边
+      const locationToNode = {};
+      const entityIdToMergedId = {};
+      const agentKeyToNode = {};
+      const agentIdToMergedId = {};
+      const agentNodes = {};
+      const activityNodes = {};
+      const mergedConnections = [];
+      const seenConnections = new Set();
+
+      function mergeEntityByLocation(entity) {
+        const location = entity.location || entity.id;
+        const locationKey = normalizeArtifactLocation(location);
+        if (!locationToNode[locationKey]) {
+          locationToNode[locationKey] = {
+            ...entity,
+            id: `artifact_${Object.keys(locationToNode).length}`,
+            location,
+            original_ids: [],
+            merged: true,
+          };
+        }
+        locationToNode[locationKey].original_ids.push(entity.id);
+        entityIdToMergedId[entity.id] = locationToNode[locationKey].id;
+        return locationToNode[locationKey];
+      }
+
+      Object.values(nodes).filter(n => n.type === "entity").forEach(mergeEntityByLocation);
+      Object.values(nodes).filter(n => n.type === "agent").forEach(agent => {
+        const mergedAgent = mergeAgentByName(agent, agentKeyToNode);
+        agentNodes[mergedAgent.id] = mergedAgent;
+        agentIdToMergedId[agent.id] = mergedAgent.id;
+      });
+      activities.forEach(activity => { activityNodes[activity.id] = activity; });
+
+      for (const activity of activities) {
+        const used = edges.filter(e => e.from === activity.id && e.relation === "used").map(e => entityIdToMergedId[e.to]).filter(Boolean);
+        const generated = edges.filter(e => e.to === activity.id && e.relation === "wasGeneratedBy").map(e => entityIdToMergedId[e.from]).filter(Boolean);
+        const associated = edges.filter(e => e.from === activity.id && e.relation === "wasAssociatedWith").map(e => agentIdToMergedId[e.to]).filter(id => agentNodes[id]);
+        const agentIds = associated.length ? associated : [`activity_proxy_${activity.id}`];
+        if (!associated.length) {
+          agentNodes[agentIds[0]] = {
+            id: agentIds[0],
+            type: "agent",
+            agent_type: "activity_proxy",
+            name: activity.description || activity.activity_type || activity.id,
+            attributes: { proxied_activity: activity.id },
+          };
+        }
+
+        for (const input of used) {
+          for (const agentId of agentIds) {
+            const key = dedupeRelationKey(input, agentId, activity.activity_type || "process");
+            if (!seenConnections.has(key)) {
+              seenConnections.add(key);
+              mergedConnections.push({ from: input, to: agentId, relation: activity.activity_type || "process", activity });
+            }
+          }
+        }
+        for (const agentId of agentIds) {
+          for (const output of generated) {
+            const key = dedupeRelationKey(agentId, output, "output");
+            if (!seenConnections.has(key)) {
+              seenConnections.add(key);
+              mergedConnections.push({ from: agentId, to: output, relation: "output", activity });
+            }
+          }
+        }
+      }
+
+      for (const edge of edges.filter(e => e.relation === "wasDerivedFrom")) {
+        const from = entityIdToMergedId[edge.to];
+        const to = entityIdToMergedId[edge.from];
+        const key = dedupeRelationKey(from, to, "wasDerivedFrom");
+        if (from && to && from !== to && !seenConnections.has(key)) {
+          seenConnections.add(key);
+          mergedConnections.push({ from, to, relation: "wasDerivedFrom" });
+        }
+      }
+
+      const artifactNodes = Object.values(locationToNode);
+      const ordered = [...artifactNodes, ...Object.values(agentNodes)];
+      return { nodes: ordered, edges: mergedConnections, activityNodes };
+    }
+
+    function render() {
+      document.querySelector(".app")?.classList.toggle("inspector-expanded", state.inspectorExpanded);
+      if (!state.trace) {
+        $("sessionSubtitle").textContent = "加载任意 AgentVAST session 文件夹，按 PROV DAG 展示流程并融合分析结果";
+        $("validationBadge").textContent = "WAITING FOR SESSION";
+        $("stepCount").textContent = "0";
+        $("metricSteps").textContent = "0";
+        $("metricEntities").textContent = "0";
+        $("metricActivities").textContent = "0";
+        $("metricArtifacts").textContent = "0";
+        $("timeline").innerHTML = '<div class="empty">选择一个完整的 AgentVAST session 文件夹，页面会自动读取需要的 JSON 文件。</div>';
+        $("graphStage").innerHTML = '<div class="empty">Graph 会在加载 session 后从 prov_nodes.json + prov_edges.json 构建，并尝试融合 final report / report 参数中的分析结果。</div>';
+        $("inspector").innerHTML = '<div class="empty">点击左侧步骤或中间 DAG 节点查看输入、输出、代码、命令、参数、PROV关系和分析结果。</div>';
+        return;
+      }
+      const trace = state.trace;
+      $("sessionSubtitle").textContent = `${trace.sessionId} · created ${trace.createdAt}`;
+      $("validationBadge").textContent = trace.consistency.ok ? "SCHEMA CONSISTENT" : "CHECK WARNINGS";
+      $("validationBadge").style.color = trace.consistency.ok ? "var(--green)" : "var(--amber)";
+      $("stepCount").textContent = String(trace.steps.length);
+      $("metricSteps").textContent = String(trace.steps.length);
+      $("metricEntities").textContent = String(trace.counts.entities);
+      $("metricActivities").textContent = String(trace.counts.activities);
+      $("metricArtifacts").textContent = String(trace.counts.artifacts);
+      renderTimeline(trace);
+      renderGraph(trace);
+      renderInspector(trace);
+    }
+
+    function renderTimeline(trace) {
+      $("timeline").innerHTML = trace.steps.map(step => `
+        <article class="step-card ${step.id === state.selectedStepId ? "active" : ""}" data-step-id="${step.id}">
+          <div class="step-kicker"><span>${String(step.index).padStart(2, "0")} · ${escapeHtml(step.operation)}</span><span>${escapeHtml(step.id)}</span></div>
+          <div class="step-name">${escapeHtml(step.name)}</div>
+          <div class="step-desc">${escapeHtml(step.description)}</div>
+          <div class="node-meta">${step.inputFiles.length} inputs → ${step.outputFiles.length} outputs · ${step.codeFiles.length} code files</div>
+        </article>`).join("");
+      document.querySelectorAll("[data-step-id]").forEach(el => el.addEventListener("click", () => {
+        state.selectedStepId = el.getAttribute("data-step-id");
+        state.selectedProvId = null;
+        state.activeTab = "overview";
+        render();
+      }));
+    }
+
+    function verticalLayout(flow, stageWidth) {
+      const NODE_W = 220;
+      const NODE_H = 96;
+      const GROUP_GAP = 140;
+      const COL_GAP = 96;
+      const SIDE_LANE_W = 84;
+      const PADDING_X = 32;
+      const PADDING_Y = 36;
+
+      const getNodeKey = (node) => {
+        // 优先检查 location 中的文件名
+        let name = "";
+        if (node.location) {
+          name = baseName(node.location).toLowerCase();
+        } else if (node.name) {
+          name = node.name.toLowerCase();
+        } else {
+          name = node.id.toLowerCase();
+        }
+
+        // 匹配多种模式：n01., n1., node_01, node_1, _n01.
+        const match = name.match(/^n0*(\d+)\./) ||
+                     name.match(/^node_0*(\d+)/) ||
+                     name.match(/_n0*(\d+)\./) ||
+                     name.match(/_n0*(\d+)_/) ||
+                     name.match(/^artifact_0*(\d+)/);
+
+        if (match) {
+          const num = parseInt(match[1]);
+          return `node_${String(num).padStart(2, '0')}`;
+        }
+
+        // 检查 merged 节点的 original_ids
+        if (node.merged && node.original_ids && node.original_ids.length > 0) {
+          for (const origId of node.original_ids) {
+            const origName = origId.toLowerCase();
+            const origMatch = origName.match(/n0*(\d+)/) || origName.match(/node_0*(\d+)/);
+            if (origMatch) {
+              const num = parseInt(origMatch[1]);
+              return `node_${String(num).padStart(2, '0')}`;
+            }
+          }
+        }
+
+        return null;
+      };
+
+      const isTrueRawData = (node) => {
+        const name = (node.location ? baseName(node.location) : (node.name || node.id)).toLowerCase();
+        // 真正的原始数据：包含mc2/vast，且不含node编号模式
+        const hasNodePattern = /^n0*\d+[\._]/.test(name) ||
+                               /^node_0*\d+/.test(name) ||
+                               /_n0*\d+[\._]/.test(name);
+        // 只有不含node编号的mc2/vast数据才算原始数据
+        return !hasNodePattern && (name.includes("mc2") || name.includes("vast") ||
+                                   name.includes("saidit") || name.includes("parler") ||
+                                   name.includes("vastchallenge"));
+      };
+
+      const isProcessingNode = (node) => {
+        return node.type === "agent" || node.type === "activity";
+      };
+
+      // 分组节点：按node_XX模式分组
+      const grouped = new Map();
+      const rawDataNodes = [];
+      const debugInfo = { grouped: {}, raw: [] }; // 调试信息
+
+      flow.nodes.forEach(node => {
+        const key = getNodeKey(node);
+        if (key) {
+          if (!grouped.has(key)) grouped.set(key, []);
+          grouped.get(key).push(node);
+          if (!debugInfo.grouped[key]) debugInfo.grouped[key] = [];
+          debugInfo.grouped[key].push({
+            id: node.id,
+            location: node.location ? baseName(node.location) : node.name || node.id,
+            type: node.type
+          });
+        } else if (isTrueRawData(node)) {
+          rawDataNodes.push(node);
+          debugInfo.raw.push({
+            id: node.id,
+            location: node.location ? baseName(node.location) : node.name || node.id,
+            type: node.type,
+            why: "true_raw"
+          });
+        } else {
+          // 其他节点归入原始数据行（如最终报告）
+          rawDataNodes.push(node);
+          debugInfo.raw.push({
+            id: node.id,
+            location: node.location ? baseName(node.location) : node.name || node.id,
+            type: node.type,
+            why: "fallback"
+          });
+        }
+      });
+
+      const sortedGroups = [...grouped.keys()].sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+
+      // 调试输出
+      console.log("Layout Debug Info:", {
+        totalNodes: flow.nodes.length,
+        groupedGroups: Object.keys(debugInfo.grouped).length,
+        groupedDetail: debugInfo.grouped,
+        rawDataCount: rawDataNodes.length,
+        rawDetail: debugInfo.raw,
+        sortedGroups
+      });
+
+      const positions = {};
+      const nodeGroups = [];
+      let maxGroupWidth = 0;
+      let currentY = PADDING_Y;
+      let currentLayer = 0;
+
+      // 第一行：真正的原始数据
+      if (rawDataNodes.length) {
+        rawDataNodes.sort((a, b) => {
+          const aIsProc = isProcessingNode(a);
+          const bIsProc = isProcessingNode(b);
+          if (aIsProc && !bIsProc) return -1;
+          if (!aIsProc && bIsProc) return 1;
+          return 0;
+        });
+
+        const rowWidth = rawDataNodes.length * NODE_W + Math.max(0, rawDataNodes.length - 1) * COL_GAP;
+        maxGroupWidth = Math.max(maxGroupWidth, rowWidth);
+        const startX = SIDE_LANE_W + PADDING_X + Math.max(0, ((stageWidth || 900) - SIDE_LANE_W * 2 - PADDING_X * 2 - rowWidth) / 2);
+
+        rawDataNodes.forEach((node, col) => {
+          positions[node.id] = {
+            x: startX + col * (NODE_W + COL_GAP),
+            y: currentY,
+            layer: currentLayer,
+          };
+        });
+
+        nodeGroups.push({
+          key: "raw_data",
+          nodes: rawDataNodes,
+          y: currentY,
+          box: { x: startX, y: currentY, width: rowWidth, height: NODE_H },
+        });
+
+        currentY += NODE_H + GROUP_GAP;
+        currentLayer++;
+      }
+
+      // 处理节点组（node_01, node_02...）
+      sortedGroups.forEach((groupKey) => {
+        const groupNodes = grouped.get(groupKey);
+        groupNodes.sort((a, b) => {
+          const aIsProc = isProcessingNode(a);
+          const bIsProc = isProcessingNode(b);
+          if (aIsProc && !bIsProc) return -1;
+          if (!aIsProc && bIsProc) return 1;
+          return 0;
+        });
+
+        const rowWidth = groupNodes.length * NODE_W + Math.max(0, groupNodes.length - 1) * COL_GAP;
+        maxGroupWidth = Math.max(maxGroupWidth, rowWidth);
+        const startX = SIDE_LANE_W + PADDING_X + Math.max(0, ((stageWidth || 900) - SIDE_LANE_W * 2 - PADDING_X * 2 - rowWidth) / 2);
+
+        groupNodes.forEach((node, col) => {
+          positions[node.id] = {
+            x: startX + col * (NODE_W + COL_GAP),
+            y: currentY,
+            layer: currentLayer,
+          };
+        });
+
+        nodeGroups.push({
+          key: groupKey,
+          nodes: groupNodes,
+          y: currentY,
+          box: { x: startX, y: currentY, width: rowWidth, height: NODE_H },
+        });
+
+        currentY += NODE_H + GROUP_GAP;
+        currentLayer++;
+      });
+
+      // 分析边：区分组内的边和跨组的边
+      const intraGroupEdges = [];
+      const interGroupEdges = [];
+
+      for (const edge of flow.edges) {
+        if (edge.relation === "wasDerivedFrom") continue;
+
+        const fromPos = positions[edge.from];
+        const toPos = positions[edge.to];
+        if (!fromPos || !toPos) continue;
+
+        if (fromPos.layer === toPos.layer) {
+          intraGroupEdges.push({ ...edge, kind: "intra-group" });
+        } else {
+          interGroupEdges.push({ ...edge, kind: "inter-group", layerDiff: toPos.layer - fromPos.layer });
+        }
+      }
+
+      // 跨组边路由：根据涉及的节点类型决定左右侧
+      // 如果edge涉及代码节点（agent/activity），从左侧连接
+      // 如果edge只涉及数据节点，从右侧连接
+      const routedInterGroupEdges = [];
+      const leftLaneUsage = new Map();
+      const rightLaneUsage = new Map();
+
+      for (const edge of interGroupEdges) {
+        const fromNode = flow.nodes.find(n => n.id === edge.from);
+        const toNode = flow.nodes.find(n => n.id === edge.to);
+
+        // 判断是否涉及代码节点
+        const involvesProcessing = fromNode && (isProcessingNode(fromNode)) ||
+                                    toNode && (isProcessingNode(toNode));
+
+        const side = involvesProcessing ? "left" : "right";
+        const layerDiff = Math.abs(edge.layerDiff);
+
+        const laneUsage = side === "left" ? leftLaneUsage : rightLaneUsage;
+        const usageCount = laneUsage.get(layerDiff) || 0;
+        laneUsage.set(layerDiff, usageCount + 1);
+
+        routedInterGroupEdges.push({
+          ...edge,
+          side,
+          laneOffset: 10 + layerDiff * 16 + usageCount * 12,
+        });
+      }
+
+      // 组间连接：从上一个组的最后一个节点到下一个组的第一个节点
+      const groupConnectors = [];
+      for (let i = 0; i < nodeGroups.length - 1; i++) {
+        const fromGroup = nodeGroups[i];
+        const toGroup = nodeGroups[i + 1];
+        if (fromGroup.nodes.length > 0 && toGroup.nodes.length > 0) {
+          groupConnectors.push({
+            from: fromGroup.nodes[fromGroup.nodes.length - 1].id,
+            to: toGroup.nodes[0].id,
+            kind: "group-to-group"
+          });
+        }
+      }
+
+      return {
+        positions,
+        nodeGroups,
+        intraGroupEdges,
+        interGroupEdges: routedInterGroupEdges,
+        groupConnectors,
+        width: Math.max((stageWidth || 900), maxGroupWidth + SIDE_LANE_W * 2 + PADDING_X * 2),
+        height: Math.max(currentY + PADDING_Y, 720),
+        nodeWidth: NODE_W,
+        nodeHeight: NODE_H,
+        groupGap: GROUP_GAP,
+        colGap: COL_GAP,
+        sideLaneWidth: SIDE_LANE_W,
+      };
+    }
+
+    function layeredLayout(flow, stageWidth) {
+      const NODE_W = 150;
+      const NODE_H = 76;
+      const COL_GAP = 90;
+      const ROW_GAP = 28;
+      const incoming = new Map(flow.nodes.map(n => [n.id, 0]));
+      const outgoing = new Map(flow.nodes.map(n => [n.id, []]));
+      for (const edge of flow.edges) {
+        incoming.set(edge.to, (incoming.get(edge.to) || 0) + 1);
+        if (!outgoing.has(edge.from)) outgoing.set(edge.from, []);
+        outgoing.get(edge.from).push(edge.to);
+      }
+      const layer = new Map();
+      const queue = flow.nodes.filter(n => !incoming.get(n.id)).map(n => n.id);
+      flow.nodes.forEach(n => { if (!layer.has(n.id)) layer.set(n.id, 0); });
+      while (queue.length) {
+        const id = queue.shift();
+        const nextLayer = (layer.get(id) || 0) + 1;
+        for (const to of outgoing.get(id) || []) {
+          if ((layer.get(to) || 0) < nextLayer) layer.set(to, nextLayer);
+          incoming.set(to, incoming.get(to) - 1);
+          if (incoming.get(to) === 0) queue.push(to);
+        }
+      }
+      const maxColumns = Math.max(2, Math.floor((stageWidth || 900) / (NODE_W + COL_GAP)));
+      const columns = new Map();
+      for (const node of flow.nodes) {
+        const col = layer.get(node.id) || 0;
+        if (!columns.has(col)) columns.set(col, []);
+        columns.get(col).push(node);
+      }
+      const positions = {};
+      const sortedLayers = [...columns.keys()].sort((a, b) => a - b);
+      let bandOffsetY = 18;
+      for (let i = 0; i < sortedLayers.length; i += maxColumns) {
+        const band = sortedLayers.slice(i, i + maxColumns);
+        const bandHeight = Math.max(...band.map(col => columns.get(col).length)) * (NODE_H + ROW_GAP);
+        band.forEach((layerNo, bandCol) => {
+          columns.get(layerNo).forEach((node, row) => {
+            positions[node.id] = {
+              x: 22 + bandCol * (NODE_W + COL_GAP),
+              y: bandOffsetY + row * (NODE_H + ROW_GAP),
+            };
+          });
+        });
+        bandOffsetY += Math.max(bandHeight, NODE_H + ROW_GAP) + 70;
+      }
+      return {
+        positions,
+        width: Math.max(Math.min(sortedLayers.length, maxColumns) * (NODE_W + COL_GAP) + 90, 760),
+        height: Math.max(bandOffsetY + 40, 520),
+        nodeWidth: NODE_W,
+        nodeHeight: NODE_H,
+      };
+    }
+
+    function isLongEdge(edge, positions) {
+      const from = positions[edge.from];
+      const to = positions[edge.to];
+      if (!from || !to) return false;
+      return Math.abs((to.layer || 0) - (from.layer || 0)) > 1;
+    }
+
+    function routeGraphEdges(edges, positions) {
+      let laneIndex = 0;
+      return edges.map(edge => {
+        if (!isLongEdge(edge, positions)) return { ...edge, kind: "short" };
+        const routed = {
+          ...edge,
+          kind: "long",
+          laneIndex,
+          side: laneIndex % 2 === 0 ? "left" : "right",
+        };
+        laneIndex += 1;
+        return routed;
+      });
+    }
+
+    function renderShortEdge(edge, positions, layout) {
+      const a = positions[edge.from], b = positions[edge.to];
+      if (!a || !b) return "";
+      const x1 = a.x + layout.nodeWidth / 2;
+      const y1 = a.y + layout.nodeHeight;
+      const x2 = b.x + layout.nodeWidth / 2;
+      const y2 = b.y;
+      const labelX = (x1 + x2) / 2;
+      const labelY = (y1 + y2) / 2 - 6;
+      const bend = Math.max(44, Math.abs(y2 - y1) / 2);
+      const path = `M ${x1} ${y1} C ${x1} ${y1 + bend}, ${x2} ${y2 - bend}, ${x2} ${y2}`;
+      return `<path class="dag-edge ${edge.relation === "output" ? "generated" : ""}" d="${path}" marker-end="url(#arrow)" /><text class="edge-label" x="${labelX}" y="${labelY}">${escapeHtml(edge.relation)}</text>`;
+    }
+
+    function renderIntraGroupEdge(edge, positions, layout) {
+      const a = positions[edge.from], b = positions[edge.to];
+      if (!a || !b) return "";
+      const x1 = a.x + layout.nodeWidth;
+      const y1 = a.y + layout.nodeHeight / 2;
+      const x2 = b.x;
+      const y2 = b.y + layout.nodeHeight / 2;
+      const path = `M ${x1} ${y1} L ${x2} ${y2}`;
+      const labelX = (x1 + x2) / 2;
+      const labelY = y1 - 8;
+      return `<path class="dag-edge" d="${path}" marker-end="url(#arrow)" /><text class="edge-label" x="${labelX}" y="${labelY}">${escapeHtml(edge.relation)}</text>`;
+    }
+
+    function renderGroupConnector(connector, positions, layout) {
+      const a = positions[connector.from], b = positions[connector.to];
+      if (!a || !b) return "";
+      const x1 = a.x + layout.nodeWidth / 2;
+      const y1 = a.y + layout.nodeHeight;
+      const x2 = b.x + layout.nodeWidth / 2;
+      const y2 = b.y;
+      const path = `M ${x1} ${y1} L ${x2} ${y2}`;
+      return `<path class="dag-edge generated" d="${path}" marker-end="url(#arrow)" />`;
+    }
+
+    function renderInterGroupEdge(edge, positions, layout) {
+      const a = positions[edge.from], b = positions[edge.to];
+      if (!a || !b) return "";
+
+      // 根据side选择左侧或右侧通道
+      const laneX = edge.side === "left"
+        ? layout.sideLaneWidth - edge.laneOffset
+        : layout.width - layout.sideLaneWidth + edge.laneOffset;
+
+      const x1 = edge.side === "left" ? a.x : a.x + layout.nodeWidth;
+      const y1 = a.y + layout.nodeHeight / 2;
+      const x2 = edge.side === "left" ? b.x : b.x + layout.nodeWidth;
+      const y2 = b.y + layout.nodeHeight / 2;
+      const labelX = laneX + (edge.side === "left" ? -6 : 6);
+      const labelY = (y1 + y2) / 2;
+
+      const path = `M ${x1} ${y1} C ${laneX} ${y1}, ${laneX} ${y1}, ${laneX} ${(y1 + y2) / 2} C ${laneX} ${y2}, ${laneX} ${y2}, ${x2} ${y2}`;
+      return `<path class="dag-edge long-edge" d="${path}" /><text class="edge-label" x="${labelX}" y="${labelY}">${escapeHtml(edge.relation)}</text>`;
+    }
+
+    function renderGraph(trace) {
+      const flow = buildProvDAGFlow(trace);
+      if (!flow.nodes.length) { $("graphStage").innerHTML = '<div class="empty">No PROV nodes found.</div>'; return; }
+
+      const GRAPH_SCALE = state.graphScale;
+      const layout = verticalLayout(flow, $("graphStage").clientWidth);
+      const pos = layout.positions;
+
+      // 渲染组内边
+      const intraGroupEdgesHtml = (layout.intraGroupEdges || []).map(edge => renderIntraGroupEdge(edge, pos, layout)).join("");
+
+      // 渲染组间连接
+      const groupConnectorHtml = (layout.groupConnectors || []).map(conn => renderGroupConnector(conn, pos, layout)).join("");
+
+      // 渲染跨组边
+      const interGroupEdgesHtml = (layout.interGroupEdges || []).map(edge => renderInterGroupEdge(edge, pos, layout)).join("");
+
+      const svgEdges = intraGroupEdgesHtml + groupConnectorHtml + interGroupEdgesHtml;
+
+      const nodeHtml = flow.nodes.map(node => renderDAGNode(node, pos[node.id], trace)).join("");
+      $("graphStage").innerHTML = `<div class="flow-grid" style="width:${layout.width * GRAPH_SCALE}px;height:${layout.height * GRAPH_SCALE}px"><div style="position:relative;width:${layout.width}px;height:${layout.height}px;transform:scale(${GRAPH_SCALE});transform-origin:top left;">
+        <svg class="dag-svg" width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}">
+          <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="rgba(217, 119, 69, 0.55)" /></marker></defs>
+          ${svgEdges}
+        </svg>${nodeHtml}
+        </div></div>`;
+      document.querySelectorAll("[data-prov-id]").forEach(el => el.addEventListener("click", () => {
+        state.selectedProvId = el.getAttribute("data-prov-id");
+        state.selectedStepId = findStepForProvNode(trace, state.selectedProvId)?.id || state.selectedStepId;
+        state.activeTab = "overview";
+        render();
+      }));
+      const zoomIn = $("zoom-in");
+      const zoomOut = $("zoom-out");
+      const zoomLabel = $("zoomLabel");
+      if (zoomLabel) zoomLabel.textContent = `${Math.round(state.graphScale * 100)}%`;
+      if (zoomIn) zoomIn.onclick = () => { state.graphScale = Math.min(1.8, state.graphScale + 0.1); renderGraph(trace); };
+      if (zoomOut) zoomOut.onclick = () => { state.graphScale = Math.max(0.45, state.graphScale - 0.1); renderGraph(trace); };
+    }
+
+    function formatNodeTitle(node) {
+      const raw = node.location ? baseName(node.location) : (node.name || node.description || node.id);
+      return String(raw)
+        .replace(/^node_0*(\d+)_/, "n$1 · ")
+        .replace(/_/g, " ")
+        .replace(/\.json$|\.py$|\.txt$/i, "")
+        .slice(0, 54);
+    }
+
+    function formatNodeDescription(node) {
+      if (node.type === "agent") return (node.name || node.agent_type || "processing agent").replace(/_/g, " ").slice(0, 72);
+      if (node.type === "activity") return (node.description || node.activity_type || "activity").slice(0, 72);
+      if (node.location) return `${node.entity_type || "artifact"} · click for full path`;
+      return (node.description || node.name || "PROV node").slice(0, 72);
+    }
+
+    function renderDAGNode(node, p, trace) {
+      const kind = node.merged ? "entity" : (node.type || "node");
+      const subtype = node.entity_type || node.activity_type || node.agent_type || kind;
+      const title = formatNodeTitle(node);
+      const description = formatNodeDescription(node);
+      const mergedMeta = node.merged && node.original_ids?.length > 1 ? `merged ${node.original_ids.length}` : "detail in inspector";
+      return `<article class="dag-node ${escapeHtml(kind)} ${/report|final/i.test(title) ? "report" : ""} ${node.id === state.selectedProvId ? "selected" : ""}" data-prov-id="${escapeHtml(node.id)}" style="left:${p.x}px;top:${p.y}px">
+        <div class="node-kind">${escapeHtml(subtype)} · ${escapeHtml(mergedMeta)}</div>
+        <div class="node-label">${escapeHtml(title)}</div>
+        <div class="node-desc">${escapeHtml(description)}</div>
+      </article>`;
+    }
+
+    function findStepForProvNode(trace, provId) {
+      const node = trace.prov.nodes[provId] || findMergedNodeById(buildProvDAGFlow(trace).nodes, provId);
+      if (!node) return null;
+      const hay = `${node.location || ""} ${node.description || ""} ${node.name || ""}`.toLowerCase();
+      return trace.steps.find(step => hay.includes(step.id.toLowerCase()) || step.outputFiles.some(f => hay.includes(baseName(f).toLowerCase())) || step.inputFiles.some(f => hay.includes(baseName(f).toLowerCase())));
+    }
+
+    function findMergedNodeById(nodes, id) {
+      return nodes.find(node => node.id === id || node.original_ids?.includes(id)) || null;
+    }
+
+    function renderInspector(trace) {
+      const provNode = state.selectedProvId ? (trace.prov.nodes[state.selectedProvId] || findMergedNodeById(buildProvDAGFlow(trace).nodes, state.selectedProvId)) : null;
+      const step = state.selectedStepId ? trace.steps.find(s => s.id === state.selectedStepId) : trace.steps[0];
+      const artifact = findLlmArtifact(trace, { step, node: provNode });
+      const artifactKind = getArtifactKind(artifact);
+      $("selectedLabel").textContent = provNode?.id || step?.id || "none";
+      const tabs = artifactKind === "dataset" ? ["overview", "files", "chart", "parameters"] : ["overview", "files", "code", "parameters"];
+      if (!tabs.includes(state.activeTab)) state.activeTab = "overview";
+      const tabHtml = tabs.map(tab => `<span class="tab ${state.activeTab === tab ? "active" : ""}" data-tab="${tab}">${tab}</span>`).join("");
+      let body = "";
+      if (state.activeTab === "overview") {
+        const title = provNode?.description || provNode?.name || step?.name || "Selection";
+        const summary = step?.description || provNode?.location || "";
+        const artifactOverview = formatArtifactOverview(artifact, artifactKind);
+        body = `<div class="detail"><h2>${escapeHtml(title)}</h2><p>${escapeHtml(summary)}</p>
+          ${artifactOverview || `<div class="kv"><b>type</b><span>${escapeHtml(provNode ? `${provNode.type} / ${provNode.entity_type || provNode.activity_type || provNode.agent_type || ""}` : step?.operation)}</span></div>
+          <div class="kv"><b>timestamp</b><span>${escapeHtml(provNode?.timestamp || step?.timestamp || "unknown")}</span></div>`}</div>`;
+      } else if (state.activeTab === "files") {
+        body = `<div class="kv"><b>input files</b>${(step?.inputFiles || []).map(f => `<span>${escapeHtml(baseName(f))}</span><br>`).join("") || "—"}</div>
+          <div class="kv"><b>output files</b>${(step?.outputFiles || []).map(f => `<span>${escapeHtml(baseName(f))}</span><br>`).join("") || "—"}</div>`;
+      } else if (state.activeTab === "code") {
+        body = `<div class="kv"><b>code files</b>${(step?.codeFiles || []).map(f => `<span>${escapeHtml(f)}</span><br>`).join("") || "—"}</div>
+          <div class="kv"><b>algorithm_logic</b>${artifactKind === "script" ? formatAlgorithmLogic(artifact) : "—"}</div>
+          <div class="kv"><b>commands</b>${(step?.commands || []).map(c => `<span>${escapeHtml(c)}</span><br>`).join("") || "—"}</div>
+          <div class="kv"><b>generated snippets</b><pre>${escapeHtml((step?.codeGenerated || []).join("\n")) || "—"}</pre></div>`;
+      } else if (state.activeTab === "chart") {
+        body = formatDatasetChart(artifact);
+      } else {
+        body = Object.entries(step?.parameters || {}).map(([key, value]) => `<div class="kv"><b>${escapeHtml(key)}</b><span>${escapeHtml(shortValue(value))}</span></div>`).join("") || "<p>No parameters recorded.</p>";
+      }
+      $("inspector").innerHTML = `<div class="tabs">${tabHtml}<button class="inspector-toggle" id="inspectorToggle">${state.inspectorExpanded ? "Collapse" : "Expand"}</button></div>${body}`;
+      const toggle = $("inspectorToggle");
+      if (toggle) toggle.onclick = () => { state.inspectorExpanded = !state.inspectorExpanded; render(); };
+      if (state.activeTab === "chart" && artifactKind === "dataset") renderDatasetChart(artifact);
+      document.querySelectorAll("[data-tab]").forEach(el => el.addEventListener("click", () => { state.activeTab = el.getAttribute("data-tab"); renderInspector(trace); }));
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>'"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[ch]));
+    }
+
+    render();
+  </script>
+</body>
+</html>

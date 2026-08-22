@@ -13,10 +13,10 @@ import json
 import sys
 from pathlib import Path
 
-# 添加 opentrace 到路径
+# 添加 agentvast 到路径
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from opentrace.mcp_server import get_server
+from agentvast.mcp_server import get_server
 
 
 def main():

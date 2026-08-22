@@ -1,5 +1,5 @@
 name: trace-guided-data-analysis
-description: "Agent 迭代式数据血缘追踪分析工作流 - 每步操作都记录到 OpenTrace 系统，并在观察结果后决定下一步"
+description: "Agent 迭代式数据血缘追踪分析工作流 - 每步操作都记录到 AgentVAST 系统，并在观察结果后决定下一步"
 version: "1.0"
 
 metadata:
@@ -12,11 +12,11 @@ metadata:
 
 phases:
   - title: "初始化会话"
-    description: "加载数据并初始化 OpenTrace 会话；只允许完成初始化和首个中间文件写入，不得一次性执行完整分析"
+    description: "加载数据并初始化 AgentVAST 会话；只允许完成初始化和首个中间文件写入，不得一次性执行完整分析"
     steps:
       - name: "加载原始数据"
         action: |
-          1. 获取 OpenTrace 服务器实例: `server = get_server()`，工作目录使用 `Path(server.base_dir) / session_id`
+          1. 获取 AgentVAST 服务器实例: `server = get_server()`，工作目录使用 `Path(server.base_dir) / session_id`
           2. 初始化会话: `server.init_session(task_description, data_path, data_type)`
           3. 保存原始数据为中间文件: `working_dir/loaded_data.json`
           4. 调用 `server.record_step()` 记录基础步骤

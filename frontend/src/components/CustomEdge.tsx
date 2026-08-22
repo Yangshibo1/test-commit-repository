@@ -51,7 +51,8 @@ const CustomEdge = ({
               style={{
                 position: 'absolute',
                 transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
-                fontSize: '10px',
+                fontSize: '12px',
+                lineHeight: '18px',
                 fontFamily: 'monospace',
                 background: '#fffaf5',
                 padding: '2px 6px',
@@ -105,7 +106,8 @@ const CustomEdge = ({
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
-              fontSize: '10px',
+              fontSize: '12px',
+              lineHeight: '18px',
               fontFamily: 'monospace',
               background: '#fffaf5',
               padding: '2px 6px',

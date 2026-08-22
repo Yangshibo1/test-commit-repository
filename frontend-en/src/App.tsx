@@ -6,7 +6,7 @@ import FollowPanel from './components/FollowPanel';
 import { TraceData, ProvNode, StepDetail, SessionFiles } from './types';
 import { parseSessionFiles, buildProvDAGFlow } from './utils/traceParser';
 
-const DEFAULT_WORKSPACE = 'C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository';
+const DEFAULT_WORKSPACE = 'C:\\path\\to\\analysis-project';
 
 function App() {
   const [trace, setTrace] = useState<TraceData | null>(null);
@@ -125,7 +125,7 @@ function App() {
   }, [trace]);
 
   const selectedContext = trace ? {
-    opentrace_session: trace.sessionId,
+    agentvast_session: trace.sessionId,
     selected_step: selectedStep ? {
       id: selectedStep.step_id,
       name: selectedStep.name,
@@ -149,12 +149,12 @@ function App() {
       <header className="h-[92px] flex items-center px-6 border-b border-[rgba(184,165,143,0.55)] bg-[rgba(255,250,240,0.78)] backdrop-blur-2xl">
         <div className="flex items-center gap-4 flex-1">
           <div className="w-12 h-12 border border-[rgba(217,119,69,0.42)] rounded-xl flex items-center justify-center bg-gradient-to-br from-white to-[#fff6ef] shadow-lg">
-            <span className="text-accent font-bold text-lg rotate-[-4deg]">OT</span>
+            <span className="text-accent font-bold text-lg rotate-[-4deg]">AV</span>
           </div>
           <div>
-            <h1 className="font-serif text-2xl leading-none">OpenTrace Workbench</h1>
+            <h1 className="font-serif text-2xl leading-none">AgentVAST Workbench</h1>
             <div className="text-muted text-xs font-mono mt-1">
-              {trace ? `${trace.sessionId} · created ${trace.createdAt}` : 'Load OpenTrace session folder to view PROV DAG with analysis results'}
+              {trace ? `${trace.sessionId} · created ${trace.createdAt}` : 'Load AgentVAST session folder to view PROV DAG with analysis results'}
             </div>
           </div>
         </div>
@@ -232,7 +232,7 @@ function App() {
             </div>
           ) : (
             <div className="h-full flex items-center justify-center text-muted text-sm p-8 text-center">
-              Select a complete OpenTrace session folder, the page will automatically read the required JSON files.
+              Select a complete AgentVAST session folder, the page will automatically read the required JSON files.
             </div>
           )}
         </aside>

@@ -1,4 +1,4 @@
-# OpenTrace 数据血缘追踪指南
+# AgentVAST 数据血缘追踪指南
 
 ## 项目说明
 
@@ -22,9 +22,9 @@
 ### 初始化会话
 
 ```python
-from opentrace.mcp_server import get_server
+from agentvast.mcp_server import get_server
 
-# 获取服务器实例（默认使用项目根目录 .opentrace/）
+# 获取服务器实例（默认使用项目根目录 .agentvast/）
 server = get_server()
 
 # 创建新会话
@@ -80,15 +80,15 @@ server.record_prov_relation(
 4. **临时 ID 必填**: 实体/活动/代理必须提供临时 ID 用于引用
 5. **工具失败处理**: 同一类工具调用连续失败 3 次后，必须停止重复尝试并向用户询问下一步，不要继续盲目重试
 6. **测试文件归档**: 后续生成的临时测试文件和测试数据统一放入 `test/` 文件夹，不要散落在项目根目录
-7. **VAST 数据归档**: VAST Challenge 相关测试数据分别存放在对应的数据目录中，不要与核心 OpenTrace 源码或通用测试文件混放
-8. **统一会话存储**: 除非显式设置 `OPENTRACE_BASE_DIR` 或传入 `get_server(base_dir)`，所有 OpenTrace session 统一写入项目根目录 `.opentrace/`，不要写入 VAST 子目录或 `opentrace/` 包目录
+7. **VAST 数据归档**: VAST Challenge 相关测试数据分别存放在对应的数据目录中，不要与核心 AgentVAST 源码或通用测试文件混放
+8. **统一会话存储**: 除非显式设置 `AGENTVAST_BASE_DIR` 或传入 `get_server(base_dir)`，所有 AgentVAST session 统一写入项目根目录 `.agentvast/`，不要写入 VAST 子目录或 `agentvast/` 包目录
 
 ## 服务器实例管理
 
 ```python
-from opentrace.mcp_server import get_server, list_all_servers
+from agentvast.mcp_server import get_server, list_all_servers
 
-# 默认实例（使用 opentrace 项目目录）
+# 默认实例（使用 agentvast 项目目录）
 default_server = get_server()
 
 # 自定义存储位置

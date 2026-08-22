@@ -1,5 +1,5 @@
 {
-  "name": "opentrace",
+  "name": "agentvast",
   "description": "Records Claude Code data-analysis workflows as semantic steps and file-level lineage.",
   "version": "0.1.0"
 }

@@ -1,4 +1,4 @@
-# OpenTrace MCP 工具参考手册
+# AgentVAST MCP 工具参考手册
 
 ## 工具清单
 
@@ -73,7 +73,7 @@ server.init_session(
     "keys": ["description", "events"],
     "fields": {...}
   },
-  "working_copy": ".opentrace/session_xxx/working_data.json"
+  "working_copy": ".agentvast/session_xxx/working_data.json"
 }
 ```
 
@@ -640,7 +640,7 @@ server.export_session(
 ### 输出结果
 ```json
 {
-  "export_path": ".opentrace/session_20260615_110055/export_20260615_110100.json",
+  "export_path": ".agentvast/session_20260615_110055/export_20260615_110100.json",
   "status": "success"
 }
 ```

@@ -456,9 +456,11 @@ def _node09_recurrence_matrix(node09: Mapping[str, Any], node12: Mapping[str, An
         source = post.get("content_source", "unknown")
         content = content_by_source.get(source, {})
         is_recent = source == "SwiftWren.txt"
+        source_label = escape(str(source).replace(".txt", ""))
+        latest_chip = ' <span class="vast-chip">latest</span>' if is_recent else ""
         rows.append(
             "<tr>"
-            f"<td>{escape(str(source).replace('.txt',''))}{' <span class=\"vast-chip\">latest</span>' if is_recent else ''}</td>"
+            f"<td>{source_label}{latest_chip}</td>"
             f"<td>{escape(source_hint.get(str(source), 'Unknown'))}</td>"
             f"<td>{escape(str(source))}</td>"
             "<td>John Windward</td>"

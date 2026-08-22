@@ -1,6 +1,6 @@
-# OpenTrace Frontend
+# AgentVAST Frontend
 
-基于 React + React Flow + Dagre 的 OpenTrace 数据血缘可视化前端。
+基于 React + React Flow + Dagre 的 AgentVAST 数据血缘可视化前端。
 
 ## 技术栈
 
@@ -35,7 +35,7 @@ npm run build
 
 ## 功能
 
-- 加载 OpenTrace session 文件夹
+- 加载 AgentVAST session 文件夹
 - 显示 PROV DAG（使用 Dagre 自动布局）
 - Timeline 展示分析步骤
 - Inspector 查看节点详情
@@ -44,7 +44,7 @@ npm run build
 
 ## 设计原则
 
-参考 `opentrace/visualization/vis-guide.md`：
+参考 `agentvast/visualization/vis-guide.md`：
 - 不重新实现 DAG 绘制
 - 专注将执行过程转换为具有语义的可解释 Provenance Graph
 - 使用现成的布局库（Dagre/ELK）

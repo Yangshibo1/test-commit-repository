@@ -1,4 +1,4 @@
-# OpenTrace MCP 工具完整指南
+# AgentVAST MCP 工具完整指南
 
 ## 目录
 - [概述](#概述)
@@ -14,20 +14,23 @@
 
 ## 概述
 
-### OpenTrace MCP 是什么？
+### AgentVAST MCP 是什么？
 
-OpenTrace 是一个**数据血缘追踪工具**，用于记录和追溯数据分析过程中的数据处理步骤。它由两部分组成：
+AgentVAST 是一个**数据血缘追踪工具**，用于记录和追溯数据分析过程中的数据处理步骤。它由两部分组成：
 
-1. **核心库** (`opentrace/tracker.py`)：血缘追踪核心功能
-2. **服务器接口** (`opentrace/mcp_server.py`)：对外提供的调用接口
+1. **核心库** (`agentvast/tracker.py`)：血缘追踪核心功能
+2. **服务器接口** (`agentvast/mcp_server.py`)：对外提供的调用接口
 
 ### 当前状态
 
-⚠️ **重要说明**：当前版本是**直接调用接口模式**，不是完整的 MCP 协议实现。
+⚠️ **重要说明**：本指南描述的是保留的 MCP/Tracker 兼容接口。AgentVAST 当前默认工作流是
+`python -m agentvast.agent_cli` 记录命令配合 Claude Code Plugin/Hook；启动器默认不加载 MCP，
+以兼容不支持 `tool_reference` 的模型网关。
 
 - ✅ 可以通过 Python 代码直接调用
-- ⏳ 标准 MCP 协议集成待完善
-- ⏳ Claude Code 自动集成待实现
+- ✅ `agentvast.mcp_stdio` 提供可选标准输入输出 MCP 通道
+- ✅ Claude Code 已通过 Plugin/Hook 自动观察并约束工作流
+- ℹ️ MCP 是可选适配通道，不是当前记录闭环的运行前提
 
 ---
 
@@ -43,7 +46,7 @@ OpenTrace 是一个**数据血缘追踪工具**，用于记录和追溯数据分
                      │ 手动调用
                      ↓
 ┌─────────────────────────────────────────────────────────┐
-│              OpenTraceServer (mcp_server.py)             │
+│              AgentVASTServer (mcp_server.py)             │
 │  - 提供调用接口                                          │
 │  - 管理会话                                              │
 │  - 调用核心追踪器                                        │
@@ -59,7 +62,7 @@ OpenTrace 是一个**数据血缘追踪工具**，用于记录和追溯数据分
                      │ 文件写入
                      ↓
 ┌─────────────────────────────────────────────────────────┐
-│               .opentrace/ 目录                           │
+│               .agentvast/ 目录                           │
 │  session_xxx/                                            │
 │    ├── meta.json                                         │
 │    ├── step_*.json                                       │
@@ -72,15 +75,15 @@ OpenTrace 是一个**数据血缘追踪工具**，用于记录和追溯数据分
 
 ```
 不是：
-  ✗ MCP 协议服务器
-  ✗ 自动监控工具
+  ✗ 默认 Claude Code 记录通道
+  ✗ 数据分析执行引擎
   ✗ 后台守护进程
   ✗ 代码拦截器
 
 是：
   ✓ Python 库
   ✓ 直接调用接口
-  ✓ 手动记录工具
+  ✓ 可选 MCP/手动记录兼容接口
   ✓ 文件存储系统
 ```
 
@@ -118,10 +121,10 @@ OpenTrace 是一个**数据血缘追踪工具**，用于记录和追溯数据分
 ### 方式1：直接导入调用
 
 ```python
-from opentrace.mcp_server import OpenTraceServer
+from agentvast.mcp_server import AgentVASTServer
 
 # 创建服务器实例
-server = OpenTraceServer('.opentrace')
+server = AgentVASTServer('.agentvast')
 
 # 调用工具
 result = server.init_session(
@@ -136,10 +139,10 @@ print(result['session_id'])
 ### 方式2：使用单例
 
 ```python
-from opentrace.mcp_server import get_server
+from agentvast.mcp_server import get_server
 
 # 获取单例实例
-server = get_server('.opentrace')
+server = get_server('.agentvast')
 
 # 调用工具
 session = server.init_session(...)
@@ -149,13 +152,13 @@ session = server.init_session(...)
 
 ```bash
 # 查看会话状态
-python opentrace_cli.py status
+python agentvast_cli.py status
 
 # 启动新会话
-python opentrace_cli.py start
+python agentvast_cli.py start
 
 # 导出会话
-python opentrace_cli.py export <session_id>
+python agentvast_cli.py export <session_id>
 ```
 
 ---
@@ -166,7 +169,7 @@ python opentrace_cli.py export <session_id>
 
 ```
 1. 初始化
-   └─> server = OpenTraceServer()
+   └─> server = AgentVASTServer()
    └─> session = server.init_session(...)
 
 2. 数据加载（自动记录）
@@ -203,10 +206,10 @@ python opentrace_cli.py export <session_id>
 ### 示例1：基础追踪
 
 ```python
-from opentrace.mcp_server import OpenTraceServer
+from agentvast.mcp_server import AgentVASTServer
 
 # 1. 初始化
-server = OpenTraceServer('.opentrace')
+server = AgentVASTServer('.agentvast')
 session = server.init_session("数据分析", "data.json", "json")
 session_id = session['session_id']
 
@@ -234,10 +237,10 @@ server.export_session(session_id)
 ### 示例2：完整数据处理记录
 
 ```python
-from opentrace.mcp_server import OpenTraceServer
+from agentvast.mcp_server import AgentVASTServer
 import json
 
-server = OpenTraceServer('.opentrace')
+server = AgentVASTServer('.agentvast')
 session = server.init_session("分析任务", "data.json", "json")
 session_id = session['session_id']
 
@@ -305,7 +308,7 @@ for source in analysis['analysis']['possible_sources']:
 ### 目录结构
 
 ```
-.opentrace/
+.agentvast/
 ├── session_20260615_120000/
 │   ├── meta.json                    # 会话元信息
 │   ├── step_000.json                # 数据加载步骤
@@ -522,8 +525,9 @@ server.trace_element(
 - ✅ **功能完整**：10个核心工具全部可用
 - ✅ **直接调用**：可以通过 Python 代码直接使用
 - ✅ **文件存储**：数据持久化到本地文件系统
-- ⏳ **MCP 协议**：标准 MCP 集成待完善
-- ⏳ **自动监控**：Claude Code 自动集成待实现
+- ✅ **MCP 通道**：`agentvast.mcp_stdio` 作为可选适配方式保留
+- ✅ **自动观察**：Claude Code Plugin/Hook 已实现
+- ℹ️ **默认通道**：当前使用 `agentvast.agent_cli`，不依赖 MCP
 
 ### 使用建议
 
@@ -534,7 +538,7 @@ server.trace_element(
 - 需要长期保存分析记录
 
 **使用步骤**：
-1. 导入 OpenTraceServer
+1. 导入 AgentVASTServer
 2. 初始化会话
 3. 在分析代码中调用记录方法
 4. 查询和导出结果

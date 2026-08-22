@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Generate six Flint-validated ECharts option JSON visualizations from the VAST Challenge 2026 MC2 event and organization datasets, then expose them through the existing OpenTrace Inspector artifacts.
+**Goal:** Generate six Flint-validated ECharts option JSON visualizations from the VAST Challenge 2026 MC2 event and organization datasets, then expose them through the existing AgentVAST Inspector artifacts.
 
 **Architecture:** A focused Python module will normalize only the event rows needed to answer the six challenge questions, derive six small chart tables, and hold six Flint `ChartAssemblyInput` specifications. A chart-generation script will validate and compile those specifications through `flint-chart-mcp` to ECharts options, then merge each option into the established `artifacts_llm/*.analysis.json` shape as `visualization_type: "echarts"` and `echarts_chart`.
 

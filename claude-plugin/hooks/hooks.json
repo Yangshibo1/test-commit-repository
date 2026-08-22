@@ -9,7 +9,7 @@
             "command": "python",
             "args": [
               "-m",
-              "opentrace.plugin_hook"
+              "agentvast.plugin_hook"
             ],
             "timeout": 10
           }
@@ -24,7 +24,7 @@
             "command": "python",
             "args": [
               "-m",
-              "opentrace.plugin_hook"
+              "agentvast.plugin_hook"
             ],
             "timeout": 10
           }
@@ -40,7 +40,7 @@
             "command": "python",
             "args": [
               "-m",
-              "opentrace.plugin_hook"
+              "agentvast.plugin_hook"
             ],
             "timeout": 10
           }
@@ -56,7 +56,7 @@
             "command": "python",
             "args": [
               "-m",
-              "opentrace.plugin_hook"
+              "agentvast.plugin_hook"
             ],
             "timeout": 10
           }
@@ -72,7 +72,54 @@
             "command": "python",
             "args": [
               "-m",
-              "opentrace.plugin_hook"
+              "agentvast.plugin_hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "-m",
+              "agentvast.plugin_hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "-m",
+              "agentvast.plugin_hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python",
+            "args": [
+              "-m",
+              "agentvast.plugin_hook"
             ],
             "timeout": 10
           }
@@ -87,7 +134,7 @@
             "command": "python",
             "args": [
               "-m",
-              "opentrace.plugin_hook"
+              "agentvast.plugin_hook"
             ],
             "timeout": 10
           }
@@ -103,7 +150,7 @@
             "command": "python",
             "args": [
               "-m",
-              "opentrace.plugin_hook"
+              "agentvast.plugin_hook"
             ],
             "timeout": 10
           }

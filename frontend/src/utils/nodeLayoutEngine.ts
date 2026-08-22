@@ -37,7 +37,7 @@ export function createNodeLayout(
   function getNodeNumber(node: ProvNode): number {
     // Try to extract from location first
     if (node.location) {
-      const match = node.location.match(/node_0*(\d+)_/i);
+      const match = node.location.match(/node[-_]0*(\d+)(?:[-_]|\b)/i);
       if (match) {
         return parseInt(match[1], 10); // 1 for node_01, 2 for node_02, etc.
       }
@@ -45,7 +45,7 @@ export function createNodeLayout(
       // Check if it's a report or visualization file (belongs to last row)
       if (node.location.match(/(final_report|visualization|validation_result)/i)) {
         // Try to extract node number from these files
-        const nodeMatch = node.location.match(/node_0*(\d+)_/i);
+        const nodeMatch = node.location.match(/node[-_]0*(\d+)(?:[-_]|\b)/i);
         if (nodeMatch) {
           return parseInt(nodeMatch[1], 10);
         }
@@ -60,7 +60,7 @@ export function createNodeLayout(
 
     // For agent nodes, try to extract from name
     if (node.type === 'agent' && node.name) {
-      const match = node.name.match(/node_0*(\d+)/i);
+      const match = node.name.match(/node[-_]0*(\d+)/i);
       if (match) {
         return parseInt(match[1], 10); // 1 for node_01, 2 for node_02, etc.
       }
@@ -237,9 +237,9 @@ export function createNodeLayout(
 function formatNodeLabel(node: ProvNode): string {
   const raw = node.location ? node.location.split(/[\\/]/).pop() : (node.name || node.description || node.id);
   return String(raw)
-    .replace(/^node_0*(\d+)_/, 'n$1 · ')
+    .replace(/^node[-_]0*(\d+)[-_]/i, 'node-$1 · ')
     .replace(/_/g, ' ')
-    .replace(/\.(json|py|txt)$/i, '')
+    .replace(/\.(json|csv|py|r|sql|ipynb|md|txt|html|png|jpg|jpeg|svg)$/i, '')
     .slice(0, 54);
 }
 
@@ -268,17 +268,17 @@ export function createDAGPages(
   // Helper functions (copied from createNodeLayout)
   function getNodeNumber(node: ProvNode): number {
     if (node.location) {
-      const match = node.location.match(/node_0*(\d+)_/i);
+      const match = node.location.match(/node[-_]0*(\d+)(?:[-_]|\b)/i);
       if (match) return parseInt(match[1], 10);
       if (node.location.match(/(final_report|visualization|validation_result)/i)) {
-        const nodeMatch = node.location.match(/node_0*(\d+)_/i);
+        const nodeMatch = node.location.match(/node[-_]0*(\d+)(?:[-_]|\b)/i);
         if (nodeMatch) return parseInt(nodeMatch[1], 10);
         return 999;
       }
       if (node.location.match(/MC2 data\.json|org_chart\.json/i)) return 0;
     }
     if (node.type === 'agent' && node.name) {
-      const match = node.name.match(/node_0*(\d+)/i);
+      const match = node.name.match(/node[-_]0*(\d+)/i);
       if (match) return parseInt(match[1], 10);
     }
     return 0;

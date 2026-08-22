@@ -1,4 +1,4 @@
-// OpenTrace PROV Types
+// AgentVAST PROV Types
 export interface ArtifactMatchResult {
   artifact: LlmArtifact | null;
   matchedKey: string | null;

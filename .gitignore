@@ -14,13 +14,16 @@ __pycache__/
 .DS_Store
 __MACOSX/
 
-# OpenTrace generated sessions and artifacts
+# AgentVAST generated sessions and artifacts
+.agentvast/
+.agentvast_*/
+# Historical Runs created before the AgentVAST rename
 .opentrace/
-.opentrace_*/
 
 # Claude Code temporary worktrees
 .claude/worktrees/
 .claude/settings.local.json
+worktree-backup-*/
 
 # Local test and extraction caches
 .pytest_cache/
@@ -37,3 +40,5 @@ VAST_Challenge_2026_MC2/__MACOSX/
 
 # Temporary test data and outputs
 test/
+result/run_*/
+result/*_manual_profile.json

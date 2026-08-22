@@ -2,7 +2,7 @@
 Step 1: 加载MC2数据
 
 这是VAST Challenge 2026 MC2分析的第一步。
-加载数据并保存为中间文件，然后记录到OpenTrace。
+加载数据并保存为中间文件，然后记录到AgentVAST。
 
 预期输出: step1_loaded.json
 下一步: 基于此数据进行 SaidIT 相关事件过滤
@@ -12,10 +12,10 @@ import json
 import sys
 from pathlib import Path
 
-# 添加 opentrace 到路径
+# 添加 agentvast 到路径
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from opentrace.mcp_server import get_server
+from agentvast.mcp_server import get_server
 
 
 def main():

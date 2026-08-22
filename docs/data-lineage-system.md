@@ -498,7 +498,7 @@ prov_dag = {
 
 ```python
 # 元素级追踪
-from opentrace.tracker import LineageTracker
+from agentvast.tracker import LineageTracker
 
 tracker = LineageTracker(session_id)
 tracker.init_from_json("data.json")
@@ -506,7 +506,7 @@ tracker.record_step("清洗", "fillna", "填充缺失值")
 chain = tracker.trace_element("root[0].age")
 
 # 文件级追踪
-from opentrace.mcp_server import get_server
+from agentvast.mcp_server import get_server
 
 server = get_server()
 session = server.init_session("数据分析", "input.csv", "csv")
@@ -524,7 +524,7 @@ server.record_prov_relation(
 文件级追踪支持完整性验证：
 
 ```python
-from opentrace.prov_validation import ProtectedProvDAG, validate_session
+from agentvast.prov_validation import ProtectedProvDAG, validate_session
 
 # 使用受保护的 DAG
 protected_dag = ProtectedProvDAG(session_dir, append_only=True)

@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from opentrace.agent_cli import main
-from opentrace.workflow_store import WorkflowStore
+from agentvast.agent_cli import main
+from agentvast.workflow_store import WorkflowStore
 
 
 def test_agent_cli_records_complete_semantic_workflow(
@@ -14,9 +14,9 @@ def test_agent_cli_records_complete_semantic_workflow(
     data.write_text("x\n1\n", encoding="utf-8")
     database = tmp_path / "workflow.sqlite3"
     store = WorkflowStore(database)
-    run = store.start_run("分析数据", project, [data])
-    monkeypatch.setenv("OPENTRACE_DB", str(database))
-    monkeypatch.setenv("OPENTRACE_RUN_ID", run["run_id"])
+    run = store.start_run("分析数据", project, [data], checkpoint_mode="none")
+    monkeypatch.setenv("AGENTVAST_DB", str(database))
+    monkeypatch.setenv("AGENTVAST_RUN_ID", run["run_id"])
 
     assert main(
         [
@@ -36,20 +36,21 @@ def test_agent_cli_records_complete_semantic_workflow(
             ),
         ]
     ) == 0
-    capsys.readouterr()
+    plan_result = json.loads(capsys.readouterr().out)
+    node_id = plan_result["result"]["node_mapping"]["n1"]
 
     assert main(
         [
             "start-node",
             "--payload",
             json.dumps(
-                {"node_id": "n1", "input_files": [str(data)]},
+                {"node_id": node_id},
                 ensure_ascii=False,
             ),
         ]
     ) == 0
     started = json.loads(capsys.readouterr().out)
-    assert started["result"]["node_id"] == "n1"
+    assert started["result"]["node_id"] == node_id
 
     assert main(
         [
@@ -57,7 +58,8 @@ def test_agent_cli_records_complete_semantic_workflow(
             "--payload",
             json.dumps(
                 {
-                    "node_id": "n1",
+                    "node_id": node_id,
+                    "input_files": [str(data)],
                     "operation_summary": "读取并汇总数据",
                     "result_summary": "读取到一条完整记录。",
                     "analysis_conclusion": "未发现明显异常。",
@@ -86,11 +88,13 @@ def test_agent_cli_rejects_legacy_complete_step_shape(
     data.write_text("x\n1\n", encoding="utf-8")
     database = tmp_path / "workflow.sqlite3"
     store = WorkflowStore(database)
-    run = store.start_run("分析数据", project, [data])
-    store.set_plan(run["run_id"], [{"node_id": "n1", "objective": "检查数据"}])
-    step = store.start_step(run["run_id"], "n1", [data])
-    monkeypatch.setenv("OPENTRACE_DB", str(database))
-    monkeypatch.setenv("OPENTRACE_RUN_ID", run["run_id"])
+    run = store.start_run("分析数据", project, [data], checkpoint_mode="none")
+    plan = store.set_plan(
+        run["run_id"], [{"node_id": "n1", "objective": "检查数据"}]
+    )
+    step = store.start_step(run["run_id"], plan["node_mapping"]["n1"])
+    monkeypatch.setenv("AGENTVAST_DB", str(database))
+    monkeypatch.setenv("AGENTVAST_RUN_ID", run["run_id"])
 
     assert main(
         [
@@ -110,8 +114,8 @@ def test_agent_cli_rejects_legacy_complete_step_shape(
 
 def test_agent_cli_returns_structured_error(tmp_path: Path, monkeypatch, capsys):
     database = tmp_path / "workflow.sqlite3"
-    monkeypatch.setenv("OPENTRACE_DB", str(database))
-    monkeypatch.setenv("OPENTRACE_RUN_ID", "missing")
+    monkeypatch.setenv("AGENTVAST_DB", str(database))
+    monkeypatch.setenv("AGENTVAST_RUN_ID", "missing")
 
     assert main(["state"]) == 2
     error = json.loads(capsys.readouterr().err)

@@ -4,7 +4,7 @@ interface FollowPanelProps {
   isOpen: boolean;
   onClose: () => void;
   selectedContext?: {
-    opentrace_session?: string;
+    agentvast_session?: string;
     selected_step?: {
       id: string;
       name: string;
@@ -24,7 +24,7 @@ interface FollowPanelProps {
   DEFAULT_WORKSPACE?: string;
 }
 
-export default function FollowPanel({ isOpen, onClose, selectedContext, DEFAULT_WORKSPACE = 'C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository' }: FollowPanelProps) {
+export default function FollowPanel({ isOpen, onClose, selectedContext, DEFAULT_WORKSPACE = 'C:\\path\\to\\analysis-project' }: FollowPanelProps) {
   const [question, setQuestion] = useState('');
   const [workspace, setWorkspace] = useState(DEFAULT_WORKSPACE);
   const [sessionId, setSessionId] = useState('');
@@ -87,7 +87,7 @@ export default function FollowPanel({ isOpen, onClose, selectedContext, DEFAULT_
             type="text"
             value={workspace}
             onChange={(e) => setWorkspace(e.target.value)}
-            placeholder="e.g., C:\\Users\\83734\\Desktop\\opentrace\\test-commit-repository"
+            placeholder="e.g., C:\\path\\to\\analysis-project"
             className="w-full border border-[rgba(184,165,143,0.48)] rounded-xl p-2.5 text-ink bg-[rgba(255,250,245,0.76)] font-mono text-xs outline-none"
           />
         </div>

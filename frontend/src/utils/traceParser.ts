@@ -1,8 +1,23 @@
-import { ProvNode, ProvEdge, SessionFiles, TraceData, LlmArtifact, StepDetail, ArtifactMatchResult } from '../types';
+import {
+  ProvNode,
+  ProvEdge,
+  SessionFiles,
+  TraceData,
+  LlmArtifact,
+  StepDetail,
+  ArtifactMatchResult,
+  WorkflowDocument,
+  WorkflowNodeRecord,
+  FileVersion,
+} from '../types';
 
 const REQUIRED_FILES = ['step_details.json', 'prov_nodes.json', 'prov_edges.json', 'prov_dag.json'];
 
 export function parseSessionFiles(files: SessionFiles): TraceData | null {
+  if (files['workflow.json']) {
+    return parseWorkflowDocument(files['workflow.json']);
+  }
+
   const stepDetails = files['step_details.json'];
   const provNodes = files['prov_nodes.json']?.nodes || {};
   const provEdges = files['prov_edges.json']?.edges || [];
@@ -48,7 +63,184 @@ export function parseSessionFiles(files: SessionFiles): TraceData | null {
       artifacts: Object.keys(llmArtifacts).length,
     },
     consistency: checkConsistency(files, steps, meta as Record<string, unknown>),
+    sourceFormat: 'legacy',
   };
+}
+
+function parseWorkflowDocument(workflow: WorkflowDocument): TraceData {
+  const graph = buildWorkflowGraph(workflow);
+  const steps: StepDetail[] = workflow.nodes
+    .slice()
+    .sort((a, b) => a.sequence - b.sequence)
+    .map((node) => workflowNodeToStep(node));
+  const warnings: string[] = [];
+  const latestPlan = workflow.plan_revisions[workflow.plan_revisions.length - 1];
+  const completedIds = new Set(workflow.nodes.map((node) => node.node_id));
+
+  if (!workflow.schema_version) warnings.push('workflow.json 缺少 schema_version');
+  if (!workflow.run?.run_id) warnings.push('workflow.json 缺少 run.run_id');
+  if (!latestPlan) warnings.push('workflow.json 没有 Plan Revision');
+  for (const node of latestPlan?.nodes || []) {
+    if (workflow.run.status === 'completed' && !completedIds.has(node.node_id)) {
+      warnings.push(`已完成 Run 缺少 Node 记录：${node.node_id}`);
+    }
+  }
+
+  const allGraphNodes = Object.values(graph.nodes);
+  return {
+    sessionId: workflow.run.run_id,
+    createdAt: workflow.run.started_at,
+    steps,
+    prov: graph,
+    llmArtifacts: {},
+    counts: {
+      entities: allGraphNodes.filter((node) => node.type === 'entity').length,
+      activities: workflow.nodes.length,
+      agents: 1,
+      edges: graph.edges.length,
+      artifacts: uniquePaths(workflow.nodes.flatMap((node) => node.outputs)).length,
+    },
+    consistency: { ok: warnings.length === 0, warnings },
+    sourceFormat: 'workflow',
+    schemaVersion: workflow.schema_version,
+    run: workflow.run,
+    planRevisions: workflow.plan_revisions,
+    humanInterventions: workflow.human_interventions,
+    fileLineage: workflow.file_lineage,
+  };
+}
+
+function workflowNodeToStep(node: WorkflowNodeRecord): StepDetail {
+  const programs = node.operation?.programs || [];
+  return {
+    step_id: node.node_id,
+    step_name: node.objective,
+    name: node.objective,
+    description: node.operation?.summary || node.result_summary || '',
+    timestamp: node.completed_at || node.started_at || '',
+    input_files: node.inputs.map((item) => item.path),
+    output_files: node.outputs.map((item) => item.path),
+    code_files: programs,
+    code_generated: programs,
+    commands_run: node.operation?.commands || [],
+    parameters: {
+      status: node.status,
+      plan_version: node.plan_version,
+      analysis_outcome: node.analysis_outcome,
+      recording_warnings: node.recording_warnings,
+    },
+    index: node.sequence,
+    operation: 'semantic_node',
+    status: node.status,
+    plan_version: node.plan_version,
+    started_at: node.started_at,
+    completed_at: node.completed_at || undefined,
+    result_summary: node.result_summary,
+    analysis_conclusion: node.analysis_conclusion || undefined,
+    analysis_outcome: node.analysis_outcome,
+    recording_warnings: node.recording_warnings,
+    operation_summary: node.operation?.summary,
+    input_versions: node.inputs,
+    output_versions: node.outputs,
+  };
+}
+
+function buildWorkflowGraph(workflow: WorkflowDocument): { nodes: Record<string, ProvNode>; edges: ProvEdge[] } {
+  const nodes: Record<string, ProvNode> = {};
+  const edges: ProvEdge[] = [];
+  const edgeKeys = new Set<string>();
+  const pathToEntity = new Map<string, string>();
+  const latestPlan = workflow.plan_revisions[workflow.plan_revisions.length - 1];
+
+  function addEdge(from: string, to: string, relation: string) {
+    const key = `${from}|${to}|${relation}`;
+    if (edgeKeys.has(key)) return;
+    edgeKeys.add(key);
+    edges.push({ from, to, relation });
+  }
+
+  function entityFor(file: FileVersion, declared = false): string {
+    const key = normalizeArtifactLocation(file.path);
+    const existing = pathToEntity.get(key);
+    if (existing) {
+      const hashes = new Set<string>([
+        ...((nodes[existing].attributes?.sha256_versions as string[] | undefined) || []),
+        file.sha256,
+      ]);
+      nodes[existing].attributes = {
+        ...nodes[existing].attributes,
+        sha256_versions: Array.from(hashes).filter(Boolean),
+        declared_input: Boolean(nodes[existing].attributes?.declared_input) || declared,
+      };
+      return existing;
+    }
+    const id = `file-${String(pathToEntity.size + 1).padStart(3, '0')}`;
+    pathToEntity.set(key, id);
+    nodes[id] = {
+      id,
+      type: 'entity',
+      entity_type: artifactType(file.path),
+      name: baseName(file.path),
+      location: file.path,
+      description: declared ? 'Run 初始或执行中发现的外部输入' : 'Node 文件产物',
+      attributes: {
+        sha256_versions: file.sha256 ? [file.sha256] : [],
+        declared_input: declared,
+      },
+    };
+    return id;
+  }
+
+  for (const file of workflow.run.declared_inputs || []) entityFor(file, true);
+
+  for (const node of workflow.nodes) {
+    const id = `semantic-${node.node_id}`;
+    const planNode = latestPlan?.nodes.find((item) => item.node_id === node.node_id);
+    const lineage = workflow.file_lineage.find((item) => item.node_id === node.node_id);
+    nodes[id] = {
+      id,
+      type: 'agent',
+      agent_type: 'semantic_node',
+      name: `${node.node_id} · ${node.objective}`,
+      description: node.result_summary || node.operation?.summary || node.objective,
+      timestamp: node.completed_at || node.started_at,
+      attributes: {
+        node_id: node.node_id,
+        sequence: node.sequence,
+        status: node.status,
+        plan_version: node.plan_version,
+        required_artifacts: planNode?.required_artifacts || [],
+        result_summary: node.result_summary,
+        analysis_conclusion: node.analysis_conclusion,
+        analysis_outcome: node.analysis_outcome,
+        recording_warnings: node.recording_warnings,
+      },
+    };
+    for (const input of lineage?.inputs || node.inputs) addEdge(entityFor(input), id, 'input');
+    for (const output of lineage?.outputs || node.outputs) addEdge(id, entityFor(output), 'output');
+  }
+
+  for (const node of latestPlan?.nodes || []) {
+    for (const dependency of node.depends_on || []) {
+      const from = `semantic-${dependency}`;
+      const to = `semantic-${node.node_id}`;
+      if (nodes[from] && nodes[to]) addEdge(from, to, 'depends_on');
+    }
+  }
+
+  return { nodes, edges };
+}
+
+function artifactType(path: string): string {
+  const normalized = path.replace(/\\/g, '/').toLowerCase();
+  if (normalized.includes('/code/') || /\.(py|r|sql|ipynb)$/.test(normalized)) return 'code';
+  if (normalized.includes('/report/')) return 'report';
+  if (normalized.includes('/visualization/') || /\.(html|png|jpg|jpeg|svg)$/.test(normalized)) return 'visualization';
+  return 'data';
+}
+
+function uniquePaths(files: FileVersion[]): string[] {
+  return Array.from(new Set(files.map((file) => normalizeArtifactLocation(file.path))));
 }
 
 function inferOperation(step: any): string {
@@ -153,6 +345,9 @@ export function baseName(path: string): string {
 }
 
 export function buildProvDAGFlow(trace: TraceData): { nodes: ProvNode[]; edges: ProvEdge[] } {
+  if (trace.sourceFormat === 'workflow') {
+    return { nodes: Object.values(trace.prov.nodes), edges: trace.prov.edges };
+  }
   const nodes = trace.prov.nodes || {};
   const edges = trace.prov.edges || [];
   const activities = Object.values(nodes).filter((n) => n.type === 'activity');

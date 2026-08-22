@@ -1,4 +1,4 @@
-# OpenTrace 后续开发规划
+# AgentVAST 后续开发规划
 
 ## 三大重点方向
 
@@ -50,7 +50,7 @@ server.record_step(
 
 ```python
 # 自动记录输入输出
-@opentrace.step
+@agentvast.step
 def filter_data(data):
     return [x for x in data if condition(x)]
 
@@ -101,7 +101,7 @@ session_XXXX/
 当前引导方式：
 - 文档：AGENT_GUIDE.md, API_REFERENCE.md
 - 工作流：.claude/workflows/trace-analysis.yaml
-- Skill：.claude/skills/opentrace-data-analysis.md
+- Skill：.claude/skills/agentvast-data-analysis.md
 
 **痛点**：
 - 文档分散，难以快速理解
@@ -134,13 +134,13 @@ Level 3: 高级使用
 
 ```python
 # 验证检查
-validator = OpenTraceValidator()
+validator = AgentVASTValidator()
 validator.check_step(step_data)
 # => ⚠️ 警告: 缺少 step_details 记录
 # => 💡 建议: 调用 record_step_details()
 
 # 自动建议
-advisor = OpenTraceAdvisor()
+advisor = AgentVASTAdvisor()
 advisor.suggest_next_step(current_state)
 # => 💡 下一步建议: 基于 filtered.json，可以：
 #    1. 聚合统计
@@ -153,10 +153,10 @@ advisor.suggest_next_step(current_state)
 **目标**: 对话式帮助系统
 
 ```python
-guide = OpenTraceGuide()
+guide = AgentVASTGuide()
 guide.start_session()
 
-# Guide: 你好！我是OpenTrace引导助手。
+# Guide: 你好！我是AgentVAST引导助手。
 # Guide: 请告诉我你想分析什么数据？
 # User: 我想分析销售数据
 # Guide: 好的。让我们从第一步开始：加载数据。
@@ -231,7 +231,7 @@ explorer.show()
 **目标**: 自动发现和展示关键信息
 
 ```python
-insights = OpenTraceInsights(session_id)
+insights = AgentVASTInsights(session_id)
 
 # 自动发现：
 # - 异常步骤（处理时间过长）

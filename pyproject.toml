@@ -1,5 +1,5 @@
 [project]
-name = "opentrace"
+name = "agentvast"
 version = "0.2.0"
 description = "数据血缘追踪系统 - 用于追踪 agent 数据分析流程"
 readme = "README.md"
@@ -9,13 +9,18 @@ dependencies = [
 ]
 
 [project.scripts]
-opentrace = "opentrace.cli:main"
-opentrace-agent = "opentrace.agent_cli:main"
-opentrace-mcp = "opentrace.mcp_stdio:main"
+agentvast = "agentvast.cli:main"
+agentvast-agent = "agentvast.agent_cli:main"
+agentvast-mcp = "agentvast.mcp_stdio:main"
 
 [project.optional-dependencies]
 pandas = [
     "pandas>=2.0.0",
+]
+web = [
+    "fastapi>=0.115.0,<1.0",
+    "uvicorn[standard]>=0.30.0,<1.0",
+    "pywinpty>=2.0.13,<4.0; platform_system == 'Windows'",
 ]
 dev = [
     "pytest>=7.0.0",

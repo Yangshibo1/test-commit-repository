@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from opentrace import plugin_hook
-from opentrace.workflow_store import WorkflowStore
+from agentvast import plugin_hook
+from agentvast.workflow_store import WorkflowStore
 
 
 def configured_run(tmp_path: Path, monkeypatch):
@@ -12,9 +12,15 @@ def configured_run(tmp_path: Path, monkeypatch):
     data.write_text("x\n1\n", encoding="utf-8")
     database = tmp_path / "workflow.sqlite3"
     store = WorkflowStore(database)
-    run = store.start_run("分析数据", project, [data], claude_session_id="session-1")
-    monkeypatch.setenv("OPENTRACE_DB", str(database))
-    monkeypatch.setenv("OPENTRACE_RUN_ID", run["run_id"])
+    run = store.start_run(
+        "分析数据",
+        project,
+        [data],
+        claude_session_id="session-1",
+        checkpoint_mode="none",
+    )
+    monkeypatch.setenv("AGENTVAST_DB", str(database))
+    monkeypatch.setenv("AGENTVAST_RUN_ID", run["run_id"])
     return project, store, run
 
 
@@ -41,7 +47,7 @@ def test_user_prompt_is_captured_and_material_tool_is_gated(tmp_path, monkeypatc
     denied_unapplied = plugin_hook.pre_tool_use(
         {"hook_event_name": "PreToolUse", "tool_name": "Bash"}
     )
-    assert "apply_user_input" in denied_unapplied["hookSpecificOutput"][
+    assert "apply-user-input" in denied_unapplied["hookSpecificOutput"][
         "permissionDecisionReason"
     ]
     store.apply_user_input(
@@ -51,12 +57,14 @@ def test_user_prompt_is_captured_and_material_tool_is_gated(tmp_path, monkeypatc
     denied_without_step = plugin_hook.pre_tool_use(
         {"hook_event_name": "PreToolUse", "tool_name": "Bash"}
     )
-    assert "Set an OpenTrace plan" in denied_without_step["hookSpecificOutput"][
+    assert "Set an AgentVAST plan" in denied_without_step["hookSpecificOutput"][
         "permissionDecisionReason"
     ]
 
-    store.set_plan(run["run_id"], [{"node_id": "n1", "objective": "检查异常值"}])
-    store.start_step(run["run_id"], "n1", [project / "data.csv"])
+    plan = store.set_plan(
+        run["run_id"], [{"node_id": "n1", "objective": "检查异常值"}]
+    )
+    store.start_step(run["run_id"], plan["node_mapping"]["n1"])
     assert (
         plugin_hook.pre_tool_use(
             {"hook_event_name": "PreToolUse", "tool_name": "Bash"}
@@ -71,10 +79,10 @@ def test_initial_launcher_prompt_is_not_human_intervention(tmp_path, monkeypatch
         {
             "hook_event_name": "UserPromptSubmit",
             "session_id": "session-1",
-            "prompt": f"[OPENTRACE_INITIAL_TASK run_id={run['run_id']}]\n分析数据",
+            "prompt": f"[AGENTVAST_INITIAL_TASK run_id={run['run_id']}]\n分析数据",
         }
     )
-    assert result == {}
+    assert run["run_id"] in json.dumps(result)
     assert store.get_state(run["run_id"])["pending_user_inputs"] == []
 
 
@@ -82,14 +90,14 @@ def test_recording_bash_command_bypasses_step_gate_but_chaining_does_not(
     tmp_path, monkeypatch
 ):
     project, _, _ = configured_run(tmp_path, monkeypatch)
-    monkeypatch.setenv("OPENTRACE_PROJECT_ROOT", str(project))
+    monkeypatch.setenv("AGENTVAST_PROJECT_ROOT", str(project))
     allowed = plugin_hook.pre_tool_use(
         {
             "hook_event_name": "PreToolUse",
             "tool_name": "Bash",
             "tool_input": {
                 "command": (
-                    "opentrace-agent set-plan --payload "
+                    "agentvast-agent set-plan --payload "
                     """'{"nodes":[{"node_id":"n1","objective":"Inspect"}]}'"""
                 )
             },
@@ -103,7 +111,7 @@ def test_recording_bash_command_bypasses_step_gate_but_chaining_does_not(
             "tool_name": "Bash",
             "tool_input": {
                 "command": (
-                    f'cd "{project}" && python -m opentrace.agent_cli '
+                    f'cd "{project}" && python -m agentvast.agent_cli '
                     "set-plan --payload '{\n"
                     '  "nodes": [{"node_id": "n1", "objective": "Inspect"}]\n'
                     "}'"
@@ -118,7 +126,7 @@ def test_recording_bash_command_bypasses_step_gate_but_chaining_does_not(
             "hook_event_name": "PreToolUse",
             "tool_name": "Bash",
             "tool_input": {
-                "command": "opentrace-agent state && python analyze.py"
+                "command": "agentvast-agent state && python analyze.py"
             },
         }
     )
@@ -130,7 +138,7 @@ def test_recording_bash_command_bypasses_step_gate_but_chaining_does_not(
             "tool_name": "Bash",
             "tool_input": {
                 "command": (
-                    "python -m opentrace.agent_cli set-plan "
+                    "python -m agentvast.agent_cli set-plan "
                     """--payload '{"nodes":[{"node_id":"n1","objective":"Inspect"}]}' """
                     "&& python analyze.py"
                 )
@@ -147,7 +155,7 @@ def test_recording_bash_command_bypasses_step_gate_but_chaining_does_not(
             "tool_name": "Bash",
             "tool_input": {
                 "command": (
-                    f'cd "{other_project}" && python -m opentrace.agent_cli '
+                    f'cd "{other_project}" && python -m agentvast.agent_cli '
                     """state"""
                 )
             },
@@ -187,13 +195,18 @@ def test_stop_requires_plan_nodes_and_finished_run(tmp_path, monkeypatch):
     project, store, run = configured_run(tmp_path, monkeypatch)
     assert plugin_hook.stop({})["decision"] == "block"
 
-    store.set_plan(run["run_id"], [{"node_id": "n1", "objective": "检查数据"}])
+    plan = store.set_plan(
+        run["run_id"], [{"node_id": "n1", "objective": "检查数据"}]
+    )
     assert "Complete every node" in plugin_hook.stop({})["reason"]
 
-    step = store.start_step(run["run_id"], "n1", [project / "data.csv"])
-    assert "n1" in plugin_hook.stop({})["reason"]
-    store.complete_step(step["step_id"], "检查数据", "检查完成")
-    assert "finish-run" in plugin_hook.stop({})["reason"]
+    node_id = plan["node_mapping"]["n1"]
+    step = store.start_step(run["run_id"], node_id)
+    assert node_id in plugin_hook.stop({})["reason"]
+    store.complete_step(
+        step["step_id"], [project / "data.csv"], "检查数据", "检查完成"
+    )
+    assert plugin_hook.stop({}) == {}
 
     store.finish_run(run["run_id"])
     assert plugin_hook.stop({}) == {}
@@ -209,4 +222,4 @@ def test_plugin_json_files_are_valid():
     skill = (root / "skills" / "data-analysis" / "SKILL.md").read_text(
         encoding="utf-8"
     )
-    assert "python -m opentrace.agent_cli set-plan" in skill
+    assert "python -m agentvast.agent_cli set-plan" in skill
