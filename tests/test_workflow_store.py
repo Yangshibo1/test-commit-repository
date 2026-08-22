@@ -281,3 +281,98 @@ def test_existing_database_is_migrated_without_deleting_history(tmp_path: Path):
     migrated.close()
     assert "trigger_kind" in plan_columns
     assert {"plan_version", "commands_json", "result_summary", "analysis_conclusion"} <= step_columns
+
+
+def test_every_plan_revision_requires_current_user_approval(tmp_path: Path):
+    project = tmp_path / "project"
+    project.mkdir()
+    data = project / "data.csv"
+    data.write_text("x\n1\n", encoding="utf-8")
+    store = WorkflowStore(project / ".agentvast" / "workflow.sqlite3")
+    run = store.start_run("分析数据", project, [data], checkpoint_mode="plan")
+
+    initial = store.set_plan(
+        run["run_id"], [{"node_id": "profile", "objective": "检查数据结构"}]
+    )
+    profile_id = initial["node_mapping"]["profile"]
+    state = store.get_state(run["run_id"])
+    assert state["run"]["awaiting_user"] == 1
+    assert state["run"]["checkpoint_kind"] == "plan"
+    assert state["run"]["plan_approved_version"] is None
+
+    approval = store.capture_user_input(run["run_id"], "确认初始计划")
+    store.classify_user_input(approval["input_event_id"], "checkpoint_continue")
+    state = store.get_state(run["run_id"])
+    assert state["run"]["awaiting_user"] == 0
+    assert state["run"]["plan_approved_version"] == 1
+
+    step = store.start_step(run["run_id"], profile_id)
+    store.complete_step(step["step_id"], [data], "检查数据", "检查完成")
+    revised = store.set_plan(
+        run["run_id"],
+        [
+            {"node_id": profile_id, "objective": "检查数据结构"},
+            {
+                "node_id": "analyze",
+                "objective": "分析数据分布",
+                "depends_on": [profile_id],
+            },
+        ],
+        trigger="agent_replan",
+        change_reason="数据结构检查完成后增加分布分析",
+    )
+    analyze_id = revised["node_mapping"]["analyze"]
+    state = store.get_state(run["run_id"])
+    assert state["plan"]["version"] == 2
+    assert state["run"]["awaiting_user"] == 1
+    assert state["run"]["checkpoint_kind"] == "plan"
+    assert state["run"]["plan_approved_version"] == 1
+
+    with pytest.raises(WorkflowError, match="checkpoint"):
+        store.start_step(run["run_id"], analyze_id)
+    with pytest.raises(WorkflowError, match="checkpoint user response"):
+        store.set_plan(
+            run["run_id"],
+            revised["nodes"],
+            trigger="agent_replan",
+            change_reason="不应在未批准时继续叠加 Revision",
+        )
+
+    second_approval = store.capture_user_input(run["run_id"], "确认修订计划")
+    store.classify_user_input(
+        second_approval["input_event_id"], "checkpoint_continue"
+    )
+    state = store.get_state(run["run_id"])
+    assert state["run"]["plan_approved_version"] == 2
+    assert state["run"]["awaiting_user"] == 0
+    assert store.start_step(run["run_id"], analyze_id)["plan_version"] == 2
+
+
+def test_web_plan_edit_replaces_checkpoint_with_new_revision(tmp_path: Path):
+    project = tmp_path / "project"
+    project.mkdir()
+    store = WorkflowStore(project / ".agentvast" / "workflow.sqlite3")
+    run = store.start_run("分析数据", project, [], checkpoint_mode="plan")
+    initial = store.set_plan(
+        run["run_id"], [{"node_id": "profile", "objective": "检查数据结构"}]
+    )
+
+    replacement = store.set_plan(
+        run["run_id"],
+        [
+            {
+                "node_id": initial["nodes"][0]["node_id"],
+                "objective": "检查数据结构与完整性",
+            }
+        ],
+        trigger="human_intervention",
+        change_reason="用户在 Web 中细化分析目标",
+        replace_plan_checkpoint=True,
+    )
+
+    state = store.get_state(run["run_id"])
+    assert replacement["plan_version"] == 2
+    assert replacement["next_action"] == "present-plan-and-wait-for-user"
+    assert state["run"]["awaiting_user"] == 1
+    assert state["run"]["checkpoint_kind"] == "plan"
+    assert state["plan"]["version"] == 2

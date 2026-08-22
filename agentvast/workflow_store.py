@@ -1054,10 +1054,10 @@ class WorkflowStore:
 
             checkpoint_opened = False
             checkpoint_mode = run["checkpoint_mode"] or "plan"
-            # Only the initial Plan is a mandatory approval boundary. Later
-            # Revisions are recorded and may be edited by the user, but they do not
-            # interrupt Claude's analysis by default.
-            if version == 1 and checkpoint_mode in {"plan", "node"}:
+            # Every Revision is a new execution contract. In plan/node checkpoint
+            # modes it must be shown to and approved by the user before material
+            # analysis can continue.
+            if checkpoint_mode in {"plan", "node"}:
                 checkpoint_opened = True
                 connection.execute(
                     """
@@ -1518,8 +1518,8 @@ class WorkflowStore:
                 )
             if checkpoint_mode == "plan":
                 raise WorkflowError(
-                    "checkpoint mode 'plan' pauses automatically after the initial "
-                    "Plan; analysis then runs without later checkpoints"
+                    "checkpoint mode 'plan' opens a checkpoint automatically after "
+                    "every Plan Revision and cannot open a manual Node checkpoint"
                 )
             if run["awaiting_user"]:
                 raise WorkflowError("the Run is already waiting for user input")
