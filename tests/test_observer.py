@@ -1,0 +1,413 @@
+import base64
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+from agentvast.cli import main as agentvast_main
+from agentvast.observer.cli import _environment
+from agentvast.observer.event_merger import derive_session
+from agentvast.observer.hook_collector import collect_event
+from agentvast.observer.otel_collector import record_otel_request
+from agentvast.observer.store import (
+    append_raw_event,
+    create_session,
+    iter_jsonl,
+    read_manifest,
+    register_session_root,
+)
+from agentvast.observer.transcript_reader import snapshot_transcript
+from agentvast.observer.validation import validate_session
+from agentvast.paths import expose_repository_to_python
+
+
+def hook(session_id: str, event_name: str, **values):
+    return {
+        "session_id": session_id,
+        "cwd": values.pop("cwd", "C:/analysis"),
+        "transcript_path": values.pop("transcript_path", "C:/transcript.jsonl"),
+        "hook_event_name": event_name,
+        **values,
+    }
+
+
+def test_hook_collector_preserves_raw_payload_and_monotonic_sequence(
+    tmp_path: Path, monkeypatch
+):
+    monkeypatch.setenv("AGENTVAST_OBSERVER_ROOT", str(tmp_path))
+    session_id = "session-observer"
+    first_payload = hook(session_id, "SessionStart", model="claude-test")
+    second_payload = hook(session_id, "UserPromptSubmit", prompt="inspect data")
+
+    first = collect_event(first_payload)
+    second = collect_event(second_payload)
+
+    assert first["raw_payload"] == first_payload
+    assert second["raw_payload"] == second_payload
+    assert first["observer_sequence"] == 1
+    assert second["observer_sequence"] == 2
+    assert first["observer_event_id"] != second["observer_event_id"]
+    stored = list(iter_jsonl(tmp_path / session_id / "raw" / "hooks.jsonl"))
+    assert [item["observer_sequence"] for item in stored] == [1, 2]
+    manifest = read_manifest(session_id, tmp_path)
+    assert manifest["sources"]["hooks"] is True
+    assert manifest["transcript_source_path"] == "C:/transcript.jsonl"
+
+
+def test_transcript_snapshot_keeps_raw_and_invalid_lines(tmp_path: Path):
+    session_id = "session-transcript"
+    source = tmp_path / "claude.jsonl"
+    source.write_text('{"type":"user","text":"hello"}\nnot-json\n', encoding="utf-8")
+    root = tmp_path / "observations"
+    create_session(session_id, tmp_path, root)
+
+    result = snapshot_transcript(
+        session_id, source, root, attempts=1, delay=0
+    )
+
+    assert result["record_count"] == 2
+    assert result["invalid_record_count"] == 1
+    assert (root / session_id / "transcript" / "transcript.jsonl").read_text(
+        encoding="utf-8"
+    ) == source.read_text(encoding="utf-8")
+    envelopes = list(iter_jsonl(root / session_id / "raw" / "transcript.jsonl"))
+    assert envelopes[0]["parsed"] is True
+    assert envelopes[1] == {
+        "line_number": 2,
+        "parsed": False,
+        "raw_line": "not-json",
+    }
+
+
+def test_otel_collector_preserves_exact_body_and_decodes_json(tmp_path: Path):
+    session_id = "session-otel"
+    body = json.dumps({"resourceLogs": [{"scopeLogs": []}]}).encode("utf-8")
+
+    event = record_otel_request(
+        session_id,
+        "/v1/logs",
+        {"Content-Type": "application/json"},
+        body,
+        str(tmp_path),
+    )
+
+    payload = event["raw_payload"]
+    assert base64.b64decode(payload["body_base64"]) == body
+    assert payload["decoded"] == {"resourceLogs": [{"scopeLogs": []}]}
+    assert payload["decoded_format"] == "json"
+
+
+def test_otel_collector_preserves_undecodable_protobuf(tmp_path: Path):
+    body = b"\x08\xff\x00not-valid-otlp"
+
+    event = record_otel_request(
+        "session-otel-binary",
+        "/v1/logs",
+        {"Content-Type": "application/x-protobuf"},
+        body,
+        str(tmp_path),
+    )
+
+    payload = event["raw_payload"]
+    assert base64.b64decode(payload["body_base64"]) == body
+    assert payload["decoded"] is None
+    assert payload["decode_error"]
+
+
+def test_merger_reconstructs_tool_message_and_valid_session(tmp_path: Path):
+    root = tmp_path / "observations"
+    session_id = "session-derive"
+    transcript = tmp_path / "transcript.jsonl"
+    transcript.write_text(
+        json.dumps({"prompt_id": "prompt-1", "tool_use_id": "tool-1"}) + "\n",
+        encoding="utf-8",
+    )
+    create_session(session_id, tmp_path, root)
+    events = [
+        hook(session_id, "SessionStart", transcript_path=str(transcript)),
+        hook(
+            session_id,
+            "UserPromptSubmit",
+            transcript_path=str(transcript),
+            prompt_id="prompt-1",
+            prompt="inspect data",
+        ),
+        hook(
+            session_id,
+            "MessageDisplay",
+            transcript_path=str(transcript),
+            prompt_id="prompt-1",
+            turn_id="turn-1",
+            message_id="display-1",
+            index=0,
+            final=False,
+            delta="I will inspect ",
+        ),
+        hook(
+            session_id,
+            "MessageDisplay",
+            transcript_path=str(transcript),
+            prompt_id="prompt-1",
+            turn_id="turn-1",
+            message_id="display-1",
+            index=1,
+            final=True,
+            delta="the data.",
+        ),
+        hook(
+            session_id,
+            "PreToolUse",
+            transcript_path=str(transcript),
+            prompt_id="prompt-1",
+            tool_use_id="tool-1",
+            tool_name="Read",
+            tool_input={"file_path": "data.csv"},
+        ),
+        hook(
+            session_id,
+            "PostToolUse",
+            transcript_path=str(transcript),
+            prompt_id="prompt-1",
+            tool_use_id="tool-1",
+            tool_name="Read",
+            tool_input={"file_path": "data.csv"},
+            tool_response={"filePath": "data.csv", "success": True},
+        ),
+        hook(
+            session_id,
+            "Stop",
+            transcript_path=str(transcript),
+            prompt_id="prompt-1",
+            last_assistant_message="done",
+        ),
+        hook(session_id, "SessionEnd", transcript_path=str(transcript), reason="other"),
+    ]
+    for payload in events:
+        append_raw_event(session_id, "hook", payload, root)
+    otel_payload = {
+        "resourceLogs": [
+            {
+                "scopeLogs": [
+                    {
+                        "logRecords": [
+                            {
+                                "attributes": [
+                                    {
+                                        "key": "tool_use_id",
+                                        "value": {"stringValue": "tool-1"},
+                                    },
+                                    {
+                                        "key": "prompt.id",
+                                        "value": {"stringValue": "prompt-1"},
+                                    },
+                                    {
+                                        "key": "event.name",
+                                        "value": {"stringValue": "tool_result"},
+                                    },
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+    record_otel_request(
+        session_id,
+        "/v1/logs",
+        {"Content-Type": "application/json"},
+        json.dumps(otel_payload).encode("utf-8"),
+        str(root),
+    )
+    snapshot_transcript(session_id, transcript, root, attempts=1, delay=0)
+
+    derived = derive_session(session_id, str(root))
+    report = validate_session(session_id, str(root))
+
+    assert derived["tool_call_count"] == 1
+    assert derived["message_count"] == 1
+    tool_calls = list(iter_jsonl(root / session_id / "derived" / "tool_calls.jsonl"))
+    assert tool_calls[0]["tool"]["success"] is True
+    assert tool_calls[0]["tool"]["input"] == {"file_path": "data.csv"}
+    assert tool_calls[0]["field_origins"]["event_order"] == "derived"
+    assert {item["source"] for item in tool_calls[0]["evidence"]} == {
+        "hook",
+        "otel",
+        "transcript",
+    }
+    messages = list(iter_jsonl(root / session_id / "derived" / "messages.jsonl"))
+    assert messages[0]["message"]["content"] == "I will inspect the data."
+    assert messages[0]["origin"] == "derived"
+    assert report["valid"] is True
+    assert report["counts"]["matched_tool_calls"] == 1
+    assert report["counts"]["otel_matched_tool_calls"] == 1
+    assert report["counts"]["transcript_matched_tool_calls"] == 1
+    assert report["counts"]["matched_prompts"] == 1
+
+
+def test_observe_cli_no_launch_creates_passive_manifest(
+    tmp_path: Path, capsys, monkeypatch
+):
+    project = tmp_path / "project"
+    project.mkdir()
+    root = tmp_path / "observations"
+    monkeypatch.setenv("AGENTVAST_OBSERVER_REGISTRY", str(tmp_path / "registry"))
+    plugin = Path(__file__).resolve().parents[1] / "claude-observer-plugin"
+
+    result = agentvast_main(
+        [
+            "observe",
+            "start",
+            "--project",
+            str(project),
+            "--session-id",
+            "session-cli",
+            "--storage-root",
+            str(root),
+            "--plugin-dir",
+            str(plugin),
+            "--no-otel",
+            "--no-launch",
+        ]
+    )
+
+    assert result == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["observer_mode"] == "passive"
+    assert payload["launch_command"][1:] == [
+        "--session-id",
+        "session-cli",
+        "--plugin-dir",
+        str(plugin.resolve()),
+    ]
+    manifest = read_manifest("session-cli", root)
+    assert manifest["cwd"] == str(project.resolve())
+    assert manifest["sources"] == {
+        "hooks": False,
+        "otel": False,
+        "transcript": False,
+        "raw_api": False,
+    }
+
+    with pytest.raises(SystemExit) as duplicate:
+        agentvast_main(
+            [
+                "observe",
+                "start",
+                "--project",
+                str(project),
+                "--session-id",
+                "session-cli",
+                "--storage-root",
+                str(root),
+                "--plugin-dir",
+                str(plugin),
+                "--no-otel",
+                "--no-launch",
+            ]
+        )
+    assert duplicate.value.code == 2
+    assert "cannot be overwritten" in capsys.readouterr().err
+
+
+def test_observer_plugin_never_declares_control_output():
+    plugin = Path(__file__).resolve().parents[1] / "claude-observer-plugin"
+    hooks = json.loads((plugin / "hooks" / "hooks.json").read_text(encoding="utf-8"))
+    serialized = json.dumps(hooks)
+
+    assert "permissionDecision" not in serialized
+    assert "additionalContext" not in serialized
+    assert "stopReason" not in serialized
+    assert "UserPromptSubmit" in hooks["hooks"]
+    assert "PostToolUse" in hooks["hooks"]
+    assert "SessionEnd" in hooks["hooks"]
+    assert "${CLAUDE_PLUGIN_ROOT}/scripts/hook_collector.py" in serialized
+
+
+def test_observer_environment_preserves_user_runtime_paths(tmp_path: Path, monkeypatch):
+    monkeypatch.setenv("PATH", "C:\\user-runtime")
+    monkeypatch.setenv("PYTHONPATH", "C:\\user-pythonpath")
+    monkeypatch.setenv("AGENTVAST_OBSERVER_ROOT", str(tmp_path))
+    monkeypatch.setenv("AGENTVAST_OBSERVER_SESSION_ID", "hidden-session")
+    monkeypatch.setenv("AGENTVAST_OBSERVER_REGISTRY", str(tmp_path / "registry"))
+
+    environment = _environment()
+
+    assert environment["PATH"] == "C:\\user-runtime"
+    assert environment["PYTHONPATH"] == "C:\\user-pythonpath"
+    assert not any(name.startswith("AGENTVAST_OBSERVER_") for name in environment)
+
+
+def test_plugin_hook_runner_is_silent_without_changing_pythonpath(
+    tmp_path: Path, monkeypatch
+):
+    root = tmp_path / "observations"
+    project = tmp_path / "external-project"
+    project.mkdir()
+    registry = tmp_path / "registry"
+    monkeypatch.setenv("AGENTVAST_OBSERVER_REGISTRY", str(registry))
+    register_session_root("session-silent", root)
+    environment = os.environ.copy()
+    environment.pop("PYTHONPATH", None)
+    runner = (
+        Path(__file__).resolve().parents[1]
+        / "claude-observer-plugin"
+        / "scripts"
+        / "hook_collector.py"
+    )
+    payload = hook("session-silent", "UserPromptSubmit", prompt="hello")
+
+    result = subprocess.run(
+        [sys.executable, str(runner)],
+        input=json.dumps(payload),
+        cwd=project,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert result.stdout == ""
+    assert result.stderr == ""
+    assert (root / "session-silent" / "raw" / "hooks.jsonl").exists()
+
+
+def test_concurrent_hook_processes_keep_unique_contiguous_sequence(tmp_path: Path):
+    root = tmp_path / "observations"
+    environment = os.environ.copy()
+    expose_repository_to_python(environment)
+    code = (
+        "import sys; "
+        "from agentvast.observer.store import append_raw_event; "
+        "root,session,worker=sys.argv[1:4]; "
+        "[append_raw_event(session,'hook',{'hook_event_name':'PostToolUse',"
+        "'session_id':session,'worker':worker,'index':i},root) for i in range(10)]"
+    )
+    processes = [
+        subprocess.Popen(
+            [sys.executable, "-c", code, str(root), "session-concurrent", str(index)],
+            env=environment,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        for index in range(4)
+    ]
+    errors = []
+    for process in processes:
+        _, stderr = process.communicate(timeout=20)
+        if process.returncode:
+            errors.append(stderr)
+    assert not errors
+
+    events = list(
+        iter_jsonl(root / "session-concurrent" / "raw" / "hooks.jsonl")
+    )
+    sequences = sorted(item["observer_sequence"] for item in events)
+    assert len(events) == 40
+    assert sequences == list(range(1, 41))
+    assert len({item["observer_event_id"] for item in events}) == 40

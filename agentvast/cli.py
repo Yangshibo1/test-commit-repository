@@ -146,6 +146,13 @@ def build_parser() -> argparse.ArgumentParser:
     web.add_argument("--claude-command", default="claude")
     web.add_argument("--plugin-dir", default=str(DEFAULT_PLUGIN_DIR))
 
+    observe = subparsers.add_parser(
+        "observe", help="Passively observe Claude Code without workflow enforcement"
+    )
+    from agentvast.observer.cli import configure_parser as configure_observer_parser
+
+    configure_observer_parser(observe)
+
     return parser
 
 
@@ -519,6 +526,13 @@ def main(argv: Optional[List[str]] = None) -> int:
             return command_abort(args)
         if args.command == "web":
             return command_web(args)
+        if args.command == "observe":
+            from agentvast.observer.cli import execute as execute_observer
+
+            try:
+                return execute_observer(args)
+            except (OSError, RuntimeError, ValueError) as error:
+                raise WorkflowError("Observer failed: {0}".format(error)) from error
         parser.error(f"unsupported command: {args.command}")
     except WorkflowError as error:
         parser.exit(2, f"AgentVAST error: {error}\n")

@@ -8,6 +8,7 @@
 - [`Claude工作流程约束设计.md`](Claude工作流程约束设计.md)：Plugin/Hook、Plan、Node 和人工介入规则。
 - [`Web终端交互层P0计划.md`](Web终端交互层P0计划.md)：Web 终端设计与手动验收依据。
 - [`Web交互层P1实施说明.md`](Web交互层P1实施说明.md)：Web Plan 控制、SSE 和多轮 Trace 设计。
+- [`PassiveObserverV1.md`](PassiveObserverV1.md)：不介入 Claude 工作流的 Hook/OTel/Transcript 观察模式。
 
 当前默认记录通道是 `python -m agentvast.agent_cli` 配合
 `claude-plugin/skills/data-analysis/SKILL.md`。`agentvast.mcp_stdio` 是可选通道；旧

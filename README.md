@@ -24,6 +24,18 @@ AgentVAST 是一个面向 Coding Agent 的数据分析工作流记录器。
 `docs/archive/` 保存旧 Tracker/PROV 文档和阶段性实施记录，不应作为当前 API 或 Agent
 执行说明。
 
+## Passive Observer
+
+除现有强约束工作流外，AgentVAST 还提供不注入 Plan/Node 规则、不修改工具决策的 Claude
+Code 观察模式：
+
+```powershell
+agentvast observe start --project "C:\path\to\analysis-project"
+```
+
+观察数据默认保存在 `~/.agentvast/observations/<session-id>/`，原始 Hook、OTel 和 Transcript
+始终与 derived canonical events 分开。详见 [Passive Observer V1](docs/PassiveObserverV1.md)。
+
 ## 快速安装
 
 在 AgentVAST 仓库中执行：

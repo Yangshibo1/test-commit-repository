@@ -1,0 +1,5 @@
+{
+  "name": "agentvast-observer",
+  "description": "Passively records raw Claude Code lifecycle events without decisions or context injection.",
+  "version": "0.1.0"
+}

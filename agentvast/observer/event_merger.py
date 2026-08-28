@@ -1,0 +1,425 @@
+"""Deterministic Hook/OTel/Transcript alignment for canonical trajectories."""
+
+from __future__ import annotations
+
+import json
+import uuid
+from collections import defaultdict
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, DefaultDict, Dict, Iterable, Iterator, List, Mapping, Optional, Set
+
+from agentvast.observer.store import ensure_session_layout, iter_jsonl, write_jsonl
+
+
+TOOL_TERMINALS = {"PostToolUse": True, "PostToolUseFailure": False}
+
+
+def _walk(value: Any) -> Iterator[Any]:
+    yield value
+    if isinstance(value, dict):
+        for child in value.values():
+            yield from _walk(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _walk(child)
+
+
+def _find_values(value: Any, keys: Iterable[str]) -> Set[str]:
+    wanted = set(keys)
+    results: Set[str] = set()
+    for item in _walk(value):
+        if not isinstance(item, dict):
+            continue
+        for key, child in item.items():
+            if key in wanted and isinstance(child, (str, int)):
+                results.add(str(child))
+    return results
+
+
+def _otel_attributes(value: Any) -> Dict[str, Any]:
+    if isinstance(value, dict):
+        result: Dict[str, Any] = {}
+        raw_attributes = value.get("attributes")
+        if isinstance(raw_attributes, list):
+            for item in raw_attributes:
+                if not isinstance(item, dict) or not isinstance(item.get("key"), str):
+                    continue
+                raw_value = item.get("value")
+                if isinstance(raw_value, dict) and raw_value:
+                    result[item["key"]] = next(iter(raw_value.values()))
+                else:
+                    result[item["key"]] = raw_value
+        elif isinstance(raw_attributes, dict):
+            result.update(raw_attributes)
+        return result
+    return {}
+
+
+def _event_id() -> str:
+    return "canonical_" + uuid.uuid4().hex
+
+
+def _otel_event_time(record: Mapping[str, Any], attributes: Mapping[str, Any]) -> Optional[str]:
+    timestamp = attributes.get("event.timestamp") or record.get("timestamp")
+    if isinstance(timestamp, str) and timestamp:
+        return timestamp
+    raw_nanos = (
+        record.get("time_unix_nano")
+        or record.get("timeUnixNano")
+        or record.get("start_time_unix_nano")
+        or record.get("startTimeUnixNano")
+    )
+    try:
+        return datetime.fromtimestamp(int(raw_nanos) / 1_000_000_000, timezone.utc).isoformat()
+    except (TypeError, ValueError, OSError):
+        return None
+
+
+def _evidence(source: str, event_id: Any) -> Dict[str, Any]:
+    return {"source": source, "event_id": str(event_id)}
+
+
+def _hook_payload(event: Mapping[str, Any]) -> Dict[str, Any]:
+    payload = event.get("raw_payload")
+    return payload if isinstance(payload, dict) else {}
+
+
+def _correlation(payload: Mapping[str, Any]) -> Dict[str, Any]:
+    return {
+        "request_id": payload.get("request_id"),
+        "message_uuid": payload.get("message_uuid") or payload.get("message_id"),
+    }
+
+
+def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any]:
+    directory = ensure_session_layout(session_id, root)
+    hooks = sorted(
+        list(iter_jsonl(directory / "raw" / "hooks.jsonl")),
+        key=lambda item: int(item.get("observer_sequence") or 0),
+    )
+    otel = list(iter_jsonl(directory / "raw" / "otel.jsonl"))
+    transcript = list(iter_jsonl(directory / "raw" / "transcript.jsonl"))
+
+    otel_by_tool: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
+    otel_by_prompt: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
+    otel_records: List[Dict[str, Any]] = []
+    for export in otel:
+        raw = export.get("raw_payload")
+        decoded = raw.get("decoded") if isinstance(raw, dict) else None
+        for item in _walk(decoded):
+            if not isinstance(item, dict):
+                continue
+            attributes = _otel_attributes(item)
+            if not attributes:
+                continue
+            record = {
+                "record_index": len(otel_records),
+                "export": export,
+                "record": item,
+                "attributes": attributes,
+            }
+            otel_records.append(record)
+            tool_ids = {
+                str(value)
+                for key, value in attributes.items()
+                if key in {"tool_use_id", "tool.use_id"} and value is not None
+            }
+            prompt_ids = {
+                str(value)
+                for key, value in attributes.items()
+                if key in {"prompt.id", "prompt_id"} and value is not None
+            }
+            for tool_id in tool_ids:
+                otel_by_tool[tool_id].append(record)
+            for prompt_id in prompt_ids:
+                otel_by_prompt[prompt_id].append(record)
+
+    transcript_by_tool: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
+    transcript_by_prompt: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
+    for envelope in transcript:
+        record = envelope.get("record") if envelope.get("parsed") else None
+        for tool_id in _find_values(record, {"tool_use_id", "tool_use_id"}):
+            transcript_by_tool[tool_id].append(envelope)
+        for prompt_id in _find_values(record, {"prompt_id", "prompt.id"}):
+            transcript_by_prompt[prompt_id].append(envelope)
+
+    tool_events: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
+    messages: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
+    agents: Dict[str, Dict[str, Any]] = {}
+    canonical: List[Dict[str, Any]] = []
+    used_otel_records: Set[int] = set()
+
+    for event in hooks:
+        payload = _hook_payload(event)
+        event_name = str(payload.get("hook_event_name") or "unknown")
+        tool_use_id = payload.get("tool_use_id")
+        if tool_use_id:
+            tool_events[str(tool_use_id)].append(event)
+        if event_name == "MessageDisplay":
+            key = "|".join(
+                str(payload.get(name) or "")
+                for name in ("session_id", "turn_id", "message_id")
+            )
+            messages[key].append(event)
+            continue
+        if event_name in {"PreToolUse", "PostToolUse", "PostToolUseFailure"}:
+            continue
+        if event_name in {"SubagentStart", "SubagentStop"}:
+            agent_id = str(payload.get("agent_id") or "unknown")
+            current = agents.setdefault(
+                agent_id,
+                {
+                    "agent_id": agent_id,
+                    "agent_type": payload.get("agent_type"),
+                    "parent_agent_id": payload.get("parent_agent_id"),
+                    "started_at": None,
+                    "ended_at": None,
+                    "agent_transcript_path": None,
+                    "last_assistant_message": None,
+                    "origin": "observed",
+                    "evidence": [],
+                },
+            )
+            current["evidence"].append(_evidence("hook", event["observer_event_id"]))
+            if event_name == "SubagentStart":
+                current["started_at"] = event.get("observer_received_at")
+            else:
+                current["ended_at"] = event.get("observer_received_at")
+                current["agent_transcript_path"] = payload.get("agent_transcript_path")
+                current["last_assistant_message"] = payload.get("last_assistant_message")
+
+        canonical_event = {
+            "event_id": _event_id(),
+            "event_time": event.get("observer_received_at"),
+            "event_order": None,
+            "session_id": payload.get("session_id") or session_id,
+            "prompt_id": payload.get("prompt_id"),
+            "turn_id": payload.get("turn_id"),
+            "agent_id": payload.get("agent_id") or "main",
+            "parent_agent_id": payload.get("parent_agent_id"),
+            "event_type": (
+                "user_prompt"
+                if event_name == "UserPromptSubmit"
+                else "tool_batch"
+                if event_name == "PostToolBatch"
+                else "lifecycle"
+            ),
+            "event_name": event_name,
+            "origin": "observed",
+            "payload": (
+                {"prompt": payload.get("prompt")}
+                if event_name == "UserPromptSubmit"
+                else payload
+            ),
+            "correlation": _correlation(payload),
+            "evidence": [_evidence("hook", event["observer_event_id"])],
+        }
+        if event_name == "PostToolBatch":
+            batch_id = payload.get("batch_id") or (
+                "derived_batch_" + str(event["observer_event_id"])
+            )
+            canonical_event["batch"] = {
+                "batch_id": batch_id,
+                "origin": "observed" if payload.get("batch_id") else "derived",
+                "tool_use_ids": sorted(
+                    _find_values(payload.get("tool_results"), {"tool_use_id"})
+                ),
+            }
+        prompt_id = payload.get("prompt_id")
+        if prompt_id:
+            for record in otel_by_prompt.get(str(prompt_id), []):
+                export = record["export"]
+                canonical_event["evidence"].append(
+                    _evidence("otel", export["observer_event_id"])
+                )
+                used_otel_records.add(int(record["record_index"]))
+            for envelope in transcript_by_prompt.get(str(prompt_id), []):
+                canonical_event["evidence"].append(
+                    _evidence("transcript", "line:{0}".format(envelope["line_number"]))
+                )
+        canonical.append(canonical_event)
+
+    tool_calls: List[Dict[str, Any]] = []
+    for tool_use_id, events in tool_events.items():
+        ordered = sorted(events, key=lambda item: int(item.get("observer_sequence") or 0))
+        payloads = [_hook_payload(item) for item in ordered]
+        pre = next((p for p in payloads if p.get("hook_event_name") == "PreToolUse"), None)
+        terminal_payload = next(
+            (p for p in reversed(payloads) if p.get("hook_event_name") in TOOL_TERMINALS),
+            None,
+        )
+        terminal_event = next(
+            (
+                item
+                for item in reversed(ordered)
+                if _hook_payload(item).get("hook_event_name") in TOOL_TERMINALS
+            ),
+            None,
+        )
+        basis = terminal_payload or pre or {}
+        evidence = [_evidence("hook", item["observer_event_id"]) for item in ordered]
+        for record in otel_by_tool.get(tool_use_id, []):
+            export = record["export"]
+            evidence.append(_evidence("otel", export["observer_event_id"]))
+            used_otel_records.add(int(record["record_index"]))
+        for envelope in transcript_by_tool.get(tool_use_id, []):
+            evidence.append(
+                _evidence("transcript", "line:{0}".format(envelope["line_number"]))
+            )
+        success = (
+            TOOL_TERMINALS.get(str(terminal_payload.get("hook_event_name")))
+            if terminal_payload
+            else None
+        )
+        canonical_event = {
+            "event_id": _event_id(),
+            "event_time": (
+                terminal_event.get("observer_received_at")
+                if terminal_event
+                else ordered[0].get("observer_received_at")
+            ),
+            "event_order": None,
+            "session_id": basis.get("session_id") or session_id,
+            "prompt_id": basis.get("prompt_id"),
+            "turn_id": basis.get("turn_id"),
+            "agent_id": basis.get("agent_id") or "main",
+            "parent_agent_id": basis.get("parent_agent_id"),
+            "event_type": "tool_execution",
+            "origin": "observed",
+            "tool": {
+                "tool_use_id": tool_use_id,
+                "name": basis.get("tool_name"),
+                "input": basis.get("tool_input"),
+                "output": terminal_payload.get("tool_response") if terminal_payload else None,
+                "error": terminal_payload.get("error") if terminal_payload else None,
+                "success": success,
+                "duration_ms": terminal_payload.get("duration_ms") if terminal_payload else None,
+            },
+            "correlation": _correlation(basis),
+            "evidence": evidence,
+        }
+        tool_calls.append(canonical_event)
+        canonical.append(canonical_event)
+
+    rebuilt_messages: List[Dict[str, Any]] = []
+    for _, events in messages.items():
+        ordered = sorted(
+            events,
+            key=lambda item: int(_hook_payload(item).get("index") or 0),
+        )
+        payload = _hook_payload(ordered[-1])
+        message = {
+            "event_id": _event_id(),
+            "event_time": ordered[-1].get("observer_received_at"),
+            "event_order": None,
+            "session_id": payload.get("session_id") or session_id,
+            "prompt_id": payload.get("prompt_id"),
+            "turn_id": payload.get("turn_id"),
+            "agent_id": payload.get("agent_id") or "main",
+            "parent_agent_id": payload.get("parent_agent_id"),
+            "event_type": "assistant_message",
+            "origin": "derived",
+            "message": {
+                "message_id": payload.get("message_id"),
+                "content": "".join(str(_hook_payload(item).get("delta") or "") for item in ordered),
+                "final": any(bool(_hook_payload(item).get("final")) for item in ordered),
+                "delta_count": len(ordered),
+            },
+            "correlation": _correlation(payload),
+            "evidence": [_evidence("hook", item["observer_event_id"]) for item in ordered],
+        }
+        rebuilt_messages.append(message)
+        canonical.append(message)
+
+    decoded_export_ids = {
+        str(record["export"].get("observer_event_id")) for record in otel_records
+    }
+    for record in otel_records:
+        if int(record["record_index"]) in used_otel_records:
+            continue
+        export = record["export"]
+        export_id = str(export.get("observer_event_id"))
+        attributes = record["attributes"]
+        canonical.append(
+            {
+                "event_id": _event_id(),
+                "event_time": _otel_event_time(record["record"], attributes)
+                or export.get("observer_received_at"),
+                "event_order": None,
+                "session_id": session_id,
+                "prompt_id": attributes.get("prompt.id") or attributes.get("prompt_id"),
+                "turn_id": attributes.get("turn_id"),
+                "agent_id": attributes.get("agent_id") or "main",
+                "parent_agent_id": attributes.get("parent_agent_id"),
+                "event_type": "telemetry",
+                "event_name": attributes.get("event.name") or attributes.get("name"),
+                "origin": "observed",
+                "telemetry": {
+                    "attributes": attributes,
+                    "record": record["record"],
+                },
+                "correlation": {
+                    "request_id": attributes.get("request_id"),
+                    "message_uuid": attributes.get("message.uuid"),
+                },
+                "evidence": [_evidence("otel", export_id)],
+            }
+        )
+
+    for export in otel:
+        export_id = str(export.get("observer_event_id"))
+        if export_id in decoded_export_ids:
+            continue
+        raw = export.get("raw_payload") or {}
+        canonical.append(
+            {
+                "event_id": _event_id(),
+                "event_time": export.get("observer_received_at"),
+                "event_order": None,
+                "session_id": session_id,
+                "prompt_id": None,
+                "turn_id": None,
+                "agent_id": "main",
+                "parent_agent_id": None,
+                "event_type": "telemetry_export",
+                "origin": "observed",
+                "telemetry": {
+                    "request_path": raw.get("request_path") if isinstance(raw, dict) else None,
+                    "decoded_format": raw.get("decoded_format") if isinstance(raw, dict) else None,
+                },
+                "correlation": {"request_id": None, "message_uuid": None},
+                "evidence": [_evidence("otel", export_id)],
+            }
+        )
+
+    canonical.sort(key=lambda item: (str(item.get("event_time") or ""), item["event_id"]))
+    for index, event in enumerate(canonical, start=1):
+        event["event_order"] = index
+        event["field_origins"] = {
+            "event_id": "derived",
+            "event_order": "derived",
+            "event_time": "observed",
+            "session_id": "observed",
+            "prompt_id": "observed",
+            "turn_id": "observed",
+            "agent_id": "observed",
+            "parent_agent_id": (
+                "observed" if event.get("parent_agent_id") is not None else "derived"
+            ),
+            "evidence": "derived",
+        }
+
+    write_jsonl(directory / "derived" / "canonical_events.jsonl", canonical)
+    write_jsonl(directory / "derived" / "messages.jsonl", rebuilt_messages)
+    write_jsonl(directory / "derived" / "tool_calls.jsonl", tool_calls)
+    write_jsonl(directory / "derived" / "agents.jsonl", agents.values())
+    return {
+        "session_id": session_id,
+        "canonical_event_count": len(canonical),
+        "tool_call_count": len(tool_calls),
+        "message_count": len(rebuilt_messages),
+        "agent_count": len(agents),
+        "otel_export_count": len(otel),
+        "transcript_record_count": len(transcript),
+    }

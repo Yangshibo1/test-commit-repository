@@ -12,7 +12,8 @@ AgentVAST 是面向 Coding Agent 数据分析任务的本地工作流记录与�
 2. `docs/记录字段设计.md`：schema 1.3 字段规范。
 3. `docs/Claude工作流程约束设计.md`：Plan、Node、人工介入和 Hook 门禁。
 4. `docs/AgentVAST系统设计总览.md`：产品边界和总体架构。
-5. `README.md`：安装、启动和用户命令。
+5. `docs/PassiveObserverV1.md`：不干预 Claude 执行的观察模式。
+6. `README.md`：安装、启动和用户命令。
 
 `docs/archive/` 中的内容只用于历史复核，不是当前操作说明。
 
@@ -25,6 +26,8 @@ AgentVAST 是面向 Coding Agent 数据分析任务的本地工作流记录与�
 - 默认 Claude 集成：`claude-plugin` 的 SessionStart、PreToolUse、PostToolUse、
   UserPromptSubmit 和 Stop Hook。
 - `agentvast.mcp_stdio` 是可选通道，默认启动器不依赖 MCP。
+- `agentvast observe` 使用独立的 `claude-observer-plugin`，只保存 Hook、OTel 和 Transcript
+  原始事件，不创建 enforce Run，也不注入工作流约束。
 
 ## 开发规则
 
