@@ -44,6 +44,27 @@ agentvast observe start --project "C:\path\to\analysis-project"
 python -m pip install -e .
 ```
 
+基础安装只包含 AgentVAST 本身，不会安装 MCP、Web 或数据分析依赖。建议在独立虚拟环境中
+安装，避免改变 Anaconda 基础环境：
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e .
+```
+
+按功能安装可选依赖：
+
+```powershell
+python -m pip install -e ".[observer]"  # OTel protobuf 解码
+python -m pip install -e ".[web]"       # FastAPI / Uvicorn / WinPTY
+python -m pip install -e ".[mcp]"       # 可选 MCP 1.x 兼容通道
+```
+
+MCP 2.x 是破坏性重写；当前兼容通道固定使用 `mcp>=1.28,<2.0`，默认 Claude 工作流和
+Passive Observer 均不依赖 MCP。
+
 需要本机已经安装并登录 Claude Code。
 
 ## 一键启动 Web 前后端

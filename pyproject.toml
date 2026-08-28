@@ -4,9 +4,7 @@ version = "0.2.0"
 description = "数据血缘追踪系统 - 用于追踪 agent 数据分析流程"
 readme = "README.md"
 requires-python = ">=3.8"
-dependencies = [
-    "mcp>=0.1.0",
-]
+dependencies = []
 
 [project.scripts]
 agentvast = "agentvast.cli:main"
@@ -14,6 +12,9 @@ agentvast-agent = "agentvast.agent_cli:main"
 agentvast-mcp = "agentvast.mcp_stdio:main"
 
 [project.optional-dependencies]
+mcp = [
+    "mcp>=1.28,<2.0; python_version >= '3.10'",
+]
 pandas = [
     "pandas>=2.0.0",
 ]
@@ -29,6 +30,7 @@ dev = [
     "pytest>=7.0.0",
     "black>=23.0.0",
     "mypy>=1.0.0",
+    "mcp>=1.28,<2.0; python_version >= '3.10'",
 ]
 
 [build-system]

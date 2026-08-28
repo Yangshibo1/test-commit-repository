@@ -11,6 +11,8 @@ Claude Code 暴露的原始行为。现有 enforce 模式保持不变。
 agentvast observe start --project "C:\path\to\analysis-project" --no-otel
 ```
 
+基础 Observer 仅使用 Python 标准库，不需要安装 MCP。
+
 完整观察（Hook + OTel + Transcript）：
 
 ```powershell
