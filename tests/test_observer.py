@@ -82,6 +82,91 @@ def test_transcript_snapshot_keeps_raw_and_invalid_lines(tmp_path: Path):
     }
 
 
+def test_transcript_only_session_builds_degraded_canonical_trajectory(tmp_path: Path):
+    session_id = "session-transcript-fallback"
+    root = tmp_path / "observations"
+    source = tmp_path / "native-transcript.jsonl"
+    records = [
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "promptId": "prompt-1",
+            "uuid": "user-1",
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "message": {"role": "user", "content": "inspect data"},
+        },
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "assistant-1",
+            "timestamp": "2026-01-01T00:00:01+00:00",
+            "message": {
+                "id": "message-1",
+                "role": "assistant",
+                "model": "claude-test",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "tool-1",
+                        "name": "Read",
+                        "input": {"file_path": "data.csv"},
+                    }
+                ],
+            },
+        },
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "uuid": "user-2",
+            "timestamp": "2026-01-01T00:00:02+00:00",
+            "message": {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": "tool-1",
+                        "content": "rows=10",
+                    }
+                ],
+            },
+        },
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "assistant-2",
+            "timestamp": "2026-01-01T00:00:03+00:00",
+            "message": {
+                "id": "message-2",
+                "role": "assistant",
+                "model": "claude-test",
+                "content": [{"type": "text", "text": "Inspection complete."}],
+            },
+        },
+    ]
+    source.write_text(
+        "".join(json.dumps(item) + "\n" for item in records), encoding="utf-8"
+    )
+    create_session(session_id, tmp_path, root)
+    snapshot_transcript(session_id, source, root, attempts=1, delay=0)
+
+    derived = derive_session(session_id, str(root))
+    report = validate_session(session_id, str(root))
+
+    assert derived["tool_call_count"] == 1
+    assert derived["message_count"] == 2
+    assert report["valid"] is False
+    assert report["usable"] is True
+    assert report["degraded"] is True
+    assert report["capture_mode"] == "transcript_fallback"
+    assert report["counts"]["tool_calls"] == 1
+    assert report["counts"]["transcript_reconstructed_tool_calls"] == 1
+    assert report["counts"]["prompts"] == 1
+    assert "reconstructed from the native transcript" in " ".join(report["warnings"])
+    tools = list(iter_jsonl(root / session_id / "derived" / "tool_calls.jsonl"))
+    assert tools[0]["tool"]["name"] == "Read"
+    assert tools[0]["tool"]["output"] == "rows=10"
+
+
 def test_otel_collector_preserves_exact_body_and_decodes_json(tmp_path: Path):
     session_id = "session-otel"
     body = json.dumps({"resourceLogs": [{"scopeLogs": []}]}).encode("utf-8")
@@ -277,6 +362,7 @@ def test_observe_cli_no_launch_creates_passive_manifest(
     assert result == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["observer_mode"] == "passive"
+    assert payload["hook_profile"] == "modern"
     assert payload["launch_command"][1:] == [
         "--session-id",
         "session-cli",
@@ -312,7 +398,6 @@ def test_observe_cli_no_launch_creates_passive_manifest(
     assert duplicate.value.code == 2
     assert "cannot be overwritten" in capsys.readouterr().err
 
-
 def test_observer_plugin_never_declares_control_output():
     plugin = Path(__file__).resolve().parents[1] / "claude-observer-plugin"
     hooks = json.loads((plugin / "hooks" / "hooks.json").read_text(encoding="utf-8"))
@@ -325,6 +410,9 @@ def test_observer_plugin_never_declares_control_output():
     assert "PostToolUse" in hooks["hooks"]
     assert "SessionEnd" in hooks["hooks"]
     assert "${CLAUDE_PLUGIN_ROOT}/scripts/hook_collector.py" in serialized
+    assert "MessageDisplay" in hooks["hooks"]
+    assert "PostToolBatch" in hooks["hooks"]
+    assert '"async": true' in serialized
 
 
 def test_observer_environment_preserves_user_runtime_paths(tmp_path: Path, monkeypatch):

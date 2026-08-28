@@ -31,6 +31,14 @@ agentvast observe start `
 `observe start` 不提交初始 prompt，也不改变 Claude 的权限模式。Claude 启动后由用户正常输入
 任务。只有显式传入 `--permission-mode` 时，Observer 才把该参数转交 Claude Code。
 
+Observer 面向当前 Claude Code Hook schema，启用 MessageDisplay、PostToolBatch、
+PermissionDenied、Subagent、Task 和 async Hook。使用前应执行 `claude update` 并确认
+`claude --version` 为当前版本。
+
+Transcript fallback 仍然保留：当 Hook 配置错误、异步事件丢失或 Session 异常终止时，可以
+从原生 transcript 确定性重建可见消息和工具调用，并明确标记为 `transcript_fallback`，不会
+伪装成完整 Hook capture。
+
 ## 管理和处理
 
 ```powershell
@@ -44,6 +52,33 @@ agentvast observe export <session-id>
 
 `observe stop`只执行 transcript snapshot 和 manifest finalization，不终止 Claude 进程。正常
 交互式使用时，直接退出 Claude；`observe start` 会在 Claude 退出后自动 finalization。
+
+旧版 Hook 未记录 transcript path 时，可以显式恢复：
+
+```powershell
+agentvast observe stop <session-id> --transcript-path "C:\path\to\claude-session.jsonl"
+```
+
+## 查看记录
+
+默认 Session 目录：
+
+```text
+C:\Users\<用户名>\.agentvast\observations\<session-id>\
+```
+
+建议依次查看：
+
+```text
+manifest.json                           数据源与 Hook profile
+diagnostics/validation_report.json     完整性和降级状态
+derived/canonical_events.jsonl         统一事件轨迹
+derived/tool_calls.jsonl               工具调用
+derived/messages.jsonl                 用户与 Claude 可见消息
+raw/hooks.jsonl                        原始 Hook payload
+raw/otel.jsonl                         原始 OTLP 请求
+transcript/transcript.jsonl            Claude 原生 transcript 快照
+```
 
 ## 存储
 

@@ -332,6 +332,173 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
         rebuilt_messages.append(message)
         canonical.append(message)
 
+    # Older Claude Code versions may not support MessageDisplay or newer Hook
+    # events. The native transcript remains an observed source, so use it as a
+    # deterministic fallback without assigning workflow semantics.
+    hook_prompt_ids = {
+        str(_hook_payload(item).get("prompt_id"))
+        for item in hooks
+        if _hook_payload(item).get("hook_event_name") == "UserPromptSubmit"
+        and _hook_payload(item).get("prompt_id")
+    }
+    transcript_tool_uses: Dict[str, Dict[str, Any]] = {}
+    transcript_tool_results: Dict[str, Dict[str, Any]] = {}
+    for envelope in transcript:
+        if not envelope.get("parsed") or not isinstance(envelope.get("record"), dict):
+            continue
+        record = envelope["record"]
+        record_type = str(record.get("type") or "")
+        message = record.get("message")
+        if not isinstance(message, dict):
+            continue
+        content = message.get("content")
+        blocks = content if isinstance(content, list) else []
+        for block in blocks:
+            if not isinstance(block, dict):
+                continue
+            if block.get("type") == "tool_use" and block.get("id"):
+                transcript_tool_uses[str(block["id"])] = {
+                    "block": block,
+                    "record": record,
+                    "envelope": envelope,
+                }
+            if block.get("type") == "tool_result" and block.get("tool_use_id"):
+                transcript_tool_results[str(block["tool_use_id"])] = {
+                    "block": block,
+                    "record": record,
+                    "envelope": envelope,
+                }
+
+        prompt_id = record.get("promptId") or record.get("prompt_id")
+        evidence = [_evidence("transcript", "line:{0}".format(envelope["line_number"]))]
+        if record_type == "user" and not blocks:
+            if not isinstance(content, str) or not content:
+                continue
+            if prompt_id and str(prompt_id) in hook_prompt_ids:
+                continue
+            prompt_event = {
+                "event_id": _event_id(),
+                "event_time": record.get("timestamp"),
+                "event_order": None,
+                "session_id": record.get("sessionId") or session_id,
+                "prompt_id": prompt_id,
+                "turn_id": record.get("uuid"),
+                "agent_id": "main",
+                "parent_agent_id": None,
+                "event_type": "user_prompt",
+                "event_name": "TranscriptUserMessage",
+                "origin": "observed",
+                "message": {
+                    "message_id": record.get("uuid"),
+                    "role": "user",
+                    "content": content,
+                },
+                "correlation": {
+                    "request_id": None,
+                    "message_uuid": record.get("uuid"),
+                },
+                "evidence": evidence,
+            }
+            rebuilt_messages.append(prompt_event)
+            canonical.append(prompt_event)
+        elif record_type == "assistant" and not messages:
+            text_blocks = [
+                str(block.get("text") or "")
+                for block in blocks
+                if isinstance(block, dict) and block.get("type") == "text"
+            ]
+            visible_text = "".join(text_blocks)
+            if not visible_text:
+                continue
+            assistant_event = {
+                "event_id": _event_id(),
+                "event_time": record.get("timestamp"),
+                "event_order": None,
+                "session_id": record.get("sessionId") or session_id,
+                "prompt_id": prompt_id,
+                "turn_id": record.get("uuid"),
+                "agent_id": "main",
+                "parent_agent_id": None,
+                "event_type": "assistant_message",
+                "event_name": "TranscriptAssistantMessage",
+                "origin": "observed",
+                "message": {
+                    "message_id": message.get("id") or record.get("uuid"),
+                    "role": "assistant",
+                    "content": visible_text,
+                    "model": message.get("model"),
+                    "usage": message.get("usage"),
+                },
+                "correlation": {
+                    "request_id": message.get("id"),
+                    "message_uuid": record.get("uuid"),
+                },
+                "evidence": evidence,
+            }
+            rebuilt_messages.append(assistant_event)
+            canonical.append(assistant_event)
+
+    for tool_use_id, observed_use in transcript_tool_uses.items():
+        if tool_use_id in tool_events:
+            continue
+        result = transcript_tool_results.get(tool_use_id)
+        use_block = observed_use["block"]
+        use_record = observed_use["record"]
+        evidence = [
+            _evidence(
+                "transcript",
+                "line:{0}".format(observed_use["envelope"]["line_number"]),
+            )
+        ]
+        if result:
+            evidence.append(
+                _evidence(
+                    "transcript",
+                    "line:{0}".format(result["envelope"]["line_number"]),
+                )
+            )
+        result_block = result["block"] if result else {}
+        use_message = use_record.get("message")
+        transcript_tool = {
+            "event_id": _event_id(),
+            "event_time": (
+                result["record"].get("timestamp") if result else use_record.get("timestamp")
+            ),
+            "event_order": None,
+            "session_id": use_record.get("sessionId") or session_id,
+            "prompt_id": use_record.get("promptId") or use_record.get("prompt_id"),
+            "turn_id": use_record.get("uuid"),
+            "agent_id": "main",
+            "parent_agent_id": None,
+            "event_type": "tool_execution",
+            "event_name": "TranscriptToolExecution",
+            "origin": "observed",
+            "tool": {
+                "tool_use_id": tool_use_id,
+                "name": use_block.get("name"),
+                "input": use_block.get("input"),
+                "output": result_block.get("content") if result else None,
+                "error": (
+                    result_block.get("content")
+                    if result and result_block.get("is_error")
+                    else None
+                ),
+                "success": (
+                    not bool(result_block.get("is_error")) if result else None
+                ),
+                "duration_ms": None,
+            },
+            "correlation": {
+                "request_id": (
+                    use_message.get("id") if isinstance(use_message, dict) else None
+                ),
+                "message_uuid": use_record.get("uuid"),
+            },
+            "evidence": evidence,
+        }
+        tool_calls.append(transcript_tool)
+        canonical.append(transcript_tool)
+
     decoded_export_ids = {
         str(record["export"].get("observer_event_id")) for record in otel_records
     }

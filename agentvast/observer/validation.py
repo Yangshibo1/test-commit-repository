@@ -51,6 +51,8 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
     otel = list(iter_jsonl(directory / "raw" / "otel.jsonl"))
     transcript = list(iter_jsonl(directory / "raw" / "transcript.jsonl"))
     canonical = list(iter_jsonl(directory / "derived" / "canonical_events.jsonl"))
+    derived_tool_calls = list(iter_jsonl(directory / "derived" / "tool_calls.jsonl"))
+    derived_messages = list(iter_jsonl(directory / "derived" / "messages.jsonl"))
 
     event_counts = Counter(str(_payload(item).get("hook_event_name") or "unknown") for item in hooks)
     by_tool: DefaultDict[str, Set[str]] = defaultdict(set)
@@ -120,6 +122,29 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
         bool((_payload(item) or {}).get("decode_error")) for item in otel
     )
     invalid_transcript = sum(not bool(item.get("parsed")) for item in transcript)
+    transcript_record_types = Counter(
+        str((item.get("record") or {}).get("type") or "unknown")
+        for item in transcript
+        if item.get("parsed") and isinstance(item.get("record"), dict)
+    )
+    transcript_fallback_usable = bool(
+        transcript_record_types.get("user")
+        and transcript_record_types.get("assistant")
+    )
+    transcript_prompt_count = sum(
+        1
+        for item in transcript
+        if item.get("parsed")
+        and isinstance(item.get("record"), dict)
+        and item["record"].get("type") == "user"
+        and isinstance((item["record"].get("message") or {}).get("content"), str)
+    )
+    transcript_reconstructed_tools = sum(
+        1
+        for item in derived_tool_calls
+        if item.get("event_name") == "TranscriptToolExecution"
+    )
+    hook_complete = not missing_events
     warnings: List[str] = []
     if unmatched_tools:
         warnings.append("{0} tool calls could not be fully matched".format(len(unmatched_tools)))
@@ -131,20 +156,37 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
         warnings.append("derive has not produced canonical events")
     if unmatched_prompts:
         warnings.append("{0} prompts have no OTel/transcript match".format(len(unmatched_prompts)))
-
+    if not hook_complete and transcript_fallback_usable:
+        warnings.append(
+            "Hook capture is unavailable; canonical trajectory was reconstructed "
+            "from the native transcript"
+        )
     report = {
         "session_id": session_id,
-        "valid": not missing_events,
+        "valid": hook_complete,
+        "usable": hook_complete or transcript_fallback_usable,
+        "degraded": not hook_complete and transcript_fallback_usable,
+        "capture_mode": (
+            "hook_primary"
+            if hook_complete
+            else "transcript_fallback"
+            if transcript_fallback_usable
+            else "incomplete"
+        ),
         "sources": manifest.get("sources", {}),
         "counts": {
             "hook_events": len(hooks),
             "otel_exports": len(otel),
             "transcript_records": len(transcript),
             "canonical_events": len(canonical),
-            "tool_calls": len(by_tool),
+            "tool_calls": len(derived_tool_calls),
+            "hook_tool_calls": len(by_tool),
+            "transcript_reconstructed_tool_calls": transcript_reconstructed_tools,
             "matched_tool_calls": matched_tools,
             "unmatched_tool_calls": len(unmatched_tools),
-            "prompts": event_counts.get("UserPromptSubmit", 0),
+            "prompts": max(event_counts.get("UserPromptSubmit", 0), transcript_prompt_count),
+            "transcript_prompts": transcript_prompt_count,
+            "derived_messages": len(derived_messages),
             "prompts_with_stable_id": len(hook_prompt_ids),
             "matched_prompts": matched_prompts,
             "unmatched_prompts": len(unmatched_prompts),
@@ -152,6 +194,7 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
             "transcript_matched_tool_calls": transcript_matched_tools,
         },
         "hook_event_counts": dict(sorted(event_counts.items())),
+        "transcript_record_types": dict(sorted(transcript_record_types.items())),
         "missing_events": missing_events,
         "warnings": warnings,
         "unmatched_tools": unmatched_tools,

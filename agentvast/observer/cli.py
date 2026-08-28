@@ -60,6 +60,10 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
     stop = subparsers.add_parser("stop", help="Finalize transcript and manifest")
     stop.add_argument("session_id", nargs="?")
     stop.add_argument("--storage-root")
+    stop.add_argument(
+        "--transcript-path",
+        help="Recover/finalize from an explicitly supplied Claude transcript path",
+    )
 
     sessions = subparsers.add_parser("sessions", help="List observer sessions")
     sessions.add_argument("--storage-root")
@@ -267,7 +271,7 @@ def command_start(args: argparse.Namespace) -> int:
         )
     executable = _resolve_claude(args.claude_command) if not args.no_launch else args.claude_command
     version = _claude_version(executable) if not args.no_launch else None
-    manifest = create_session(
+    create_session(
         session_id,
         project,
         root,
@@ -275,6 +279,11 @@ def command_start(args: argparse.Namespace) -> int:
         raw_api=args.capture_api_bodies,
     )
     register_session_root(session_id, root)
+    update_manifest(
+        session_id,
+        {"collector": {"hook_profile": "modern"}},
+        root,
+    )
     environment = _environment()
     arguments = ["--session-id", session_id, "--plugin-dir", str(plugin_dir)]
     if args.permission_mode:
@@ -312,6 +321,7 @@ def command_start(args: argparse.Namespace) -> int:
         "storage_root": str(root),
         "session_directory": str(ensure_session_layout(session_id, root)),
         "plugin_dir": str(plugin_dir),
+        "hook_profile": "modern",
         "otel_endpoint": endpoint,
         "otel_decode_available": decode_available(),
         "capture_raw_api": bool(args.capture_api_bodies),
@@ -386,7 +396,17 @@ def execute(args: argparse.Namespace) -> int:
         )
         return 0
     if args.observe_command == "stop":
-        print(json.dumps(finalize_session(session_id, root), ensure_ascii=False, indent=2))
+        print(
+            json.dumps(
+                finalize_session(
+                    session_id,
+                    root,
+                    transcript_path=getattr(args, "transcript_path", None),
+                ),
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
         return 0
     if args.observe_command == "derive":
         print(json.dumps(derive_session(session_id, str(root)), ensure_ascii=False, indent=2))
