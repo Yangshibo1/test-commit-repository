@@ -41,6 +41,11 @@ npm run build
 - Inspector 查看节点详情
 - Follow-up 生成 Claude 继续问答命令
 - ECharts 数据集可视化
+- Passive Observer 独立页面：展示 transcript 派生的 Turn、工具批次、错误恢复和最终回答
+
+Passive Observer 页面读取后端只读 Observation API，或离线加载
+`derived/observer_trace.json`。它不会直接解析原始 transcript，也不会把执行轨迹伪装成带 Plan
+约束的 `workflow.json`。
 
 ## 设计原则
 

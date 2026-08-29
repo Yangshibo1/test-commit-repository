@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import RecordPage from './App';
 import ClaudeTerminalPage from './pages/ClaudeTerminalPage';
+import ObserverPage from './pages/ObserverPage';
 
-type Page = 'claude' | 'records';
+type Page = 'claude' | 'records' | 'observer';
 
 function Workbench() {
   const [page, setPage] = useState<Page>('claude');
@@ -43,15 +44,30 @@ function Workbench() {
           >
             工作流记录
           </button>
+          <button
+            type="button"
+            onClick={() => setPage('observer')}
+            className={`px-5 py-2 rounded-lg text-sm transition-all ${
+              page === 'observer'
+                ? 'bg-white text-accent shadow-sm font-semibold'
+                : 'text-muted hover:text-ink'
+            }`}
+          >
+            被动观察
+          </button>
         </nav>
 
         <div className="ml-auto text-[11px] text-muted font-mono">
-          P0 · CLI TERMINAL BRIDGE
+          CLAUDE · WORKFLOW · OBSERVER
         </div>
       </header>
 
       <main className="flex-1 min-h-0">
-        {page === 'claude' ? <ClaudeTerminalPage /> : <RecordPage />}
+        {page === 'claude'
+          ? <ClaudeTerminalPage />
+          : page === 'records'
+          ? <RecordPage />
+          : <ObserverPage />}
       </main>
     </div>
   );

@@ -58,6 +58,9 @@ agentvast observe export <session-id>
 `observe stop`只执行 transcript snapshot 和 manifest finalization，不终止 Claude 进程。正常
 交互式使用时，直接退出 Claude；`observe start` 会在 Claude 退出后自动 finalization。
 
+`observe derive` 同时生成 `derived/observer_trace.json`。该文件是 Passive Observer 页面使用的
+只读展示 Bundle；浏览器不直接解析或修改原始 transcript。
+
 旧版 Hook 未记录 transcript path 时，可以显式恢复：
 
 ```powershell
@@ -80,6 +83,7 @@ diagnostics/validation_report.json     完整性和降级状态
 derived/canonical_events.jsonl         统一事件轨迹
 derived/tool_calls.jsonl               工具调用
 derived/messages.jsonl                 用户与 Claude 可见消息
+derived/observer_trace.json            Passive Observer 页面数据
 raw/hooks.jsonl                        原始 Hook payload
 raw/otel.jsonl                         原始 OTLP 请求
 transcript/transcript.jsonl            Claude 原生 transcript 快照
@@ -109,7 +113,8 @@ transcript/transcript.jsonl            Claude 原生 transcript 快照
 │  ├─ canonical_events.jsonl
 │  ├─ messages.jsonl
 │  ├─ tool_calls.jsonl
-│  └─ agents.jsonl
+│  ├─ agents.jsonl
+│  └─ observer_trace.json
 └─ diagnostics/
    ├─ missing_events.json
    ├─ unmatched_events.json
@@ -124,6 +129,39 @@ transcript/transcript.jsonl            Claude 原生 transcript 快照
 Hook runner 根据 Claude payload 自带的 `session_id` 查询该映射；Observer 不向 Claude 注入
 `AGENTVAST_OBSERVER_*` 环境变量，也不修改 Claude 分析子进程的 `PYTHONPATH`。
 Observer 同样不会重排 Claude 的 `PATH`；启动前要求用户原有环境已经可以运行 `python`。
+
+## Transcript-only 处理规则
+
+Observer 对 transcript 采用以下顺序处理：
+
+1. 按 JSONL 行读取并保留原始行号，原文件不覆盖、不清洗；
+2. 只把 `origin.kind=human`、`promptSource=typed/pasted/voice` 或带稳定
+   `promptId` 的普通文本识别为人工 Prompt；
+3. 将 `/exit`、`local-command-caveat`、本地命令输出和系统 UI 消息归为默认折叠的内部事件；
+4. 使用 `message.id` 合并同一模型响应中的多个工具调用，重建工具批次；
+5. 使用 `tool_use_id` 精确配对工具调用和结果，保留结构化 `toolUseResult`；
+6. 使用 `uuid/parentUuid` 保存原始父子链，并从 Prompt、Response、Tool、Final Answer
+   确定性生成紧凑执行图；
+7. 事件 ID 由 Session、来源行和稳定标识计算，重复 derive 不改变节点 ID；
+8. 成本、模型、权限模式和会话级耗时作为 Session 指标保存。
+
+`observer_trace.json` 中只有 `observed` 和可重复计算的 `derived` 数据，不生成 Exploration、
+Analysis、Validation 等语义阶段。工具调用到结果之间的 transcript 时间差记录为
+`observed_elapsed_ms`，它不是精确工具运行时间；只有原始结构化结果提供的 `durationMs` 才作为
+精确单次工具耗时。
+
+## Passive Observer 页面
+
+AgentVAST Web 顶部新增“被动观察”页面。页面通过只读接口加载已经 derive 的 Session：
+
+```text
+GET /api/observations
+GET /api/observations/<session-id>/trace
+```
+
+页面提供 Session 列表、执行时间线、Prompt → 模型响应/工具批次 → 工具结果 → 最终回答图、
+工具错误状态、成本与耗时指标，以及可回溯到 transcript 行号的 Inspector。也可以离线加载单个
+`observer_trace.json`。该页面没有启动、停止、审批或修改 Claude 的控制能力。
 
 ## 被动性保证
 

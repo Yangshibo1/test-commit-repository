@@ -21,6 +21,10 @@ from agentvast.paths import (
     resolve_user_path,
     workflow_database,
 )
+from agentvast.observer.trace_builder import (
+    list_observer_sessions,
+    load_observer_trace,
+)
 from agentvast.workflow_store import WorkflowError, WorkflowStore
 
 
@@ -652,7 +656,11 @@ def create_app(
         return {
             "ok": True,
             "api_version": 2,
-            "capabilities": ["finish_trace", "reviewer_assets"],
+            "capabilities": [
+                "finish_trace",
+                "reviewer_assets",
+                "observer_trace_readonly",
+            ],
             "default_project": str(manager.default_project),
             "default_claude_command": manager.default_claude_command,
             "plugin_dir": str(manager.plugin_dir),
@@ -664,6 +672,17 @@ def create_app(
         if manager.current is None:
             return {"session": None}
         return {"session": manager.current.status()}
+
+    @app.get("/api/observations")
+    async def observations() -> Dict[str, Any]:
+        return {"sessions": list_observer_sessions()}
+
+    @app.get("/api/observations/{session_id}/trace")
+    async def observation_trace(session_id: str) -> Dict[str, Any]:
+        try:
+            return load_observer_trace(session_id)
+        except (FileNotFoundError, ValueError) as error:
+            raise HTTPException(status_code=404, detail=str(error))
 
     @app.post("/api/terminal")
     async def start_terminal(request: StartTerminalRequest) -> Dict[str, Any]:

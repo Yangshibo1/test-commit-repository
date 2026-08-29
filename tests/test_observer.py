@@ -20,6 +20,7 @@ from agentvast.observer.store import (
     register_session_root,
 )
 from agentvast.observer.transcript_reader import snapshot_transcript
+from agentvast.observer.trace_builder import list_observer_sessions
 from agentvast.observer.validation import validate_session
 from agentvast.paths import expose_repository_to_python
 
@@ -165,6 +166,154 @@ def test_transcript_only_session_builds_degraded_canonical_trajectory(tmp_path: 
     tools = list(iter_jsonl(root / session_id / "derived" / "tool_calls.jsonl"))
     assert tools[0]["tool"]["name"] == "Read"
     assert tools[0]["tool"]["output"] == "rows=10"
+
+
+def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_path: Path):
+    session_id = "session-observer-trace"
+    root = tmp_path / "observations"
+    source = tmp_path / "trace.jsonl"
+    records = [
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "uuid": "prompt-uuid",
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "origin": {"kind": "human"},
+            "promptSource": "typed",
+            "message": {"role": "user", "content": "检查数据"},
+        },
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "assistant-a",
+            "parentUuid": "prompt-uuid",
+            "timestamp": "2026-01-01T00:00:01+00:00",
+            "message": {
+                "id": "response-batch",
+                "role": "assistant",
+                "model": "claude-test",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "tool-a",
+                        "name": "Glob",
+                        "input": {"pattern": "*"},
+                    }
+                ],
+            },
+        },
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "assistant-b",
+            "parentUuid": "assistant-a",
+            "timestamp": "2026-01-01T00:00:01+00:00",
+            "message": {
+                "id": "response-batch",
+                "role": "assistant",
+                "model": "claude-test",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "tool-b",
+                        "name": "Read",
+                        "input": {"file_path": "data.txt", "pages": ""},
+                    }
+                ],
+            },
+        },
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "uuid": "result-a",
+            "parentUuid": "assistant-a",
+            "timestamp": "2026-01-01T00:00:02+00:00",
+            "toolUseResult": {"durationMs": 25, "filenames": ["data.txt"]},
+            "message": {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "tool_use_id": "tool-a", "content": "data.txt"}
+                ],
+            },
+        },
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "uuid": "result-b",
+            "parentUuid": "assistant-b",
+            "timestamp": "2026-01-01T00:00:02+00:00",
+            "toolUseResult": "invalid pages",
+            "message": {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": "tool-b",
+                        "content": "invalid pages",
+                        "is_error": True,
+                    }
+                ],
+            },
+        },
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "assistant-final",
+            "parentUuid": "result-a",
+            "timestamp": "2026-01-01T00:00:03+00:00",
+            "message": {
+                "id": "response-final",
+                "role": "assistant",
+                "model": "claude-test",
+                "stop_reason": "end_turn",
+                "content": [{"type": "text", "text": "检查完成"}],
+            },
+        },
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "uuid": "exit-uuid",
+            "timestamp": "2026-01-01T00:00:04+00:00",
+            "message": {"role": "user", "content": "<command-name>/exit</command-name>"},
+        },
+    ]
+    source.write_text(
+        "".join(json.dumps(item, ensure_ascii=False) + "\n" for item in records),
+        encoding="utf-8",
+    )
+    create_session(session_id, tmp_path, root)
+    snapshot_transcript(session_id, source, root, attempts=1, delay=0)
+
+    derive_session(session_id, str(root))
+    trace_path = root / session_id / "derived" / "observer_trace.json"
+    first = json.loads(trace_path.read_text(encoding="utf-8"))
+    first_ids = [item["event_id"] for item in first["events"]]
+    canonical_path = root / session_id / "derived" / "canonical_events.jsonl"
+    first_canonical_ids = [item["event_id"] for item in iter_jsonl(canonical_path)]
+    derive_session(session_id, str(root))
+    second = json.loads(trace_path.read_text(encoding="utf-8"))
+
+    assert first["metrics"]["human_prompt_count"] == 1
+    assert first["metrics"]["tool_call_count"] == 2
+    assert first["metrics"]["tool_error_count"] == 1
+    assert first["diagnostics"]["filtered_non_human_user_records"] == 1
+    responses = [item for item in first["events"] if item["event_type"] == "model_response"]
+    assert len(responses) == 1
+    assert responses[0]["payload"]["tool_use_ids"] == ["tool-a", "tool-b"]
+    tools = [item for item in first["events"] if item["event_type"] == "tool_execution"]
+    glob = next(item for item in tools if item["tool_use_id"] == "tool-a")
+    assert glob["payload"]["duration_ms"] == 25
+    assert glob["payload"]["structured_result"]["filenames"] == ["data.txt"]
+    assert first_ids == [item["event_id"] for item in second["events"]]
+    assert first_canonical_ids == [item["event_id"] for item in iter_jsonl(canonical_path)]
+    sessions = list_observer_sessions(str(root))
+    assert sessions[0]["session_id"] == session_id
+    assert sessions[0]["metrics"]["human_prompt_count"] == 1
+    messages = list(iter_jsonl(root / session_id / "derived" / "messages.jsonl"))
+    assert [item["event_type"] for item in messages] == [
+        "user_prompt",
+        "assistant_message",
+    ]
 
 
 def test_otel_collector_preserves_exact_body_and_decodes_json(tmp_path: Path):

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, DefaultDict, Dict, List, Optional, Set
 
 from agentvast.observer.store import ensure_session_layout, iter_jsonl, read_manifest
+from agentvast.observer.trace_builder import is_human_prompt, transcript_record
 
 
 def _payload(event: Dict[str, Any]) -> Dict[str, Any]:
@@ -103,6 +104,11 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
     canonical = list(iter_jsonl(directory / "derived" / "canonical_events.jsonl"))
     derived_tool_calls = list(iter_jsonl(directory / "derived" / "tool_calls.jsonl"))
     derived_messages = list(iter_jsonl(directory / "derived" / "messages.jsonl"))
+    observer_trace_path = directory / "derived" / "observer_trace.json"
+    try:
+        observer_trace = json.loads(observer_trace_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        observer_trace = {}
 
     event_counts = Counter(str(_payload(item).get("hook_event_name") or "unknown") for item in hooks)
     by_tool: DefaultDict[str, Set[str]] = defaultdict(set)
@@ -191,10 +197,8 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
     transcript_prompt_count = sum(
         1
         for item in transcript
-        if item.get("parsed")
-        and isinstance(item.get("record"), dict)
-        and item["record"].get("type") == "user"
-        and isinstance((item["record"].get("message") or {}).get("content"), str)
+        if transcript_record(item) is not None
+        and is_human_prompt(transcript_record(item) or {})
     )
     transcript_reconstructed_tools = sum(
         1
@@ -290,6 +294,13 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
             "unmatched_prompts": len(unmatched_prompts),
             "otel_matched_tool_calls": otel_matched_tools,
             "transcript_matched_tool_calls": transcript_matched_tools,
+            "observer_turns": len(observer_trace.get("turns") or []),
+            "observer_events": len(observer_trace.get("events") or []),
+            "filtered_non_human_user_records": (
+                (observer_trace.get("diagnostics") or {}).get(
+                    "filtered_non_human_user_records", 0
+                )
+            ),
         },
         "hook_event_counts": dict(sorted(event_counts.items())),
         "transcript_record_types": dict(sorted(transcript_record_types.items())),

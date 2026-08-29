@@ -10,6 +10,11 @@ from pathlib import Path
 from typing import Any, DefaultDict, Dict, Iterable, Iterator, List, Mapping, Optional, Set
 
 from agentvast.observer.store import ensure_session_layout, iter_jsonl, write_jsonl
+from agentvast.observer.trace_builder import (
+    build_observer_trace,
+    is_human_prompt,
+    stable_id,
+)
 
 
 TOOL_TERMINALS = {"PostToolUse": True, "PostToolUseFailure": False}
@@ -459,6 +464,8 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
         if record_type == "user" and not blocks:
             if not isinstance(content, str) or not content:
                 continue
+            if not is_human_prompt(record):
+                continue
             if prompt_id and str(prompt_id) in hook_prompt_ids:
                 continue
             prompt_event = {
@@ -468,6 +475,7 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
                 "session_id": record.get("sessionId") or session_id,
                 "prompt_id": prompt_id,
                 "turn_id": record.get("uuid"),
+                "parent_message_uuid": record.get("parentUuid"),
                 "agent_id": "main",
                 "parent_agent_id": None,
                 "event_type": "user_prompt",
@@ -506,6 +514,7 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
                 "session_id": record.get("sessionId") or session_id,
                 "prompt_id": prompt_id,
                 "turn_id": record.get("uuid"),
+                "parent_message_uuid": record.get("parentUuid"),
                 "agent_id": "main",
                 "parent_agent_id": None,
                 "event_type": "assistant_message",
@@ -559,6 +568,7 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
             "session_id": use_record.get("sessionId") or session_id,
             "prompt_id": use_record.get("promptId") or use_record.get("prompt_id"),
             "turn_id": use_record.get("uuid"),
+            "parent_message_uuid": use_record.get("parentUuid"),
             "agent_id": "main",
             "parent_agent_id": None,
             "event_type": "tool_execution",
@@ -578,12 +588,20 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
                     not bool(result_block.get("is_error")) if result else None
                 ),
                 "duration_ms": None,
+                "structured_output": (
+                    result["record"].get("toolUseResult") if result else None
+                ),
+                "started_at": use_record.get("timestamp"),
+                "ended_at": result["record"].get("timestamp") if result else None,
             },
             "correlation": {
                 "request_id": (
                     use_message.get("id") if isinstance(use_message, dict) else None
                 ),
                 "message_uuid": use_record.get("uuid"),
+                "response_id": (
+                    use_message.get("id") if isinstance(use_message, dict) else None
+                ),
             },
             "evidence": evidence,
         }
@@ -651,6 +669,17 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
             }
         )
 
+    for event in canonical:
+        event["event_id"] = stable_id(
+            "canonical",
+            session_id,
+            event.get("event_type"),
+            event.get("event_name"),
+            (event.get("tool") or {}).get("tool_use_id"),
+            (event.get("message") or {}).get("message_id"),
+            event.get("correlation"),
+            event.get("evidence"),
+        )
     canonical.sort(key=lambda item: (str(item.get("event_time") or ""), item["event_id"]))
     for index, event in enumerate(canonical, start=1):
         event["event_order"] = index
@@ -672,6 +701,7 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
     write_jsonl(directory / "derived" / "messages.jsonl", rebuilt_messages)
     write_jsonl(directory / "derived" / "tool_calls.jsonl", tool_calls)
     write_jsonl(directory / "derived" / "agents.jsonl", agents.values())
+    observer_trace = build_observer_trace(session_id, str(directory.parent))
     return {
         "session_id": session_id,
         "canonical_event_count": len(canonical),
@@ -680,4 +710,6 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
         "agent_count": len(agents),
         "otel_export_count": len(otel),
         "transcript_record_count": len(transcript),
+        "observer_turn_count": len(observer_trace["turns"]),
+        "observer_event_count": len(observer_trace["events"]),
     }

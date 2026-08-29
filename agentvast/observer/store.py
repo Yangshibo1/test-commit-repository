@@ -116,6 +116,7 @@ def _manifest_template(session_id: str) -> Dict[str, Any]:
             "transcript_snapshot": "transcript/transcript.jsonl",
             "api": "raw/api/",
             "canonical_events": "derived/canonical_events.jsonl",
+            "observer_trace": "derived/observer_trace.json",
         },
         "collector": {
             "otel_decode_available": None,
