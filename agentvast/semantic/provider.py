@@ -6,6 +6,7 @@ import json
 import os
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -29,6 +30,7 @@ class SemanticConfig:
 
     @classmethod
     def from_env(cls) -> "SemanticConfig":
+        load_semantic_env()
         return cls(
             api_base_url=(
                 os.getenv("AGENTVAST_SEMANTIC_API_BASE_URL")
@@ -162,3 +164,41 @@ def _positive_int(name: str, default: int) -> int:
         return max(1, int(os.getenv(name, str(default))))
     except ValueError:
         return default
+
+
+def load_semantic_env(path: Optional[Path] = None) -> Optional[Path]:
+    """Load one local .env without overriding an existing process environment."""
+    configured = os.getenv("AGENTVAST_ENV_FILE", "").strip()
+    candidates = [
+        Path(configured).expanduser() if configured else None,
+        path,
+        Path.cwd() / ".env",
+        Path(__file__).resolve().parents[2] / ".env",
+    ]
+    selected = next(
+        (
+            candidate.resolve()
+            for candidate in candidates
+            if candidate is not None and candidate.expanduser().is_file()
+        ),
+        None,
+    )
+    if selected is None:
+        return None
+    for raw_line in selected.read_text(encoding="utf-8-sig").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].lstrip()
+        if "=" not in line:
+            continue
+        name, value = line.split("=", 1)
+        name = name.strip()
+        value = value.strip()
+        if not name or not name.replace("_", "").isalnum() or name[0].isdigit():
+            continue
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        os.environ.setdefault(name, value)
+    return selected

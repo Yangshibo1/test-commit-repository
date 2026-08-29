@@ -446,6 +446,49 @@ def test_otel_collector_preserves_exact_body_and_decodes_json(tmp_path: Path):
     assert payload["decoded_format"] == "json"
 
 
+def test_semantic_provider_loads_gitignored_env_file(tmp_path: Path):
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "\n".join(
+            [
+                "AGENTVAST_SEMANTIC_API_BASE_URL=https://semantic.invalid",
+                "AGENTVAST_SEMANTIC_API_KEY=test-only-key",
+                "AGENTVAST_SEMANTIC_MODEL=test-model",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    environment = os.environ.copy()
+    environment["AGENTVAST_ENV_FILE"] = str(env_file)
+    for name in (
+        "AGENTVAST_SEMANTIC_API_BASE_URL",
+        "AGENTVAST_SEMANTIC_API_KEY",
+        "AGENTVAST_SEMANTIC_MODEL",
+    ):
+        environment.pop(name, None)
+    code = (
+        "import json; "
+        "from agentvast.semantic.provider import SemanticConfig; "
+        "c=SemanticConfig.from_env(); "
+        "print(json.dumps({'base':c.api_base_url,'model':c.model,'configured':c.configured()}))"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=str(Path(__file__).resolve().parents[1]),
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    value = json.loads(result.stdout)
+    assert value == {
+        "base": "https://semantic.invalid",
+        "model": "test-model",
+        "configured": True,
+    }
+
+
 def test_otel_collector_preserves_undecodable_protobuf(tmp_path: Path):
     body = b"\x08\xff\x00not-valid-otlp"
 
