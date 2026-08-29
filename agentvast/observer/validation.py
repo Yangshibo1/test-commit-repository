@@ -44,6 +44,56 @@ def _ids_from_value(value: Any, keys: Set[str]) -> Set[str]:
     return result
 
 
+def _incomplete_message_displays(
+    hooks: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    groups: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
+    for item in hooks:
+        payload = _payload(item)
+        if payload.get("hook_event_name") != "MessageDisplay":
+            continue
+        key = "|".join(
+            str(payload.get(name) or "")
+            for name in ("session_id", "turn_id", "message_id")
+        )
+        groups[key].append(item)
+
+    incomplete: List[Dict[str, Any]] = []
+    for events in groups.values():
+        payload = _payload(events[-1])
+        indexes = sorted(int(_payload(item).get("index") or 0) for item in events)
+        unique_indexes = sorted(set(indexes))
+        expected = list(range(unique_indexes[-1] + 1)) if unique_indexes else []
+        final_indexes = sorted(
+            int(_payload(item).get("index") or 0)
+            for item in events
+            if bool(_payload(item).get("final"))
+        )
+        complete = bool(
+            unique_indexes
+            and unique_indexes == expected
+            and len(indexes) == len(unique_indexes)
+            and final_indexes
+            and final_indexes[-1] == unique_indexes[-1]
+        )
+        if complete:
+            continue
+        incomplete.append(
+            {
+                "message_id": payload.get("message_id"),
+                "turn_id": payload.get("turn_id"),
+                "prompt_id": payload.get("prompt_id"),
+                "observed_indexes": unique_indexes,
+                "missing_indexes": sorted(set(expected) - set(unique_indexes)),
+                "duplicate_indexes": sorted(
+                    index for index in unique_indexes if indexes.count(index) > 1
+                ),
+                "final_seen": bool(final_indexes),
+            }
+        )
+    return incomplete
+
+
 def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any]:
     directory = ensure_session_layout(session_id, root)
     manifest = read_manifest(session_id, root)
@@ -151,7 +201,8 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
         for item in derived_tool_calls
         if item.get("event_name") == "TranscriptToolExecution"
     )
-    hook_complete = not missing_events
+    incomplete_message_displays = _incomplete_message_displays(hooks)
+    hook_complete = not missing_events and not incomplete_message_displays
     hybrid_fallback = bool(hooks) and not hook_complete and transcript_fallback_usable
     warnings: List[str] = []
     if unresolved_hook_tools:
@@ -170,6 +221,13 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
         warnings.append("{0} OTLP exports were preserved but not decoded".format(undecoded_otel))
     if invalid_transcript:
         warnings.append("{0} transcript lines could not be parsed".format(invalid_transcript))
+    if incomplete_message_displays:
+        warnings.append(
+            "{0} incomplete MessageDisplay streams were replaced by complete "
+            "assistant messages from the native transcript".format(
+                len(incomplete_message_displays)
+            )
+        )
     if otel and not canonical:
         warnings.append("derive has not produced canonical events")
     if unmatched_prompts:
@@ -214,6 +272,19 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
             "prompts": max(event_counts.get("UserPromptSubmit", 0), transcript_prompt_count),
             "transcript_prompts": transcript_prompt_count,
             "derived_messages": len(derived_messages),
+            "message_display_streams": len(
+                {
+                    "|".join(
+                        str(_payload(item).get(name) or "")
+                        for name in ("session_id", "turn_id", "message_id")
+                    )
+                    for item in hooks
+                    if _payload(item).get("hook_event_name") == "MessageDisplay"
+                }
+            ),
+            "incomplete_message_display_streams": len(
+                incomplete_message_displays
+            ),
             "prompts_with_stable_id": len(hook_prompt_ids),
             "matched_prompts": matched_prompts,
             "unmatched_prompts": len(unmatched_prompts),
@@ -227,6 +298,7 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
         "unmatched_tools": unmatched_tools,
         "unresolved_tools": unresolved_hook_tools,
         "transcript_recovered_tools": transcript_recovered_hook_tools,
+        "incomplete_message_displays": incomplete_message_displays,
         "unmatched_prompts": unmatched_prompts,
     }
     diagnostics = directory / "diagnostics"

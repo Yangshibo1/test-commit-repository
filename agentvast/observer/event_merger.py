@@ -92,6 +92,39 @@ def _correlation(payload: Mapping[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _message_display_state(events: Iterable[Mapping[str, Any]]) -> Dict[str, Any]:
+    """Describe whether one MessageDisplay stream is safe to treat as complete."""
+    materialized = list(events)
+    indexes = sorted(
+        int(_hook_payload(item).get("index") or 0) for item in materialized
+    )
+    unique_indexes = sorted(set(indexes))
+    expected_indexes = (
+        list(range(unique_indexes[-1] + 1)) if unique_indexes else []
+    )
+    final_indexes = sorted(
+        int(_hook_payload(item).get("index") or 0)
+        for item in materialized
+        if bool(_hook_payload(item).get("final"))
+    )
+    complete = bool(
+        unique_indexes
+        and unique_indexes == expected_indexes
+        and len(indexes) == len(unique_indexes)
+        and final_indexes
+        and final_indexes[-1] == unique_indexes[-1]
+    )
+    return {
+        "complete": complete,
+        "indexes": unique_indexes,
+        "missing_indexes": sorted(set(expected_indexes) - set(unique_indexes)),
+        "duplicate_indexes": sorted(
+            index for index in unique_indexes if indexes.count(index) > 1
+        ),
+        "final_seen": bool(final_indexes),
+    }
+
+
 def _transcript_tool_result(
     envelopes: Iterable[Mapping[str, Any]], tool_use_id: str
 ) -> Optional[Dict[str, Any]]:
@@ -341,12 +374,24 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
         canonical.append(canonical_event)
 
     rebuilt_messages: List[Dict[str, Any]] = []
+    incomplete_display_groups = 0
+    complete_display_contents: Set[str] = set()
     for _, events in messages.items():
         ordered = sorted(
             events,
             key=lambda item: int(_hook_payload(item).get("index") or 0),
         )
+        display_state = _message_display_state(ordered)
+        if not display_state["complete"]:
+            # The immutable Hook fragments remain in raw/hooks.jsonl. Do not
+            # promote a truncated stream to a canonical assistant message;
+            # the native transcript below is the deterministic fallback.
+            incomplete_display_groups += 1
+            continue
         payload = _hook_payload(ordered[-1])
+        content = "".join(
+            str(_hook_payload(item).get("delta") or "") for item in ordered
+        )
         message = {
             "event_id": _event_id(),
             "event_time": ordered[-1].get("observer_received_at"),
@@ -360,13 +405,15 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
             "origin": "derived",
             "message": {
                 "message_id": payload.get("message_id"),
-                "content": "".join(str(_hook_payload(item).get("delta") or "") for item in ordered),
-                "final": any(bool(_hook_payload(item).get("final")) for item in ordered),
+                "content": content,
+                "final": True,
                 "delta_count": len(ordered),
+                "capture_complete": True,
             },
             "correlation": _correlation(payload),
             "evidence": [_evidence("hook", item["observer_event_id"]) for item in ordered],
         }
+        complete_display_contents.add(content)
         rebuilt_messages.append(message)
         canonical.append(message)
 
@@ -439,7 +486,9 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
             }
             rebuilt_messages.append(prompt_event)
             canonical.append(prompt_event)
-        elif record_type == "assistant" and not messages:
+        elif record_type == "assistant" and (
+            not messages or incomplete_display_groups
+        ):
             text_blocks = [
                 str(block.get("text") or "")
                 for block in blocks
@@ -447,6 +496,8 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
             ]
             visible_text = "".join(text_blocks)
             if not visible_text:
+                continue
+            if visible_text in complete_display_contents:
                 continue
             assistant_event = {
                 "event_id": _event_id(),
@@ -466,6 +517,8 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
                     "content": visible_text,
                     "model": message.get("model"),
                     "usage": message.get("usage"),
+                    "capture_complete": True,
+                    "capture_source": "transcript_fallback",
                 },
                 "correlation": {
                     "request_id": message.get("id"),

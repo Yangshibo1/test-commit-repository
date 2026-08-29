@@ -333,6 +333,83 @@ def test_merger_reconstructs_tool_message_and_valid_session(tmp_path: Path):
     assert report["counts"]["matched_prompts"] == 1
 
 
+def test_incomplete_message_display_falls_back_to_complete_transcript(tmp_path: Path):
+    root = tmp_path / "observations"
+    session_id = "session-incomplete-message"
+    transcript = tmp_path / "transcript.jsonl"
+    records = [
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "promptId": "prompt-1",
+            "uuid": "user-1",
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "message": {"role": "user", "content": "summarize"},
+        },
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "assistant-1",
+            "timestamp": "2026-01-01T00:00:01+00:00",
+            "message": {
+                "id": "response-1",
+                "role": "assistant",
+                "model": "claude-test",
+                "content": [{"type": "text", "text": "完整的中文回答"}],
+            },
+        },
+    ]
+    transcript.write_text(
+        "".join(json.dumps(item, ensure_ascii=False) + "\n" for item in records),
+        encoding="utf-8",
+    )
+    create_session(session_id, tmp_path, root)
+    events = [
+        hook(session_id, "SessionStart", transcript_path=str(transcript)),
+        hook(
+            session_id,
+            "UserPromptSubmit",
+            transcript_path=str(transcript),
+            prompt_id="prompt-1",
+            prompt="summarize",
+        ),
+        hook(
+            session_id,
+            "MessageDisplay",
+            transcript_path=str(transcript),
+            prompt_id="prompt-1",
+            turn_id="turn-1",
+            message_id="display-1",
+            index=9,
+            final=False,
+            delta="残缺且乱码的片段",
+        ),
+        hook(session_id, "SessionEnd", transcript_path=str(transcript)),
+    ]
+    for payload in events:
+        append_raw_event(session_id, "hook", payload, root)
+    snapshot_transcript(session_id, transcript, root, attempts=1, delay=0)
+
+    derive_session(session_id, str(root))
+    report = validate_session(session_id, str(root))
+    messages = list(iter_jsonl(root / session_id / "derived" / "messages.jsonl"))
+    assistant_messages = [
+        item for item in messages if item["event_type"] == "assistant_message"
+    ]
+
+    assert len(assistant_messages) == 1
+    assert assistant_messages[0]["message"]["content"] == "完整的中文回答"
+    assert assistant_messages[0]["message"]["capture_source"] == "transcript_fallback"
+    assert report["valid"] is False
+    assert report["usable"] is True
+    assert report["capture_mode"] == "hybrid_fallback"
+    assert report["counts"]["message_display_streams"] == 1
+    assert report["counts"]["incomplete_message_display_streams"] == 1
+    assert report["incomplete_message_displays"][0]["observed_indexes"] == [9]
+    assert report["incomplete_message_displays"][0]["final_seen"] is False
+    assert "incomplete MessageDisplay" in " ".join(report["warnings"])
+
+
 def test_observe_cli_no_launch_creates_passive_manifest(
     tmp_path: Path, capsys, monkeypatch
 ):

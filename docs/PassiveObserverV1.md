@@ -39,6 +39,11 @@ Transcript fallback 仍然保留：当 Hook 配置错误、异步事件丢失或
 从原生 transcript 确定性重建可见消息和工具调用，并明确标记为 `transcript_fallback`，不会
 伪装成完整 Hook capture。
 
+`MessageDisplay` 只有在片段索引从 0 连续、没有重复且收到最终片段时，才会被提升为完整的
+canonical assistant message。片段缺失时，原始 Hook 仍保留在 `raw/hooks.jsonl`，派生层改用
+原生 transcript 中的完整回复；`validate` 会报告
+`incomplete_message_display_streams`、缺失索引和降级原因。
+
 ## 管理和处理
 
 ```powershell
@@ -79,6 +84,11 @@ raw/hooks.jsonl                        原始 Hook payload
 raw/otel.jsonl                         原始 OTLP 请求
 transcript/transcript.jsonl            Claude 原生 transcript 快照
 ```
+
+`validation_report.json` 中 `valid: false`、`usable: true`、
+`capture_mode: hybrid_fallback` 表示 Hook 存在缺口，但已经用 transcript 恢复，派生记录仍可用于
+分析。查看 `warnings`、`incomplete_message_displays`、`unresolved_tools` 可以区分已恢复缺口和
+真正无法恢复的事件。
 
 ## 存储
 
