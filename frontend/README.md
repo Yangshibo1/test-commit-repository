@@ -47,6 +47,10 @@ Passive Observer 页面读取后端只读 Observation API，或离线加载
 `derived/observer_trace.json`。它不会直接解析原始 transcript，也不会把执行轨迹伪装成带 Plan
 约束的 `workflow.json`。
 
+生成 `derived/semantic_workflow.json` 后，被动观察页面默认显示证据约束的语义工作流，并提供
+“语义工作流 / 执行轨迹 / 原始证据”三级切换。人工接受、字段修正、连续 Node 合并和按 Episode
+拆分会写入追加式 review sidecar，不会覆盖模型或规则生成的原始语义文件。
+
 ## 设计原则
 
 参考 `agentvast/visualization/vis-guide.md`：

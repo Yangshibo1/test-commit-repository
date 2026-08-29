@@ -95,23 +95,16 @@ def _tool_summary(name: str, tool_input: Any) -> str:
 
 
 def _evidence(lines: Iterable[int]) -> List[Dict[str, Any]]:
-    return [
-        {"source": "transcript", "line_number": int(line)}
-        for line in sorted(set(lines))
-    ]
+    return [{"source": "transcript", "line_number": int(line)} for line in sorted(set(lines))]
 
 
 def _write_json_atomic(path: Path, value: Any) -> None:
     temporary = path.with_name(path.name + ".tmp-" + stable_id("write", os.getpid(), path))
-    temporary.write_text(
-        json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(str(temporary), str(path))
 
 
-def build_observer_trace(
-    session_id: str, root: Optional[str] = None
-) -> Dict[str, Any]:
+def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[str, Any]:
     directory = ensure_session_layout(session_id, root)
     manifest = read_manifest(session_id, root)
     envelopes = list(iter_jsonl(directory / "raw" / "transcript.jsonl"))
@@ -347,11 +340,7 @@ def build_observer_trace(
             "message_uuid": first["record"].get("uuid"),
             "response_id": response_id,
             "tool_use_id": None,
-            "status": (
-                "complete"
-                if stop_reason == "end_turn" or visible_text
-                else "observed"
-            ),
+            "status": ("complete" if stop_reason == "end_turn" or visible_text else "observed"),
             "origin": "derived" if len(ordered) > 1 else "observed",
             "title": (
                 "工具批次 · {0} 个调用".format(len(tools))
@@ -362,8 +351,7 @@ def build_observer_trace(
             ),
             "summary": (
                 ", ".join(
-                    str(tool_uses[tool_id]["block"].get("name") or "tool")
-                    for tool_id in tools
+                    str(tool_uses[tool_id]["block"].get("name") or "tool") for tool_id in tools
                 )
                 if tools
                 else _text_preview(visible_text)
@@ -388,18 +376,14 @@ def build_observer_trace(
                 uuid_to_event[str(item["record"]["uuid"])] = event_id
 
     tool_event_by_id: Dict[str, str] = {}
-    for tool_use_id, use in sorted(
-        tool_uses.items(), key=lambda item: int(item[1]["line_number"])
-    ):
+    for tool_use_id, use in sorted(tool_uses.items(), key=lambda item: int(item[1]["line_number"])):
         result = tool_results.get(tool_use_id)
         block = use["block"]
         result_block = result["block"] if result else {}
         result_record = result["record"] if result else {}
         structured_result = result.get("structured_result") if result else None
         duration_ms = (
-            structured_result.get("durationMs")
-            if isinstance(structured_result, dict)
-            else None
+            structured_result.get("durationMs") if isinstance(structured_result, dict) else None
         )
         event_id = stable_id("event", session_id, "tool", tool_use_id)
         status = (
@@ -477,11 +461,7 @@ def build_observer_trace(
             cursor = tools or [response["event_id"]]
 
     # Preserve raw parent relationships separately from the compact execution graph.
-    known_uuids = {
-        str(record.get("uuid"))
-        for _, record in parsed
-        if record.get("uuid")
-    }
+    known_uuids = {str(record.get("uuid")) for _, record in parsed if record.get("uuid")}
     broken_parent_uuids: Set[str] = set()
     for _, record in parsed:
         child_uuid = record.get("uuid")
@@ -518,9 +498,7 @@ def build_observer_trace(
                 "status": "observed",
                 "origin": "observed",
                 "title": (
-                    "本地命令"
-                    if is_local
-                    else "系统事件 · {0}".format(record.get("subtype") or "system")
+                    "本地命令" if is_local else "系统事件 · {0}".format(record.get("subtype") or "system")
                 ),
                 "summary": _text_preview(record.get("content") or record.get("stopReason")),
                 "payload": record,
@@ -550,14 +528,10 @@ def build_observer_trace(
 
     event_by_id = {event["event_id"]: event for event in events}
     for turn in turns:
-        turn_events = [
-            event for event in events if event.get("turn_id") == turn["turn_id"]
-        ]
+        turn_events = [event for event in events if event.get("turn_id") == turn["turn_id"]]
         visible = [event for event in turn_events if not event.get("hidden_by_default")]
         turn["event_ids"] = [event["event_id"] for event in visible]
-        turn["tool_call_count"] = sum(
-            event["event_type"] == "tool_execution" for event in visible
-        )
+        turn["tool_call_count"] = sum(event["event_type"] == "tool_execution" for event in visible)
         turn["error_count"] = sum(event.get("status") == "error" for event in visible)
         turn["ended_at"] = next(
             (
@@ -594,11 +568,7 @@ def build_observer_trace(
         and isinstance(record.get("message"), dict)
         and (record.get("message") or {}).get("model")
     )
-    timestamps = [
-        str(record.get("timestamp"))
-        for _, record in parsed
-        if record.get("timestamp")
-    ]
+    timestamps = [str(record.get("timestamp")) for _, record in parsed if record.get("timestamp")]
     record_types = Counter(str(record.get("type") or "unknown") for _, record in parsed)
     incomplete_tools = sorted(set(tool_uses) - set(tool_results))
     orphan_result_ids = set(tool_results) - set(tool_uses)
@@ -694,9 +664,7 @@ def load_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[str
 
 def list_observer_sessions(root: Optional[str] = None) -> List[Dict[str, Any]]:
     """List already-derived sessions without creating or modifying any files."""
-    observations_root = (
-        Path(root).expanduser().resolve() if root else default_observations_root()
-    )
+    observations_root = Path(root).expanduser().resolve() if root else default_observations_root()
     if not observations_root.is_dir():
         return []
     sessions: List[Dict[str, Any]] = []
@@ -711,9 +679,12 @@ def list_observer_sessions(root: Optional[str] = None) -> List[Dict[str, Any]]:
         except (OSError, ValueError, TypeError):
             continue
         trace_path = directory / "derived" / "observer_trace.json"
+        semantic_path = directory / "derived" / "semantic_workflow.json"
+        reviewed_semantic_path = directory / "derived" / "semantic_workflow_reviewed.json"
         validation_path = directory / "diagnostics" / "validation_report.json"
         trace: Dict[str, Any] = {}
         validation: Dict[str, Any] = {}
+        semantic: Dict[str, Any] = {}
         try:
             if trace_path.is_file():
                 trace = json.loads(trace_path.read_text(encoding="utf-8"))
@@ -724,6 +695,17 @@ def list_observer_sessions(root: Optional[str] = None) -> List[Dict[str, Any]]:
                 validation = json.loads(validation_path.read_text(encoding="utf-8"))
         except (OSError, ValueError, TypeError):
             validation = {}
+        try:
+            if semantic_path.is_file():
+                semantic = json.loads(semantic_path.read_text(encoding="utf-8"))
+            if reviewed_semantic_path.is_file() and semantic:
+                reviewed_semantic = json.loads(reviewed_semantic_path.read_text(encoding="utf-8"))
+                if (reviewed_semantic.get("inference_run") or {}).get("inference_id") == (
+                    semantic.get("inference_run") or {}
+                ).get("inference_id"):
+                    semantic = reviewed_semantic
+        except (OSError, ValueError, TypeError):
+            semantic = {}
         sessions.append(
             {
                 "session_id": manifest.get("session_id") or directory.name,
@@ -737,8 +719,14 @@ def list_observer_sessions(root: Optional[str] = None) -> List[Dict[str, Any]]:
                 "valid": validation.get("valid"),
                 "usable": validation.get("usable"),
                 "metrics": trace.get("metrics") or {},
+                "semantic_available": bool(semantic),
+                "semantic_method": (
+                    (semantic.get("inference_run") or {}).get("method") if semantic else None
+                ),
+                "semantic_node_count": len(semantic.get("semantic_nodes") or []),
+                "semantic_valid": (
+                    (semantic.get("validation") or {}).get("valid") if semantic else None
+                ),
             }
         )
-    return sorted(
-        sessions, key=lambda item: str(item.get("started_at") or ""), reverse=True
-    )
+    return sorted(sessions, key=lambda item: str(item.get("started_at") or ""), reverse=True)

@@ -47,7 +47,7 @@ def _load_web_dependencies() -> Tuple[Any, Any, Any, Any, Any, Any, Any]:
     except ImportError as error:
         raise WebDependencyError(
             "AgentVAST Web dependencies are not installed. "
-            "Run: python -m pip install -e \".[web]\""
+            'Run: python -m pip install -e ".[web]"'
         ) from error
     return (
         FastAPI,
@@ -108,10 +108,10 @@ def _pty_arguments(
 
 
 def _activation_prompt(result: Dict[str, Any], task: str) -> str:
-    declared_files = "\n".join(
-        "- {0}".format(item["path"])
-        for item in result["initial_file_versions"]
-    ) or "- No initial files were declared."
+    declared_files = (
+        "\n".join("- {0}".format(item["path"]) for item in result["initial_file_versions"])
+        or "- No initial files were declared."
+    )
     discovery_instruction = (
         "No initial file was supplied. You may use Glob, Grep, and Read to understand "
         "the task before set-plan. After a Node starts, use any relevant accessible "
@@ -202,9 +202,7 @@ async def _send_control_message(
         kind,
         payload,
     )
-    await session.write(
-        "[AGENTVAST_CONTROL id={0}]".format(control["control_id"])
-    )
+    await session.write("[AGENTVAST_CONTROL id={0}]".format(control["control_id"]))
     # Claude Code treats text and Enter written in one PTY chunk as a paste in
     # some terminal states. Send a distinct key event so Web actions execute.
     await asyncio.sleep(0.12)
@@ -368,13 +366,9 @@ class TerminalManager:
         async with self._lock:
             if self.current is not None and self.current.is_alive():
                 raise RuntimeError("A Claude terminal is already running")
-            if self.current is not None and not (
-                resume_claude_session_id or fresh_run_id
-            ):
+            if self.current is not None and not (resume_claude_session_id or fresh_run_id):
                 previous_store = WorkflowStore(self.current.database_path)
-                previous_run = previous_store.active_run_for_session(
-                    self.current.claude_session_id
-                )
+                previous_run = previous_store.active_run_for_session(self.current.claude_session_id)
                 if previous_run is not None:
                     raise RuntimeError(
                         "The previous Claude process has an active AgentVAST Run. "
@@ -383,20 +377,12 @@ class TerminalManager:
             if self.current is not None:
                 await self.current.close()
 
-            project = (
-                resolve_user_path(project_root)
-                if project_root
-                else self.default_project
-            )
+            project = resolve_user_path(project_root) if project_root else self.default_project
             if not project.is_dir():
-                raise FileNotFoundError(
-                    "Project directory does not exist: {0}".format(project)
-                )
+                raise FileNotFoundError("Project directory does not exist: {0}".format(project))
             if not self.plugin_dir.is_dir():
                 raise FileNotFoundError(
-                    "AgentVAST plugin directory does not exist: {0}".format(
-                        self.plugin_dir
-                    )
+                    "AgentVAST plugin directory does not exist: {0}".format(self.plugin_dir)
                 )
             if resume_claude_session_id and fresh_run_id:
                 raise RuntimeError(
@@ -409,7 +395,7 @@ class TerminalManager:
                 from winpty import PtyProcess
             except ImportError as error:
                 raise WebDependencyError(
-                    "pywinpty is not installed. Run: python -m pip install -e \".[web]\""
+                    'pywinpty is not installed. Run: python -m pip install -e ".[web]"'
                 ) from error
 
             command = claude_command or self.default_claude_command
@@ -443,9 +429,7 @@ class TerminalManager:
             environment = os.environ.copy()
             environment.setdefault("TERM", "xterm-256color")
             python_directory = str(Path(sys.executable).resolve().parent)
-            environment["PATH"] = (
-                python_directory + os.pathsep + environment.get("PATH", "")
-            )
+            environment["PATH"] = python_directory + os.pathsep + environment.get("PATH", "")
             expose_repository_to_python(environment)
             environment.update(
                 {
@@ -453,12 +437,8 @@ class TerminalManager:
                     "AGENTVAST_PROJECT_ROOT": str(project),
                     "AGENTVAST_PYTHON": sys.executable,
                     "AGENTVAST_CLAUDE_SESSION_ID": claude_session_id,
-                    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(
-                        DEFAULT_AUTO_COMPACT_WINDOW
-                    ),
-                    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": str(
-                        DEFAULT_AUTO_COMPACT_PERCENT
-                    ),
+                    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(DEFAULT_AUTO_COMPACT_WINDOW),
+                    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": str(DEFAULT_AUTO_COMPACT_PERCENT),
                 }
             )
             environment.pop("AGENTVAST_RUN_ID", None)
@@ -500,11 +480,7 @@ class TerminalManager:
                     store,
                     fresh_run_id,
                     "fresh_session_recovery",
-                    {
-                        "instruction": _continuation_prompt(
-                            fresh_run_id, recovery_state
-                        )
-                    },
+                    {"instruction": _continuation_prompt(fresh_run_id, recovery_state)},
                 )
             return self.current
 
@@ -564,6 +540,14 @@ def create_app(
     class ReviewRequest(BaseModel):
         force: bool = False
 
+    class SemanticGenerateRequest(BaseModel):
+        rules_only: bool = False
+        force: bool = False
+
+    class SemanticReviewRequest(BaseModel):
+        action: str
+        payload: Dict[str, Any]
+
     app = FastAPI(title="AgentVAST local Web terminal", docs_url=None, redoc_url=None)
     app.add_middleware(
         CORSMiddleware,
@@ -605,9 +589,7 @@ def create_app(
 
         state = store.get_state(run_id)
         if state["run"]["status"] != "completed":
-            raise HTTPException(
-                status_code=409, detail="Reviewer can only process a completed Run"
-            )
+            raise HTTPException(status_code=409, detail="Reviewer can only process a completed Run")
         if not reviewer_is_configured():
             return {
                 "status": "not_configured",
@@ -660,6 +642,7 @@ def create_app(
                 "finish_trace",
                 "reviewer_assets",
                 "observer_trace_readonly",
+                "semantic_workflow_review",
             ],
             "default_project": str(manager.default_project),
             "default_claude_command": manager.default_claude_command,
@@ -683,6 +666,46 @@ def create_app(
             return load_observer_trace(session_id)
         except (FileNotFoundError, ValueError) as error:
             raise HTTPException(status_code=404, detail=str(error))
+
+    @app.get("/api/observations/{session_id}/semantic")
+    async def observation_semantic_workflow(session_id: str) -> Dict[str, Any]:
+        from agentvast.semantic.pipeline import load_semantic_workflow
+
+        try:
+            return load_semantic_workflow(session_id)
+        except (FileNotFoundError, ValueError, RuntimeError) as error:
+            raise HTTPException(status_code=404, detail=str(error))
+
+    @app.post("/api/observations/{session_id}/semantic/generate")
+    async def generate_observation_semantic_workflow(
+        session_id: str, request: SemanticGenerateRequest
+    ) -> Dict[str, Any]:
+        from agentvast.semantic.pipeline import run_semantic_workflow
+
+        try:
+            loop = asyncio.get_running_loop()
+            return await loop.run_in_executor(
+                None,
+                functools.partial(
+                    run_semantic_workflow,
+                    session_id,
+                    rules_only=request.rules_only,
+                    force=request.force,
+                ),
+            )
+        except (FileNotFoundError, ValueError, RuntimeError) as error:
+            raise HTTPException(status_code=400, detail=str(error))
+
+    @app.post("/api/observations/{session_id}/semantic/reviews")
+    async def review_observation_semantic_workflow(
+        session_id: str, request: SemanticReviewRequest
+    ) -> Dict[str, Any]:
+        from agentvast.semantic.review import record_semantic_review
+
+        try:
+            return record_semantic_review(session_id, request.action, request.payload)
+        except (FileNotFoundError, ValueError, RuntimeError) as error:
+            raise HTTPException(status_code=400, detail=str(error))
 
     @app.post("/api/terminal")
     async def start_terminal(request: StartTerminalRequest) -> Dict[str, Any]:
@@ -789,9 +812,7 @@ def create_app(
         return {"result": result, "state": store.get_state(result["run_id"])}
 
     @app.post("/api/runs/{run_id}/new-task-trace")
-    async def new_task_trace(
-        run_id: str, request: StartRunRequest
-    ) -> Dict[str, Any]:
+    async def new_task_trace(run_id: str, request: StartRunRequest) -> Dict[str, Any]:
         """Seal the idle current trace and start a new one in the same Claude session."""
 
         session = current_session()
@@ -843,9 +864,7 @@ def create_app(
         }
 
     @app.post("/api/runs/{run_id}/approve-plan")
-    async def approve_plan(
-        run_id: str, request: PlanApprovalRequest
-    ) -> Dict[str, Any]:
+    async def approve_plan(run_id: str, request: PlanApprovalRequest) -> Dict[str, Any]:
         session = current_session()
         bound_run(session, run_id)
         store = WorkflowStore(session.database_path)
@@ -893,9 +912,7 @@ def create_app(
         return {"state": updated}
 
     @app.put("/api/runs/{run_id}/plan")
-    async def revise_plan(
-        run_id: str, request: PlanRevisionRequest
-    ) -> Dict[str, Any]:
+    async def revise_plan(run_id: str, request: PlanRevisionRequest) -> Dict[str, Any]:
         session = current_session()
         bound_run(session, run_id)
         store = WorkflowStore(session.database_path)
@@ -912,9 +929,7 @@ def create_app(
                 run_id,
                 "用户在 AgentVAST Web 中编辑了 Plan：{0}".format(reason),
                 "planning_input",
-                "创建 Plan Revision {0}；只改变未来 pending Nodes。".format(
-                    result["plan_version"]
-                ),
+                "创建 Plan Revision {0}；只改变未来 pending Nodes。".format(result["plan_version"]),
                 claude_session_id=session.claude_session_id,
                 target_plan_version=result["plan_version"],
             )
@@ -927,9 +942,7 @@ def create_app(
         }
 
     @app.post("/api/runs/{run_id}/interventions")
-    async def add_intervention(
-        run_id: str, request: InterventionRequest
-    ) -> Dict[str, Any]:
+    async def add_intervention(run_id: str, request: InterventionRequest) -> Dict[str, Any]:
         session = current_session()
         bound_run(session, run_id)
         if request.input_type not in {
@@ -981,7 +994,7 @@ def create_app(
                     )
                     + "Then record the concrete handling decision with: python -m "
                     "agentvast.agent_cli apply-user-input {0} "
-                    "\"REAL_WORKFLOW_EFFECT\"."
+                    '"REAL_WORKFLOW_EFFECT".'
                 ).format(event["input_event_id"]),
             },
         )
@@ -1035,9 +1048,7 @@ def create_app(
             raise HTTPException(status_code=404, detail=str(error))
 
     @app.post("/api/runs/{run_id}/review")
-    async def start_review(
-        run_id: str, request: ReviewRequest
-    ) -> Dict[str, Any]:
+    async def start_review(run_id: str, request: ReviewRequest) -> Dict[str, Any]:
         store, _ = store_for_run(run_id)
         return await schedule_review(store, run_id, force=request.force)
 

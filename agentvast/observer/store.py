@@ -117,6 +117,9 @@ def _manifest_template(session_id: str) -> Dict[str, Any]:
             "api": "raw/api/",
             "canonical_events": "derived/canonical_events.jsonl",
             "observer_trace": "derived/observer_trace.json",
+            "semantic_workflow": "derived/semantic_workflow.json",
+            "semantic_workflow_versions": "derived/semantic_workflows/",
+            "semantic_reviews": "derived/semantic_reviews.jsonl",
         },
         "collector": {
             "otel_decode_available": None,

@@ -76,6 +76,18 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
     validate.add_argument("session_id")
     validate.add_argument("--storage-root")
 
+    semantic = subparsers.add_parser(
+        "semantic", help="Build an evidence-grounded semantic workflow"
+    )
+    semantic.add_argument("session_id")
+    semantic.add_argument("--storage-root")
+    semantic.add_argument(
+        "--rules-only",
+        action="store_true",
+        help="Use conservative deterministic annotations without a model",
+    )
+    semantic.add_argument("--force", action="store_true")
+
     export = subparsers.add_parser("export", help="Export an observation session as ZIP")
     export.add_argument("session_id")
     export.add_argument("--storage-root")
@@ -145,14 +157,8 @@ def _wait_for_collector(
         except BaseException as error:
             last_error = error
             time.sleep(0.05)
-    suffix = (
-        " Review {0}.".format(diagnostics_path)
-        if diagnostics_path is not None
-        else ""
-    )
-    raise RuntimeError(
-        "OTel collector did not become ready: {0}.{1}".format(last_error, suffix)
-    )
+    suffix = " Review {0}.".format(diagnostics_path) if diagnostics_path is not None else ""
+    raise RuntimeError("OTel collector did not become ready: {0}.{1}".format(last_error, suffix))
 
 
 def _collector_process(
@@ -209,9 +215,7 @@ def _observation_counts(session_id: str, root: Path) -> Dict[str, int]:
     return {
         "hook_events": sum(1 for _ in iter_jsonl(directory / "raw" / "hooks.jsonl")),
         "otel_exports": sum(1 for _ in iter_jsonl(directory / "raw" / "otel.jsonl")),
-        "transcript_records": sum(
-            1 for _ in iter_jsonl(directory / "raw" / "transcript.jsonl")
-        ),
+        "transcript_records": sum(1 for _ in iter_jsonl(directory / "raw" / "transcript.jsonl")),
         "canonical_events": sum(
             1 for _ in iter_jsonl(directory / "derived" / "canonical_events.jsonl")
         ),
@@ -257,9 +261,7 @@ def command_start(args: argparse.Namespace) -> int:
     existing_directory = session_directory(session_id, root)
     if (existing_directory / "manifest.json").exists():
         raise RuntimeError(
-            "observer session already exists and cannot be overwritten: {0}".format(
-                session_id
-            )
+            "observer session already exists and cannot be overwritten: {0}".format(session_id)
         )
     plugin_dir = resolve_user_path(args.plugin_dir)
     if not plugin_dir.is_dir():
@@ -333,9 +335,7 @@ def command_start(args: argparse.Namespace) -> int:
 
     try:
         if endpoint:
-            collector = _collector_process(
-                session_id, root, args.otel_host, port, environment
-            )
+            collector = _collector_process(session_id, root, args.otel_host, port, environment)
             _wait_for_collector(
                 endpoint,
                 ensure_session_layout(session_id, root)
@@ -413,6 +413,32 @@ def execute(args: argparse.Namespace) -> int:
         return 0
     if args.observe_command == "validate":
         print(json.dumps(validate_session(session_id, str(root)), ensure_ascii=False, indent=2))
+        return 0
+    if args.observe_command == "semantic":
+        from agentvast.semantic.pipeline import run_semantic_workflow
+
+        workflow = run_semantic_workflow(
+            session_id,
+            str(root),
+            rules_only=bool(args.rules_only),
+            force=bool(args.force),
+        )
+        print(
+            json.dumps(
+                {
+                    "session_id": session_id,
+                    "inference_id": workflow["inference_run"]["inference_id"],
+                    "method": workflow["inference_run"]["method"],
+                    "episode_count": len(workflow["episodes"]),
+                    "semantic_node_count": len(workflow["semantic_nodes"]),
+                    "relation_count": len(workflow["relations"]),
+                    "valid": workflow["validation"]["valid"],
+                    "warnings": workflow["inference_run"]["warnings"],
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
         return 0
     if args.observe_command == "export":
         directory = ensure_session_layout(session_id, root)

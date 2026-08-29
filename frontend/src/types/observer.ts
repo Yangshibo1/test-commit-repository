@@ -9,6 +9,10 @@ export interface ObserverSessionSummary {
   valid?: boolean | null;
   usable?: boolean | null;
   metrics: ObserverMetrics;
+  semantic_available?: boolean;
+  semantic_method?: string | null;
+  semantic_node_count?: number;
+  semantic_valid?: boolean | null;
 }
 
 export interface ObserverMetrics {

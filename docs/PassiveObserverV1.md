@@ -52,6 +52,7 @@ agentvast observe status <session-id>
 agentvast observe stop <session-id>
 agentvast observe derive <session-id>
 agentvast observe validate <session-id>
+agentvast observe semantic <session-id> --rules-only
 agentvast observe export <session-id>
 ```
 
@@ -114,7 +115,11 @@ transcript/transcript.jsonl            Claude 原生 transcript 快照
 │  ├─ messages.jsonl
 │  ├─ tool_calls.jsonl
 │  ├─ agents.jsonl
-│  └─ observer_trace.json
+│  ├─ observer_trace.json
+│  ├─ semantic_workflow.json
+│  ├─ semantic_workflow_reviewed.json
+│  ├─ semantic_reviews.jsonl
+│  └─ semantic_workflows/
 └─ diagnostics/
    ├─ missing_events.json
    ├─ unmatched_events.json
@@ -162,6 +167,10 @@ GET /api/observations/<session-id>/trace
 页面提供 Session 列表、执行时间线、Prompt → 模型响应/工具批次 → 工具结果 → 最终回答图、
 工具错误状态、成本与耗时指标，以及可回溯到 transcript 行号的 Inspector。也可以离线加载单个
 `observer_trace.json`。该页面没有启动、停止、审批或修改 Claude 的控制能力。
+
+页面进一步提供“语义工作流 / 执行轨迹 / 原始证据”三级视图。语义工作流属于独立的事后推断
+层，生成与人工校正规则见 [SemanticWorkflowV1.md](SemanticWorkflowV1.md)。人工校正只写入
+Observer 派生目录，不会向 Claude 发送消息或改变已记录的会话。
 
 ## 被动性保证
 

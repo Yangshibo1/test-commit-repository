@@ -20,9 +20,11 @@ from agentvast.observer.store import (
     register_session_root,
 )
 from agentvast.observer.transcript_reader import snapshot_transcript
-from agentvast.observer.trace_builder import list_observer_sessions
+from agentvast.observer.trace_builder import list_observer_sessions, stable_id
 from agentvast.observer.validation import validate_session
 from agentvast.paths import expose_repository_to_python
+from agentvast.semantic.pipeline import build_candidate_episodes, run_semantic_workflow
+from agentvast.semantic.review import record_semantic_review
 
 
 def hook(session_id: str, event_name: str, **values):
@@ -35,9 +37,7 @@ def hook(session_id: str, event_name: str, **values):
     }
 
 
-def test_hook_collector_preserves_raw_payload_and_monotonic_sequence(
-    tmp_path: Path, monkeypatch
-):
+def test_hook_collector_preserves_raw_payload_and_monotonic_sequence(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("AGENTVAST_OBSERVER_ROOT", str(tmp_path))
     session_id = "session-observer"
     first_payload = hook(session_id, "SessionStart", model="claude-test")
@@ -65,9 +65,7 @@ def test_transcript_snapshot_keeps_raw_and_invalid_lines(tmp_path: Path):
     root = tmp_path / "observations"
     create_session(session_id, tmp_path, root)
 
-    result = snapshot_transcript(
-        session_id, source, root, attempts=1, delay=0
-    )
+    result = snapshot_transcript(session_id, source, root, attempts=1, delay=0)
 
     assert result["record_count"] == 2
     assert result["invalid_record_count"] == 1
@@ -144,9 +142,7 @@ def test_transcript_only_session_builds_degraded_canonical_trajectory(tmp_path: 
             },
         },
     ]
-    source.write_text(
-        "".join(json.dumps(item) + "\n" for item in records), encoding="utf-8"
-    )
+    source.write_text("".join(json.dumps(item) + "\n" for item in records), encoding="utf-8")
     create_session(session_id, tmp_path, root)
     snapshot_transcript(session_id, source, root, attempts=1, delay=0)
 
@@ -314,6 +310,122 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
         "user_prompt",
         "assistant_message",
     ]
+
+    trace_value = json.loads(trace_path.read_text(encoding="utf-8"))
+    candidates = build_candidate_episodes(trace_value)
+
+    class FakeSemanticProvider:
+        def complete(self, _prompt, stage):
+            if stage == "episode_segmentation":
+                return {
+                    "episode_groups": [
+                        {"candidate_episode_ids": [candidate["candidate_episode_id"]]}
+                        for candidate in candidates
+                    ]
+                }
+            if stage == "semantic_annotation":
+                nodes = []
+                for candidate in candidates:
+                    episode_id = stable_id(
+                        "episode", session_id, [candidate["candidate_episode_id"]]
+                    )
+                    evidence = candidate["event_ids"]
+                    nodes.append(
+                        {
+                            "episode_ids": [episode_id],
+                            "primary_activity": "Analysis",
+                            "activity_tags": [],
+                            "specific_intent": {
+                                "value": "模型标注意图",
+                                "evidence_event_ids": evidence,
+                            },
+                            "goal": {
+                                "value": "模型标注目标",
+                                "evidence_event_ids": evidence,
+                            },
+                            "summary": {
+                                "value": "模型标注摘要",
+                                "evidence_event_ids": evidence,
+                            },
+                            "outcome_claims": [],
+                            "confidence": {"level": "medium"},
+                        }
+                    )
+                return {"nodes": nodes}
+            return {"relations": []}
+
+    model_semantic = run_semantic_workflow(
+        session_id,
+        str(root),
+        force=True,
+        provider=FakeSemanticProvider(),
+    )
+    assert model_semantic["validation"]["valid"] is True
+    assert all(node["inference_method"] == "model" for node in model_semantic["semantic_nodes"])
+
+    semantic = run_semantic_workflow(session_id, str(root), rules_only=True)
+    assert semantic["validation"]["valid"] is True
+    assert len(semantic["semantic_nodes"]) == 2
+    assert semantic["semantic_nodes"][0]["primary_activity"] == "Data Understanding"
+    assert semantic["semantic_nodes"][1]["primary_activity"] == "Communication"
+
+    first_node, second_node = semantic["semantic_nodes"]
+    updated = record_semantic_review(
+        session_id,
+        "update",
+        {
+            "node_id": first_node["node_id"],
+            "primary_activity": "Task Understanding",
+            "specific_intent": "人工修正后的任务理解",
+        },
+        str(root),
+    )["workflow"]
+    assert updated["semantic_nodes"][0]["specific_intent"]["origin"] == "user_validated"
+    accepted = record_semantic_review(
+        session_id,
+        "accept",
+        {"node_id": second_node["node_id"]},
+        str(root),
+    )["workflow"]
+    assert accepted["semantic_nodes"][1]["review_status"] == "accepted"
+    merged = record_semantic_review(
+        session_id,
+        "merge",
+        {
+            "node_ids": [first_node["node_id"], second_node["node_id"]],
+            "primary_activity": "Task Understanding",
+            "specific_intent": "合并后的任务检查与沟通",
+            "summary": "人工合并两个连续节点",
+        },
+        str(root),
+    )["workflow"]
+    assert len(merged["semantic_nodes"]) == 1
+    merged_node = merged["semantic_nodes"][0]
+    split = record_semantic_review(
+        session_id,
+        "split",
+        {
+            "node_id": merged_node["node_id"],
+            "groups": [
+                {
+                    "episode_ids": [merged_node["episode_ids"][0]],
+                    "primary_activity": "Task Understanding",
+                    "specific_intent": "读取任务",
+                    "summary": "任务理解",
+                },
+                {
+                    "episode_ids": [merged_node["episode_ids"][1]],
+                    "primary_activity": "Communication",
+                    "specific_intent": "输出结果",
+                    "summary": "结果沟通",
+                },
+            ],
+        },
+        str(root),
+    )["workflow"]
+    assert len(split["semantic_nodes"]) == 2
+    assert split["validation"]["valid"] is True
+    assert split["review"]["review_event_count"] == 4
 
 
 def test_otel_collector_preserves_exact_body_and_decodes_json(tmp_path: Path):
@@ -542,9 +654,7 @@ def test_incomplete_message_display_falls_back_to_complete_transcript(tmp_path: 
     derive_session(session_id, str(root))
     report = validate_session(session_id, str(root))
     messages = list(iter_jsonl(root / session_id / "derived" / "messages.jsonl"))
-    assistant_messages = [
-        item for item in messages if item["event_type"] == "assistant_message"
-    ]
+    assistant_messages = [item for item in messages if item["event_type"] == "assistant_message"]
 
     assert len(assistant_messages) == 1
     assert assistant_messages[0]["message"]["content"] == "完整的中文回答"
@@ -559,9 +669,7 @@ def test_incomplete_message_display_falls_back_to_complete_transcript(tmp_path: 
     assert "incomplete MessageDisplay" in " ".join(report["warnings"])
 
 
-def test_observe_cli_no_launch_creates_passive_manifest(
-    tmp_path: Path, capsys, monkeypatch
-):
+def test_observe_cli_no_launch_creates_passive_manifest(tmp_path: Path, capsys, monkeypatch):
     project = tmp_path / "project"
     project.mkdir()
     root = tmp_path / "observations"
@@ -624,6 +732,7 @@ def test_observe_cli_no_launch_creates_passive_manifest(
     assert duplicate.value.code == 2
     assert "cannot be overwritten" in capsys.readouterr().err
 
+
 def test_observer_plugin_never_declares_control_output():
     plugin = Path(__file__).resolve().parents[1] / "claude-observer-plugin"
     hooks = json.loads((plugin / "hooks" / "hooks.json").read_text(encoding="utf-8"))
@@ -656,9 +765,7 @@ def test_observer_environment_preserves_user_runtime_paths(tmp_path: Path, monke
     assert not any(name.startswith("AGENTVAST_OBSERVER_") for name in environment)
 
 
-def test_plugin_hook_runner_is_silent_without_changing_pythonpath(
-    tmp_path: Path, monkeypatch
-):
+def test_plugin_hook_runner_is_silent_without_changing_pythonpath(tmp_path: Path, monkeypatch):
     root = tmp_path / "observations"
     project = tmp_path / "external-project"
     project.mkdir()
@@ -719,9 +826,7 @@ def test_concurrent_hook_processes_keep_unique_contiguous_sequence(tmp_path: Pat
             errors.append(stderr)
     assert not errors
 
-    events = list(
-        iter_jsonl(root / "session-concurrent" / "raw" / "hooks.jsonl")
-    )
+    events = list(iter_jsonl(root / "session-concurrent" / "raw" / "hooks.jsonl"))
     sequences = sorted(item["observer_sequence"] for item in events)
     assert len(events) == 40
     assert sequences == list(range(1, 41))
@@ -787,9 +892,7 @@ def test_partial_hook_terminal_event_is_recovered_from_transcript(tmp_path: Path
             },
         },
     ]
-    source.write_text(
-        "".join(json.dumps(item) + "\n" for item in records), encoding="utf-8"
-    )
+    source.write_text("".join(json.dumps(item) + "\n" for item in records), encoding="utf-8")
     create_session(session_id, tmp_path, root)
     append_raw_event(
         session_id,

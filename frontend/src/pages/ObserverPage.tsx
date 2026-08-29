@@ -7,6 +7,8 @@ import {
   ObserverSessionSummary,
   ObserverTrace,
 } from '../types/observer';
+import { SemanticWorkflow } from '../types/semantic';
+import SemanticWorkflowView from '../components/SemanticWorkflowView';
 
 const GRAPH_EVENT_TYPES = new Set([
   'user_prompt',
@@ -15,12 +17,16 @@ const GRAPH_EVENT_TYPES = new Set([
   'assistant_message',
 ]);
 
+type ObserverView = 'semantic' | 'execution' | 'raw';
+
 function ObserverPage() {
   const [sessions, setSessions] = useState<ObserverSessionSummary[]>([]);
   const [trace, setTrace] = useState<ObserverTrace | null>(null);
+  const [semanticWorkflow, setSemanticWorkflow] = useState<SemanticWorkflow | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [showInternal, setShowInternal] = useState(false);
+  const [view, setView] = useState<ObserverView>('semantic');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,6 +43,12 @@ function ObserverPage() {
       setTrace(value);
       setSelectedSessionId(sessionId);
       setSelectedEventId(value.turns[0]?.prompt_event_id || value.events[0]?.event_id || null);
+      const semanticResponse = await fetch(`/api/observations/${encodeURIComponent(sessionId)}/semantic`);
+      if (semanticResponse.ok) {
+        setSemanticWorkflow(await semanticResponse.json() as SemanticWorkflow);
+      } else {
+        setSemanticWorkflow(null);
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : '无法读取 Observation');
     } finally {
@@ -75,6 +87,7 @@ function ObserverPage() {
         throw new Error('请选择 derive 生成的 observer_trace.json');
       }
       setTrace(value);
+      setSemanticWorkflow(null);
       setSelectedSessionId(value.session.session_id);
       setSelectedEventId(value.turns[0]?.prompt_event_id || value.events[0]?.event_id || null);
     } catch (uploadError) {
@@ -85,10 +98,35 @@ function ObserverPage() {
   }, []);
 
   const visibleEvents = useMemo(() => (
-    (trace?.events || []).filter((event) => showInternal || !event.hidden_by_default)
-  ), [trace, showInternal]);
+    (trace?.events || []).filter((event) => view === 'raw' || showInternal || !event.hidden_by_default)
+  ), [trace, showInternal, view]);
   const selectedEvent = trace?.events.find((event) => event.event_id === selectedEventId) || null;
   const graph = useMemo(() => buildGraph(trace, selectedEventId), [trace, selectedEventId]);
+
+  const generateSemantic = useCallback(async (rulesOnly: boolean) => {
+    if (!selectedSessionId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/observations/${encodeURIComponent(selectedSessionId)}/semantic/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rules_only: rulesOnly, force: true }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.detail || `HTTP ${response.status}`);
+      setSemanticWorkflow(body as SemanticWorkflow);
+    } catch (generationError) {
+      setError(generationError instanceof Error ? generationError.message : '语义工作流生成失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedSessionId]);
+
+  const openEvidence = useCallback((eventId: string) => {
+    setSelectedEventId(eventId);
+    setView('execution');
+  }, []);
 
   return (
     <div className="h-full flex flex-col bg-[#fffaf5]">
@@ -101,15 +139,43 @@ function ObserverPage() {
               : '读取 transcript 的确定性派生轨迹；不介入 Claude，不推断语义 Plan'}
           </p>
         </div>
+        <nav className="flex items-center gap-1 p-1 rounded-xl bg-[rgba(234,223,212,0.55)] border border-line">
+          {([
+            ['semantic', '语义工作流'],
+            ['execution', '执行轨迹'],
+            ['raw', '原始证据'],
+          ] as Array<[ObserverView, string]>).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setView(value)}
+              className={`px-3 py-1.5 rounded-lg text-xs ${view === value ? 'bg-white text-accent shadow-sm font-semibold' : 'text-muted'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
         <div className="ml-auto flex items-center gap-2">
-          <label className="flex items-center gap-2 px-3 py-2 rounded-xl border border-line bg-white ot-meta cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showInternal}
-              onChange={(event) => setShowInternal(event.target.checked)}
-            />
-            显示内部事件
-          </label>
+          <select
+            value={selectedSessionId || ''}
+            onChange={(event) => event.target.value && void loadTrace(event.target.value)}
+            className="max-w-[220px] px-3 py-2 rounded-xl border border-line bg-white ot-meta font-mono"
+          >
+            <option value="">选择 Session</option>
+            {sessions.filter((session) => session.derived).map((session) => (
+              <option key={session.session_id} value={session.session_id}>{session.session_id}</option>
+            ))}
+          </select>
+          {view !== 'semantic' && (
+            <label className="flex items-center gap-2 px-3 py-2 rounded-xl border border-line bg-white ot-meta cursor-pointer">
+              <input
+                type="checkbox"
+                checked={showInternal}
+                onChange={(event) => setShowInternal(event.target.checked)}
+              />
+              显示内部事件
+            </label>
+          )}
           <label className="px-3.5 py-2.5 rounded-full border border-line-strong bg-white ot-meta cursor-pointer hover:border-accent">
             加载 observer_trace.json
             <input
@@ -135,6 +201,20 @@ function ObserverPage() {
         </div>
       )}
 
+      {trace && view === 'semantic' ? (
+        <div className="flex-1 min-h-0">
+          <SemanticWorkflowView
+            sessionId={trace.session.session_id}
+            trace={trace}
+            workflow={semanticWorkflow}
+            loading={loading}
+            onGenerate={generateSemantic}
+            onWorkflowChange={setSemanticWorkflow}
+            onEvidence={openEvidence}
+            onError={setError}
+          />
+        </div>
+      ) : (
       <main className="flex-1 min-h-0 grid grid-cols-[280px_minmax(620px,1fr)_380px] gap-3.5 p-3.5">
         <aside className="min-h-0 grid grid-rows-[210px_1fr] border border-line rounded-3xl bg-panel overflow-hidden shadow-lg">
           <section className="min-h-0 border-b border-line overflow-auto">
@@ -210,6 +290,7 @@ function ObserverPage() {
           <ObserverInspector trace={trace} event={selectedEvent} />
         </aside>
       </main>
+      )}
     </div>
   );
 }
