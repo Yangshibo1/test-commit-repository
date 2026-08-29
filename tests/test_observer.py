@@ -413,6 +413,7 @@ def test_observer_plugin_never_declares_control_output():
     assert "MessageDisplay" in hooks["hooks"]
     assert "PostToolBatch" in hooks["hooks"]
     assert '"async": true' in serialized
+    assert "async" not in hooks["hooks"]["UserPromptSubmit"][0]["hooks"][0]
 
 
 def test_observer_environment_preserves_user_runtime_paths(tmp_path: Path, monkeypatch):
@@ -499,3 +500,105 @@ def test_concurrent_hook_processes_keep_unique_contiguous_sequence(tmp_path: Pat
     assert len(events) == 40
     assert sequences == list(range(1, 41))
     assert len({item["observer_event_id"] for item in events}) == 40
+
+
+def test_partial_hook_terminal_event_is_recovered_from_transcript(tmp_path: Path):
+    root = tmp_path / "observations"
+    session_id = "session-hybrid"
+    source = tmp_path / "hybrid.jsonl"
+    records = [
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "promptId": "prompt-1",
+            "uuid": "user-1",
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "message": {"role": "user", "content": "read data"},
+        },
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "assistant-1",
+            "timestamp": "2026-01-01T00:00:01+00:00",
+            "message": {
+                "id": "message-1",
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "tool-hybrid",
+                        "name": "Read",
+                        "input": {"file_path": "data.csv"},
+                    }
+                ],
+            },
+        },
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "uuid": "user-2",
+            "timestamp": "2026-01-01T00:00:02+00:00",
+            "message": {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": "tool-hybrid",
+                        "content": "rows=10",
+                    }
+                ],
+            },
+        },
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "assistant-2",
+            "timestamp": "2026-01-01T00:00:03+00:00",
+            "message": {
+                "id": "message-2",
+                "role": "assistant",
+                "content": [{"type": "text", "text": "done"}],
+            },
+        },
+    ]
+    source.write_text(
+        "".join(json.dumps(item) + "\n" for item in records), encoding="utf-8"
+    )
+    create_session(session_id, tmp_path, root)
+    append_raw_event(
+        session_id,
+        "hook",
+        hook(session_id, "SessionStart", transcript_path=str(source)),
+        root,
+    )
+    append_raw_event(
+        session_id,
+        "hook",
+        hook(
+            session_id,
+            "PreToolUse",
+            transcript_path=str(source),
+            prompt_id="prompt-1",
+            tool_use_id="tool-hybrid",
+            tool_name="Read",
+            tool_input={"file_path": "data.csv"},
+        ),
+        root,
+    )
+    append_raw_event(
+        session_id,
+        "hook",
+        hook(session_id, "SessionEnd", transcript_path=str(source)),
+        root,
+    )
+    snapshot_transcript(session_id, source, root, attempts=1, delay=0)
+
+    derive_session(session_id, str(root))
+    report = validate_session(session_id, str(root))
+    tools = list(iter_jsonl(root / session_id / "derived" / "tool_calls.jsonl"))
+
+    assert tools[0]["tool"]["output"] == "rows=10"
+    assert tools[0]["tool"]["success"] is True
+    assert report["capture_mode"] == "hybrid_fallback"
+    assert report["counts"]["unmatched_tool_calls"] == 0
+    assert report["counts"]["transcript_recovered_hook_tools"] == 1

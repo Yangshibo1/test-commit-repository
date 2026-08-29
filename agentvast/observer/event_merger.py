@@ -92,6 +92,25 @@ def _correlation(payload: Mapping[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _transcript_tool_result(
+    envelopes: Iterable[Mapping[str, Any]], tool_use_id: str
+) -> Optional[Dict[str, Any]]:
+    for envelope in envelopes:
+        record = envelope.get("record") if envelope.get("parsed") else None
+        message = record.get("message") if isinstance(record, dict) else None
+        content = message.get("content") if isinstance(message, dict) else None
+        if not isinstance(content, list):
+            continue
+        for block in content:
+            if (
+                isinstance(block, dict)
+                and block.get("type") == "tool_result"
+                and str(block.get("tool_use_id") or "") == tool_use_id
+            ):
+                return {"block": block, "record": record, "envelope": envelope}
+    return None
+
+
 def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any]:
     directory = ensure_session_layout(session_id, root)
     hooks = sorted(
@@ -267,9 +286,14 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
             evidence.append(
                 _evidence("transcript", "line:{0}".format(envelope["line_number"]))
             )
+        transcript_result = _transcript_tool_result(
+            transcript_by_tool.get(tool_use_id, []), tool_use_id
+        )
         success = (
             TOOL_TERMINALS.get(str(terminal_payload.get("hook_event_name")))
             if terminal_payload
+            else not bool(transcript_result["block"].get("is_error"))
+            if transcript_result
             else None
         )
         canonical_event = {
@@ -277,6 +301,8 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
             "event_time": (
                 terminal_event.get("observer_received_at")
                 if terminal_event
+                else transcript_result["record"].get("timestamp")
+                if transcript_result
                 else ordered[0].get("observer_received_at")
             ),
             "event_order": None,
@@ -291,8 +317,20 @@ def derive_session(session_id: str, root: Optional[str] = None) -> Dict[str, Any
                 "tool_use_id": tool_use_id,
                 "name": basis.get("tool_name"),
                 "input": basis.get("tool_input"),
-                "output": terminal_payload.get("tool_response") if terminal_payload else None,
-                "error": terminal_payload.get("error") if terminal_payload else None,
+                "output": (
+                    terminal_payload.get("tool_response")
+                    if terminal_payload
+                    else transcript_result["block"].get("content")
+                    if transcript_result
+                    else None
+                ),
+                "error": (
+                    terminal_payload.get("error")
+                    if terminal_payload
+                    else transcript_result["block"].get("content")
+                    if transcript_result and transcript_result["block"].get("is_error")
+                    else None
+                ),
                 "success": success,
                 "duration_ms": terminal_payload.get("duration_ms") if terminal_payload else None,
             },

@@ -107,6 +107,13 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
     matched_prompts = len(hook_prompt_ids) - len(unmatched_prompts)
     otel_matched_tools = len(set(by_tool) & otel_tool_ids)
     transcript_matched_tools = len(set(by_tool) & transcript_tool_ids)
+    hook_unmatched_ids = {item["tool_use_id"] for item in unmatched_tools}
+    transcript_recovered_hook_tools = sorted(hook_unmatched_ids & transcript_tool_ids)
+    unresolved_hook_tools = [
+        item
+        for item in unmatched_tools
+        if item["tool_use_id"] not in transcript_tool_ids
+    ]
 
     missing_events: List[str] = []
     if not event_counts.get("SessionStart"):
@@ -145,9 +152,20 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
         if item.get("event_name") == "TranscriptToolExecution"
     )
     hook_complete = not missing_events
+    hybrid_fallback = bool(hooks) and not hook_complete and transcript_fallback_usable
     warnings: List[str] = []
-    if unmatched_tools:
-        warnings.append("{0} tool calls could not be fully matched".format(len(unmatched_tools)))
+    if unresolved_hook_tools:
+        warnings.append(
+            "{0} tool calls could not be matched by Hook or transcript".format(
+                len(unresolved_hook_tools)
+            )
+        )
+    if transcript_recovered_hook_tools:
+        warnings.append(
+            "{0} missing Hook terminal events were recovered from transcript".format(
+                len(transcript_recovered_hook_tools)
+            )
+        )
     if undecoded_otel:
         warnings.append("{0} OTLP exports were preserved but not decoded".format(undecoded_otel))
     if invalid_transcript:
@@ -156,7 +174,12 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
         warnings.append("derive has not produced canonical events")
     if unmatched_prompts:
         warnings.append("{0} prompts have no OTel/transcript match".format(len(unmatched_prompts)))
-    if not hook_complete and transcript_fallback_usable:
+    if hybrid_fallback:
+        warnings.append(
+            "Hook capture is partial; missing events were supplemented from the "
+            "native transcript"
+        )
+    elif not hook_complete and transcript_fallback_usable:
         warnings.append(
             "Hook capture is unavailable; canonical trajectory was reconstructed "
             "from the native transcript"
@@ -169,6 +192,8 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
         "capture_mode": (
             "hook_primary"
             if hook_complete
+            else "hybrid_fallback"
+            if hybrid_fallback
             else "transcript_fallback"
             if transcript_fallback_usable
             else "incomplete"
@@ -183,7 +208,9 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
             "hook_tool_calls": len(by_tool),
             "transcript_reconstructed_tool_calls": transcript_reconstructed_tools,
             "matched_tool_calls": matched_tools,
-            "unmatched_tool_calls": len(unmatched_tools),
+            "unmatched_tool_calls": len(unresolved_hook_tools),
+            "hook_unmatched_tool_calls": len(unmatched_tools),
+            "transcript_recovered_hook_tools": len(transcript_recovered_hook_tools),
             "prompts": max(event_counts.get("UserPromptSubmit", 0), transcript_prompt_count),
             "transcript_prompts": transcript_prompt_count,
             "derived_messages": len(derived_messages),
@@ -198,6 +225,8 @@ def validate_session(session_id: str, root: Optional[str] = None) -> Dict[str, A
         "missing_events": missing_events,
         "warnings": warnings,
         "unmatched_tools": unmatched_tools,
+        "unresolved_tools": unresolved_hook_tools,
+        "transcript_recovered_tools": transcript_recovered_hook_tools,
         "unmatched_prompts": unmatched_prompts,
     }
     diagnostics = directory / "diagnostics"
