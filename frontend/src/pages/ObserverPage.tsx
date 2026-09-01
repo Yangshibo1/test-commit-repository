@@ -14,6 +14,7 @@ const GRAPH_EVENT_TYPES = new Set([
   'user_prompt',
   'model_response',
   'tool_execution',
+  'subagent_result',
   'assistant_message',
 ]);
 
@@ -329,12 +330,13 @@ function MetricStrip({ trace }: { trace: ObserverTrace | null }) {
   const values = [
     ['Turns', metrics?.human_prompt_count ?? 0],
     ['Tools', metrics?.tool_call_count ?? 0],
+    ['Subagents', metrics?.subagent_result_count ?? 0],
     ['Errors', metrics?.tool_error_count ?? 0],
     ['Tool time', formatDuration(metrics?.total_tool_duration_ms)],
     ['Cost', formatCost(metrics?.total_cost_usd)],
   ];
   return (
-    <div className="grid grid-cols-5 gap-2.5 p-3.5 border border-line rounded-3xl bg-white/70">
+    <div className="grid grid-cols-6 gap-2.5 p-3.5 border border-line rounded-3xl bg-white/70">
       {values.map(([label, value]) => (
         <div key={String(label)} className="rounded-2xl border border-line p-3 bg-white/80">
           <div className="ot-stat text-[24px]">{value}</div>
@@ -495,6 +497,7 @@ function nodeColors(event: ObserverEvent): { border: string; background: string 
   if (event.event_type === 'user_prompt') return { border: '#0f766e', background: '#f0fdfa' };
   if (event.event_type === 'model_response') return { border: '#2563eb', background: '#eff6ff' };
   if (event.event_type === 'tool_execution') return { border: '#8b5cf6', background: '#f5f3ff' };
+  if (event.event_type === 'subagent_result') return { border: '#0891b2', background: '#ecfeff' };
   return { border: '#d97745', background: '#fff7ed' };
 }
 

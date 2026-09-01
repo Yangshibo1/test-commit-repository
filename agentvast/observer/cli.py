@@ -433,6 +433,8 @@ def execute(args: argparse.Namespace) -> int:
                     "semantic_node_count": len(workflow["semantic_nodes"]),
                     "relation_count": len(workflow["relations"]),
                     "valid": workflow["validation"]["valid"],
+                    "evidence_valid": workflow["validation"].get("evidence_valid"),
+                    "granularity_valid": workflow["validation"].get("granularity_valid"),
                     "warnings": workflow["inference_run"]["warnings"],
                 },
                 ensure_ascii=False,

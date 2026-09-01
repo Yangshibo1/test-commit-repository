@@ -112,12 +112,19 @@ export default function SemanticWorkflowView({
         <div className="px-4 py-3 border-b border-line bg-white/70">
           <div className="flex items-center justify-between">
             <span className="ot-section-title">语义节点 · {workflow.semantic_nodes.length}</span>
-            <span className={`ot-meta ${workflow.validation.valid ? 'text-green-700' : 'text-red-700'}`}>
-              {workflow.validation.valid ? 'EVIDENCE VALID' : `${workflow.validation.issue_count} ISSUES`}
-            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            <ValidationBadge
+              label="Evidence"
+              valid={workflow.validation.evidence_valid ?? workflow.validation.valid}
+            />
+            <ValidationBadge
+              label="Granularity"
+              valid={workflow.validation.granularity_valid ?? workflow.validation.valid}
+            />
           </div>
           <div className="ot-meta text-muted mt-1">
-            {workflow.inference_run.method} · {workflow.review.review_event_count} 次人工校正
+            {workflow.inference_run.method} · {workflow.inference_run.candidate_count ?? '—'} candidates · {workflow.review.review_event_count} 次人工校正
           </div>
           <div className="grid grid-cols-2 gap-2 mt-2">
             <button
@@ -219,6 +226,7 @@ export default function SemanticWorkflowView({
           <SemanticNodeInspector
             node={selectedNode}
             trace={trace}
+            workflow={workflow}
             onAccept={() => void submitReview('accept', { node_id: selectedNode.node_id })}
             onUpdate={(payload) => void submitReview('update', { node_id: selectedNode.node_id, ...payload })}
             onSplit={(groups) => void submitReview('split', { node_id: selectedNode.node_id, groups })}
@@ -235,6 +243,7 @@ export default function SemanticWorkflowView({
 function SemanticNodeInspector({
   node,
   trace,
+  workflow,
   onAccept,
   onUpdate,
   onSplit,
@@ -242,6 +251,7 @@ function SemanticNodeInspector({
 }: {
   node: SemanticNode;
   trace: ObserverTrace;
+  workflow: SemanticWorkflow;
   onAccept: () => void;
   onUpdate: (payload: Record<string, unknown>) => void;
   onSplit: (groups: Array<Record<string, unknown>>) => void;
@@ -262,6 +272,15 @@ function SemanticNodeInspector({
   const evidence = node.event_ids
     .map((eventId) => trace.events.find((event) => event.event_id === eventId))
     .filter((event): event is NonNullable<typeof event> => Boolean(event));
+  const episodeCandidates = new Set(
+    workflow.episodes
+      .filter((episode) => node.episode_ids.includes(episode.episode_id))
+      .flatMap((episode) => episode.candidate_episode_ids),
+  );
+  const boundaryDecisions = (workflow.boundary_decisions || []).filter((decision) => (
+    episodeCandidates.has(decision.left_candidate_id)
+    || episodeCandidates.has(decision.right_candidate_id)
+  ));
 
   function splitGroups() {
     const left = node.episode_ids.slice(0, splitAfter);
@@ -325,6 +344,35 @@ function SemanticNodeInspector({
               <button type="button" onClick={splitGroups} className="px-3 py-2 rounded-xl border border-line-strong bg-white text-xs">拆分节点</button>
             </div>
           )}
+        </section>
+
+        <section>
+          <h3 className="ot-section-title mb-2">Confidence & Validation</h3>
+          <div className="rounded-xl border border-line bg-white p-3 text-xs space-y-1">
+            <div>Model confidence：{node.confidence.model_level || node.confidence.level}</div>
+            <div>Validated confidence：{node.confidence.validated_level || node.confidence.level}</div>
+            <div>Evidence coverage：{(node.confidence.evidence_coverage * 100).toFixed(1)}%</div>
+          </div>
+          {workflow.validation.issues.length > 0 && (
+            <div className="mt-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+              {workflow.validation.issues.slice(0, 6).map((issue, index) => (
+                <div key={index}>{String(issue.code || 'validation_issue')}</div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section>
+          <h3 className="ot-section-title mb-2">Boundary Audit</h3>
+          {boundaryDecisions.length ? boundaryDecisions.map((decision) => (
+            <div key={`${decision.left_candidate_id}-${decision.right_candidate_id}`} className="rounded-xl border border-line bg-white p-3 mb-2 text-xs">
+              <div className="flex justify-between gap-2 font-mono">
+                <span>{decision.model_decision || '—'} → {decision.effective_decision}</span>
+                <span>{decision.decision_origin}</span>
+              </div>
+              <div className="text-muted mt-1">{decision.override_reason || decision.reason || '无边界说明'}</div>
+            </div>
+          )) : <div className="text-sm text-muted">该节点没有相邻边界决策。</div>}
         </section>
 
         <section>
@@ -440,6 +488,18 @@ function ConfidencePill({ level }: { level: string }) {
     ? 'text-amber-700 bg-amber-50 border-amber-200'
     : 'text-red-700 bg-red-50 border-red-200';
   return <span className={`px-2 py-0.5 rounded-full border text-[9px] font-mono ${style}`}>{level}</span>;
+}
+
+function ValidationBadge({ label, valid }: { label: string; valid: boolean }) {
+  return (
+    <span className={`px-2 py-0.5 rounded-full border text-[9px] font-mono ${
+      valid
+        ? 'text-green-700 bg-green-50 border-green-200'
+        : 'text-red-700 bg-red-50 border-red-200'
+    }`}>
+      {label}: {valid ? 'VALID' : 'CHECK'}
+    </span>
+  );
 }
 
 function Badge({ text, tone }: { text: string; tone: 'red' | 'green' | 'gray' }) {

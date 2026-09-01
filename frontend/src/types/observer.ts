@@ -24,6 +24,7 @@ export interface ObserverMetrics {
   incomplete_tool_count?: number;
   local_command_count?: number;
   system_event_count?: number;
+  subagent_result_count?: number;
   total_cost_usd?: number | null;
   total_duration_ms?: number | null;
   total_api_duration_ms?: number | null;

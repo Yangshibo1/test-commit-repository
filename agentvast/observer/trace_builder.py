@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -56,12 +57,23 @@ def is_human_prompt(record: Mapping[str, Any]) -> bool:
     origin = record.get("origin")
     origin_kind = origin.get("kind") if isinstance(origin, dict) else None
     prompt_source = str(record.get("promptSource") or "").lower()
-    return bool(
-        origin_kind == "human"
-        or prompt_source in {"typed", "pasted", "voice"}
-        or record.get("promptId")
-        or record.get("prompt_id")
-    )
+    return bool(origin_kind == "human" or prompt_source in {"typed", "pasted", "voice"})
+
+
+def is_subagent_notification(record: Mapping[str, Any]) -> bool:
+    if record.get("type") != "user":
+        return False
+    content = message_content(record)
+    if not isinstance(content, str):
+        return False
+    origin = record.get("origin")
+    origin_kind = origin.get("kind") if isinstance(origin, dict) else None
+    return origin_kind == "task-notification" or "<task-notification>" in content
+
+
+def _xml_value(text: str, name: str) -> Optional[str]:
+    match = re.search(r"<{0}>(.*?)</{0}>".format(re.escape(name)), text, flags=re.DOTALL)
+    return match.group(1).strip() if match else None
 
 
 def is_local_user_record(record: Mapping[str, Any]) -> bool:
@@ -124,6 +136,7 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
     prompt_event_by_turn: Dict[str, str] = {}
     filtered_non_human_users = 0
     local_command_count = 0
+    subagent_result_count = 0
 
     def add_relation(source: str, target: str, relation_type: str) -> None:
         if not source or not target or source == target:
@@ -194,6 +207,45 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             line_to_turn[line_number] = current_turn
             continue
 
+        if is_subagent_notification(record):
+            subagent_result_count += 1
+            content = str(message_content(record) or "")
+            task_id = _xml_value(content, "task-id")
+            task_summary = _xml_value(content, "summary") or "子 Agent 结果"
+            result_text = _xml_value(content, "result") or content
+            event_id = stable_id("event", session_id, "subagent-result", task_id or line_number)
+            event = {
+                "event_id": event_id,
+                "sequence": 0,
+                "event_type": "subagent_result",
+                "timestamp": record.get("timestamp"),
+                "ended_at": None,
+                "turn_id": current_turn,
+                "parent_uuid": record.get("parentUuid"),
+                "message_uuid": record.get("uuid"),
+                "response_id": None,
+                "tool_use_id": _xml_value(content, "tool-use-id"),
+                "status": _xml_value(content, "status") or "observed",
+                "origin": "observed",
+                "title": "子 Agent 结果 · {0}".format(task_summary),
+                "summary": _text_preview(result_text),
+                "payload": {
+                    "task_id": task_id,
+                    "task_summary": task_summary,
+                    "status": _xml_value(content, "status"),
+                    "output_file": _xml_value(content, "output-file"),
+                    "result": result_text,
+                    "content": content,
+                },
+                "evidence": _evidence([line_number]),
+                "source_lines": [line_number],
+                "hidden_by_default": False,
+            }
+            events.append(event)
+            if record.get("uuid"):
+                uuid_to_event[str(record["uuid"])] = event_id
+            line_to_turn[line_number] = current_turn
+            continue
         if record.get("type") == "user" and isinstance(message_content(record), str):
             filtered_non_human_users += 1
             if is_local_user_record(record):
@@ -437,28 +489,32 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             uuid_to_event[str(result_record["uuid"])] = event_id
         add_relation(response_event_by_key.get(use["response_key"], ""), event_id, "invokes")
 
-    # Build a compact, deterministic turn graph: prompt -> response -> tools -> next response.
+    # Build a compact turn graph including asynchronous Subagent results.
     for turn in turns:
         turn_id = turn["turn_id"]
-        response_items = sorted(
+        stage_items = sorted(
             (
                 event
                 for event in events
                 if event.get("turn_id") == turn_id
-                and event.get("event_type") in {"model_response", "assistant_message"}
+                and event.get("event_type")
+                in {"model_response", "assistant_message", "subagent_result"}
             ),
             key=lambda item: (min(item.get("source_lines") or [0]), item["event_id"]),
         )
         cursor = [prompt_event_by_turn[turn_id]]
-        for response in response_items:
+        for stage in stage_items:
             for source in cursor:
-                add_relation(source, response["event_id"], "next")
+                add_relation(source, stage["event_id"], "next")
+            if stage.get("event_type") == "subagent_result":
+                cursor = [stage["event_id"]]
+                continue
             tools = [
                 tool_event_by_id[tool_id]
-                for tool_id in response.get("payload", {}).get("tool_use_ids", [])
+                for tool_id in stage.get("payload", {}).get("tool_use_ids", [])
                 if tool_id in tool_event_by_id
             ]
-            cursor = tools or [response["event_id"]]
+            cursor = tools or [stage["event_id"]]
 
     # Preserve raw parent relationships separately from the compact execution graph.
     known_uuids = {str(record.get("uuid")) for _, record in parsed if record.get("uuid")}
@@ -513,6 +569,7 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
         "model_response": 1,
         "tool_execution": 2,
         "assistant_message": 3,
+        "subagent_result": 1,
         "system_event": 8,
         "local_command": 9,
     }
@@ -614,6 +671,7 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             "incomplete_tool_count": len(incomplete_tools),
             "local_command_count": local_command_count,
             "system_event_count": system_event_count,
+            "subagent_result_count": subagent_result_count,
             "total_cost_usd": cost_state.get("totalCostUSD"),
             "total_duration_ms": cost_state.get("totalDuration"),
             "total_api_duration_ms": cost_state.get("totalAPIDuration"),

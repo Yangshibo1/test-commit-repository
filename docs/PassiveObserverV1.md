@@ -119,7 +119,8 @@ transcript/transcript.jsonl            Claude 原生 transcript 快照
 │  ├─ semantic_workflow.json
 │  ├─ semantic_workflow_reviewed.json
 │  ├─ semantic_reviews.jsonl
-│  └─ semantic_workflows/
+│  ├─ semantic_workflows/
+│  └─ semantic_stages/
 └─ diagnostics/
    ├─ missing_events.json
    ├─ unmatched_events.json

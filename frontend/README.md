@@ -51,6 +51,9 @@ Passive Observer 页面读取后端只读 Observation API，或离线加载
 “语义工作流 / 执行轨迹 / 原始证据”三级切换。人工接受、字段修正、连续 Node 合并和按 Episode
 拆分会写入追加式 review sidecar，不会覆盖模型或规则生成的原始语义文件。
 
+模型模式使用相邻 Candidate 的 `MERGE/SPLIT` JSON 决策；前端分别显示 Evidence Validity、
+Granularity Validity、模型置信度、校验后置信度，以及模型边界被硬约束覆盖的原因。
+
 ## 设计原则
 
 参考 `agentvast/visualization/vis-guide.md`：

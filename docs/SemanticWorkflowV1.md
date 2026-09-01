@@ -11,11 +11,13 @@ chain-of-thought、内部 Plan 或真实因果推理。原始 `transcript.jsonl`
 ```text
 transcript.jsonl
   → observer_trace.json
-  → Candidate Episodes（确定性规则）
-  → Episode Segmentation（可选模型）
+  → Candidate Blocks（确定性聚合）
+  → Adjacent Boundary Classification（可选模型）
+  → Hard-constraint Boundary Validator
+  → Frozen Episodes
   → Semantic Annotation（可选模型）
   → Relation Extraction（可选模型）
-  → Evidence Validator（确定性）
+  → Evidence + Granularity Validator（确定性）
   → semantic_workflow.json
 ```
 
@@ -62,6 +64,16 @@ derived/
 ├─ semantic_workflow.json
 ├─ semantic_workflow_reviewed.json
 ├─ semantic_reviews.jsonl
+├─ semantic_stages/
+│  └─ <inference-id>/
+│     ├─ candidate_blocks.json
+│     ├─ boundary_raw_response.json
+│     ├─ validated_boundaries.json
+│     ├─ episodes.json
+│     ├─ annotation_raw_response.json
+│     ├─ semantic_nodes.json
+│     ├─ relation_raw_response.json
+│     └─ validation_report.json
 └─ semantic_workflows/
    ├─ semantic-0001.json
    └─ semantic-0002.json
@@ -70,6 +82,25 @@ derived/
 `semantic_workflows/` 保存每次生成版本；`semantic_workflow.json` 是当前原始推断；
 `semantic_reviews.jsonl` 是追加式人工校正记录；
 `semantic_workflow_reviewed.json` 是重放校正后的有效视图。
+
+## 边界重建
+
+确定性预处理先将同一模型响应及其工具、错误重试、连续 Task 生命周期操作聚合为 Candidate
+Block；`task-notification` 记录为 `subagent_result`，不计作人工 Prompt。边界模型不直接生成
+任意分组，而是为每一对相邻 Candidate 返回 `MERGE` 或 `SPLIT`。
+
+硬约束优先于模型：不同人工 Turn、不同 Subagent Result 和 terminal response 必须分开；一个
+Episode 最多包含三个 Candidate 和一个 Subagent Result。模型结果缺失或一次修复后仍非法时，
+不确定边界默认 `SPLIT`。
+
+Episode 冻结后实行 `1 Episode → 1 Semantic Node`。Annotation 模型只能解释 Activity、Intent、
+Goal、Summary 和 Outcome，不能再次合并、拆分或重排 Episode。
+
+Provider 优先请求 `response_format=json_schema` 且 `strict=true`；不兼容时依次降级到
+`json_object` 和普通 JSON 文本。无论 Provider 是否支持结构化输出，本地都会再次检查固定
+schema version、允许字段、封闭 ID 集合、相邻顺序、Evidence 和业务硬约束。非法输出只允许
+修复一次；边界仍非法时默认 `SPLIT`，Annotation 仍非法时保留 `Uncertain/abstained` Node，
+Relation 仍非法时只保留确定性的 `NEXT`。
 
 ## Evidence 约束
 
@@ -81,9 +112,14 @@ derived/
 - 字段是否有真实存在的 evidence；
 - Semantic relation 是否引用存在的 Node 和 evidence；
 - Evidence coverage 是否可以确定性计算。
+- terminal response 是否独立；
+- 是否出现多个 Subagent Result 被压入同一 Episode/Node；
+- 是否将整个多锚点会话压缩为一个 Node；
+- `high` model confidence 是否具有至少 0.8 Evidence Coverage。
 
-`confidence.level` 是 `high/medium/low` 分类，不是校准概率。证据不足时使用
-`Uncertain` 和 `abstained=true`。
+验证结果分别提供 `evidence_valid`、`granularity_valid` 和总体 `valid`。模型产生
+`model_level`，本地 Validator 根据 Evidence Coverage 生成 `validated_level`；页面显示后者。
+置信等级不是校准概率。证据不足时使用 `Uncertain` 和 `abstained=true`。
 
 ## 关系方向
 

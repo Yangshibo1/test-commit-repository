@@ -23,6 +23,8 @@ export interface SemanticNode {
   }>;
   confidence: {
     level: string;
+    model_level?: string;
+    validated_level?: string;
     evidence_coverage: number;
     boundary_basis: string[];
     uncertainty_reason: string;
@@ -72,8 +74,21 @@ export interface SemanticWorkflow {
     processor_version: string;
     prompt_version: string;
     generated_at: string;
+    candidate_count?: number;
+    stage_path?: string;
     warnings: string[];
   };
+  boundary_decisions?: Array<{
+    left_candidate_id: string;
+    right_candidate_id: string;
+    model_decision?: string | null;
+    effective_decision: string;
+    decision_origin: string;
+    reason: string;
+    override_reason?: string | null;
+    evidence_event_ids: string[];
+    model_confidence?: string | null;
+  }>;
   episodes: Array<{
     episode_id: string;
     sequence: number;
@@ -81,14 +96,24 @@ export interface SemanticWorkflow {
     candidate_episode_ids: string[];
     event_ids: string[];
     boundary_basis: string[];
+    candidate_kinds?: string[];
+    semantic_anchors?: string[];
+    segmentation?: {
+      origin: string;
+      internal_boundaries: Array<Record<string, unknown>>;
+    };
     origin: string;
   }>;
   semantic_nodes: SemanticNode[];
   relations: SemanticRelation[];
   validation: {
     valid: boolean;
+    evidence_valid?: boolean;
+    granularity_valid?: boolean;
     issue_count: number;
     issues: Array<Record<string, unknown>>;
+    evidence_issues?: Array<Record<string, unknown>>;
+    granularity_issues?: Array<Record<string, unknown>>;
     episode_count: number;
     node_count: number;
     relation_count: number;

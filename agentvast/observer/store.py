@@ -73,15 +73,11 @@ def validate_session_id(session_id: str) -> str:
     return value
 
 
-def session_directory(
-    session_id: str, root: Optional[Union[Path, str]] = None
-) -> Path:
+def session_directory(session_id: str, root: Optional[Union[Path, str]] = None) -> Path:
     return Path(root or default_observations_root()) / validate_session_id(session_id)
 
 
-def ensure_session_layout(
-    session_id: str, root: Optional[Union[Path, str]] = None
-) -> Path:
+def ensure_session_layout(session_id: str, root: Optional[Union[Path, str]] = None) -> Path:
     directory = session_directory(session_id, root)
     for relative in (
         "raw/api",
@@ -119,6 +115,7 @@ def _manifest_template(session_id: str) -> Dict[str, Any]:
             "observer_trace": "derived/observer_trace.json",
             "semantic_workflow": "derived/semantic_workflow.json",
             "semantic_workflow_versions": "derived/semantic_workflows/",
+            "semantic_stages": "derived/semantic_stages/",
             "semantic_reviews": "derived/semantic_reviews.jsonl",
         },
         "collector": {
@@ -137,9 +134,7 @@ def _merge(target: Dict[str, Any], update: Mapping[str, Any]) -> Dict[str, Any]:
     return target
 
 
-def read_manifest(
-    session_id: str, root: Optional[Union[Path, str]] = None
-) -> Dict[str, Any]:
+def read_manifest(session_id: str, root: Optional[Union[Path, str]] = None) -> Dict[str, Any]:
     directory = ensure_session_layout(session_id, root)
     path = directory / "manifest.json"
     if not path.exists():

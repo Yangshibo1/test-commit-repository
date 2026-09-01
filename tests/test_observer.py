@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from urllib.error import HTTPError
 
 import pytest
 
@@ -23,7 +24,14 @@ from agentvast.observer.transcript_reader import snapshot_transcript
 from agentvast.observer.trace_builder import list_observer_sessions, stable_id
 from agentvast.observer.validation import validate_session
 from agentvast.paths import expose_repository_to_python
-from agentvast.semantic.pipeline import build_candidate_episodes, run_semantic_workflow
+from agentvast.semantic.pipeline import (
+    _boundary_validation_errors,
+    _effective_boundaries,
+    _materialize_episodes,
+    build_candidate_episodes,
+    run_semantic_workflow,
+)
+from agentvast.semantic.provider import SemanticConfig, SemanticProvider
 from agentvast.semantic.review import record_semantic_review
 
 
@@ -92,6 +100,8 @@ def test_transcript_only_session_builds_degraded_canonical_trajectory(tmp_path: 
             "promptId": "prompt-1",
             "uuid": "user-1",
             "timestamp": "2026-01-01T00:00:00+00:00",
+            "origin": {"kind": "human"},
+            "promptSource": "typed",
             "message": {"role": "user", "content": "inspect data"},
         },
         {
@@ -315,17 +325,35 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
     candidates = build_candidate_episodes(trace_value)
 
     class FakeSemanticProvider:
-        def complete(self, _prompt, stage):
-            if stage == "episode_segmentation":
+        def complete(self, _prompt, stage, json_schema=None):
+            assert json_schema is not None
+            if stage == "episode_boundaries":
                 return {
-                    "episode_groups": [
-                        {"candidate_episode_ids": [candidate["candidate_episode_id"]]}
-                        for candidate in candidates
-                    ]
+                    "schema_version": "semantic-boundaries/0.1",
+                    "boundaries": [],
+                }
+            if stage == "episode_boundaries_repair":
+                return {
+                    "schema_version": "semantic-boundaries/0.1",
+                    "boundaries": [
+                        {
+                            "left_candidate_id": left["candidate_episode_id"],
+                            "right_candidate_id": right["candidate_episode_id"],
+                            "decision": "SPLIT",
+                            "same_intent": False,
+                            "reason": "测试中保留候选边界",
+                            "evidence_event_ids": [
+                                left["event_ids"][-1],
+                                right["event_ids"][0],
+                            ],
+                            "confidence_level": "high",
+                        }
+                        for left, right in zip(candidates, candidates[1:])
+                    ],
                 }
             if stage == "semantic_annotation":
                 nodes = []
-                for candidate in candidates:
+                for index, candidate in enumerate(candidates):
                     episode_id = stable_id(
                         "episode", session_id, [candidate["candidate_episode_id"]]
                     )
@@ -333,7 +361,9 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
                     nodes.append(
                         {
                             "episode_ids": [episode_id],
-                            "primary_activity": "Analysis",
+                            "primary_activity": (
+                                "Communication" if index == len(candidates) - 1 else "Analysis"
+                            ),
                             "activity_tags": [],
                             "specific_intent": {
                                 "value": "模型标注意图",
@@ -348,11 +378,19 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
                                 "evidence_event_ids": evidence,
                             },
                             "outcome_claims": [],
-                            "confidence": {"level": "medium"},
+                            "model_confidence": "medium",
+                            "uncertainty_reason": "",
+                            "abstained": False,
                         }
                     )
-                return {"nodes": nodes}
-            return {"relations": []}
+                return {
+                    "schema_version": "semantic-annotation/0.1",
+                    "nodes": nodes,
+                }
+            return {
+                "schema_version": "semantic-relations/0.1",
+                "relations": [],
+            }
 
     model_semantic = run_semantic_workflow(
         session_id,
@@ -361,7 +399,17 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
         provider=FakeSemanticProvider(),
     )
     assert model_semantic["validation"]["valid"] is True
+    assert model_semantic["validation"]["evidence_valid"] is True
+    assert model_semantic["validation"]["granularity_valid"] is True
     assert all(node["inference_method"] == "model" for node in model_semantic["semantic_nodes"])
+    stage_root = (
+        root
+        / session_id
+        / "derived"
+        / "semantic_stages"
+        / model_semantic["inference_run"]["inference_id"]
+    )
+    assert (stage_root / "boundary_repair_response.json").is_file()
 
     semantic = run_semantic_workflow(session_id, str(root), rules_only=True)
     assert semantic["validation"]["valid"] is True
@@ -446,6 +494,232 @@ def test_otel_collector_preserves_exact_body_and_decodes_json(tmp_path: Path):
     assert payload["decoded_format"] == "json"
 
 
+def test_subagent_notifications_are_anchors_not_human_turns(tmp_path: Path):
+    session_id = "session-subagent-boundaries"
+    root = tmp_path / "observations"
+    source = tmp_path / "subagents.jsonl"
+    records = [
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "uuid": "prompt",
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "origin": {"kind": "human"},
+            "promptSource": "typed",
+            "message": {"role": "user", "content": "分析数据"},
+        },
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "create",
+            "parentUuid": "prompt",
+            "timestamp": "2026-01-01T00:00:01+00:00",
+            "message": {
+                "id": "response-create",
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "tool-create",
+                        "name": "TaskCreate",
+                        "input": {"description": "创建分析任务"},
+                    }
+                ],
+            },
+        },
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "uuid": "create-result",
+            "parentUuid": "create",
+            "timestamp": "2026-01-01T00:00:02+00:00",
+            "message": {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": "tool-create",
+                        "content": "created",
+                    }
+                ],
+            },
+        },
+        _task_notification_record(session_id, "task-a", "探索数据", "create-result", 3),
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "update",
+            "parentUuid": "task-a-uuid",
+            "timestamp": "2026-01-01T00:00:04+00:00",
+            "message": {
+                "id": "response-update",
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "tool-update",
+                        "name": "TaskUpdate",
+                        "input": {"taskId": "task-a", "status": "completed"},
+                    }
+                ],
+            },
+        },
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "uuid": "update-result",
+            "parentUuid": "update",
+            "timestamp": "2026-01-01T00:00:05+00:00",
+            "message": {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": "tool-update",
+                        "content": "updated",
+                    }
+                ],
+            },
+        },
+        _task_notification_record(session_id, "task-b", "核验结果", "update-result", 6),
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "final",
+            "parentUuid": "task-b-uuid",
+            "timestamp": "2026-01-01T00:00:07+00:00",
+            "message": {
+                "id": "response-final",
+                "role": "assistant",
+                "stop_reason": "end_turn",
+                "content": [{"type": "text", "text": "综合结果"}],
+            },
+        },
+    ]
+    source.write_text(
+        "".join(json.dumps(item, ensure_ascii=False) + "\n" for item in records),
+        encoding="utf-8",
+    )
+    create_session(session_id, tmp_path, root)
+    snapshot_transcript(session_id, source, root, attempts=1, delay=0)
+    derive_session(session_id, str(root))
+    trace = json.loads(
+        (root / session_id / "derived" / "observer_trace.json").read_text(encoding="utf-8")
+    )
+    candidates = build_candidate_episodes(trace)
+
+    assert trace["metrics"]["human_prompt_count"] == 1
+    assert trace["metrics"]["subagent_result_count"] == 2
+    assert len(trace["turns"]) == 1
+    assert [item["candidate_kind"] for item in candidates] == [
+        "lifecycle",
+        "subagent_result",
+        "lifecycle",
+        "subagent_result",
+        "terminal_response",
+    ]
+
+    model_boundaries = {
+        "schema_version": "semantic-boundaries/0.1",
+        "boundaries": [
+            {
+                "left_candidate_id": left["candidate_episode_id"],
+                "right_candidate_id": right["candidate_episode_id"],
+                "decision": "MERGE",
+                "same_intent": True,
+                "reason": "测试模型试图合并所有候选",
+                "evidence_event_ids": [left["event_ids"][-1], right["event_ids"][0]],
+                "confidence_level": "high",
+            }
+            for left, right in zip(candidates, candidates[1:])
+        ],
+    }
+    assert _boundary_validation_errors(candidates, model_boundaries) == []
+    decisions, groups = _effective_boundaries(candidates, model_boundaries)
+    assert len(groups) == 3
+    assert len(groups[0]) == 3
+    assert len(groups[1]) == 1
+    assert len(groups[2]) == 1
+    assert decisions[-1]["override_reason"] == "terminal_response_must_be_independent"
+
+    episodes = _materialize_episodes(session_id, candidates, groups, decisions)
+
+    class OvermergingProvider:
+        def complete(self, _prompt, stage, json_schema=None):
+            assert json_schema is not None
+            if stage == "episode_boundaries":
+                return model_boundaries
+            if stage == "semantic_annotation":
+                return {
+                    "schema_version": "semantic-annotation/0.1",
+                    "nodes": [
+                        {
+                            "episode_ids": [episode["episode_id"]],
+                            "primary_activity": (
+                                "Communication" if index == len(episodes) - 1 else "Analysis"
+                            ),
+                            "activity_tags": [],
+                            "specific_intent": {
+                                "value": "受约束的语义意图",
+                                "evidence_event_ids": episode["event_ids"],
+                            },
+                            "goal": {
+                                "value": "受约束的语义目标",
+                                "evidence_event_ids": episode["event_ids"],
+                            },
+                            "summary": {
+                                "value": "受约束的语义摘要",
+                                "evidence_event_ids": episode["event_ids"],
+                            },
+                            "outcome_claims": [],
+                            "model_confidence": "high",
+                            "uncertainty_reason": "",
+                            "abstained": False,
+                        }
+                        for index, episode in enumerate(episodes)
+                    ],
+                }
+            return {
+                "schema_version": "semantic-relations/0.1",
+                "relations": [],
+            }
+
+    semantic = run_semantic_workflow(
+        session_id,
+        str(root),
+        force=True,
+        provider=OvermergingProvider(),
+    )
+    assert len(semantic["semantic_nodes"]) == 3
+    assert semantic["validation"]["evidence_valid"] is True
+    assert semantic["validation"]["granularity_valid"] is True
+    assert semantic["boundary_decisions"][-1]["decision_origin"] == "hard_constraint"
+
+
+def _task_notification_record(
+    session_id: str, task_id: str, summary: str, parent_uuid: str, second: int
+):
+    content = (
+        "<task-notification>"
+        "<task-id>{0}</task-id>"
+        "<tool-use-id>tool-{0}</tool-use-id>"
+        "<status>completed</status>"
+        "<summary>{1}</summary>"
+        "<result>{1}已完成</result>"
+        "</task-notification>"
+    ).format(task_id, summary)
+    return {
+        "type": "user",
+        "sessionId": session_id,
+        "uuid": task_id + "-uuid",
+        "parentUuid": parent_uuid,
+        "timestamp": "2026-01-01T00:00:{0:02d}+00:00".format(second),
+        "origin": {"kind": "task-notification"},
+        "promptSource": "system",
+        "message": {"role": "user", "content": content},
+    }
+
+
 def test_semantic_provider_loads_gitignored_env_file(tmp_path: Path):
     env_file = tmp_path / ".env"
     env_file.write_text(
@@ -487,6 +761,37 @@ def test_semantic_provider_loads_gitignored_env_file(tmp_path: Path):
         "model": "test-model",
         "configured": True,
     }
+
+
+def test_semantic_provider_prefers_json_schema_and_falls_back_to_json_object():
+    class CapturingProvider(SemanticProvider):
+        def __init__(self):
+            super().__init__(
+                SemanticConfig(
+                    api_base_url="https://semantic.invalid",
+                    api_key="test",
+                    model="test-model",
+                    max_retries=3,
+                )
+            )
+            self.payloads = []
+
+        def _post(self, payload):
+            self.payloads.append(payload)
+            if payload.get("response_format", {}).get("type") == "json_schema":
+                raise HTTPError("https://semantic.invalid", 400, "unsupported", {}, None)
+            return {"choices": [{"message": {"content": '{"schema_version":"test","items":[]}'}}]}
+
+    provider = CapturingProvider()
+    value = provider.complete(
+        "return json",
+        "test_stage",
+        json_schema={"type": "object"},
+    )
+
+    assert provider.payloads[0]["response_format"]["type"] == "json_schema"
+    assert provider.payloads[1]["response_format"]["type"] == "json_object"
+    assert value["_semantic_provider_meta"]["response_mode"] == "json_object"
 
 
 def test_otel_collector_preserves_undecodable_protobuf(tmp_path: Path):
@@ -648,6 +953,8 @@ def test_incomplete_message_display_falls_back_to_complete_transcript(tmp_path: 
             "promptId": "prompt-1",
             "uuid": "user-1",
             "timestamp": "2026-01-01T00:00:00+00:00",
+            "origin": {"kind": "human"},
+            "promptSource": "typed",
             "message": {"role": "user", "content": "summarize"},
         },
         {
@@ -887,6 +1194,8 @@ def test_partial_hook_terminal_event_is_recovered_from_transcript(tmp_path: Path
             "promptId": "prompt-1",
             "uuid": "user-1",
             "timestamp": "2026-01-01T00:00:00+00:00",
+            "origin": {"kind": "human"},
+            "promptSource": "typed",
             "message": {"role": "user", "content": "read data"},
         },
         {
