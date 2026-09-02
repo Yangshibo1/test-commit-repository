@@ -28,6 +28,7 @@ from agentvast.semantic.pipeline import (
     _boundary_validation_errors,
     _effective_boundaries,
     _annotation_validation_errors,
+    _boundary_candidate_view,
     _materialize_episodes,
     build_candidate_episodes,
     revalidate_semantic_workflow,
@@ -809,6 +810,45 @@ def test_semantic_provider_loads_gitignored_env_file(tmp_path: Path):
         "model": "test-model",
         "configured": True,
     }
+
+
+def test_boundary_candidate_view_does_not_send_full_subagent_result():
+    candidate = {
+        "candidate_episode_id": "candidate-large",
+        "turn_id": "turn-1",
+        "candidate_kind": "subagent_result",
+        "semantic_anchors": ["subagent_result:task-1"],
+        "boundary_basis": ["subagent_result_boundary"],
+        "semantic_event_ids": ["event-1"],
+        "events": [
+            {
+                "event_id": "event-1",
+                "event_type": "subagent_result",
+                "title": "子 Agent 结果",
+                "summary": "结构核验完成",
+                "status": "completed",
+                "subagent": {
+                    "task_id": "task-1",
+                    "task_summary": "结构核验",
+                    "status": "completed",
+                    "result": {
+                        "opening_excerpt": "x" * 6000,
+                        "headings": ["标题"] * 30,
+                        "key_lines": ["关键数字 42"] * 40,
+                        "conclusion_excerpt": "y" * 6000,
+                        "original_length": 12000,
+                        "truncated": True,
+                    },
+                },
+            }
+        ],
+    }
+
+    view = _boundary_candidate_view(candidate)
+    encoded = json.dumps(view, ensure_ascii=False)
+    assert "opening_excerpt" not in encoded
+    assert "conclusion_excerpt" not in encoded
+    assert len(encoded) < 3000
 
 
 def test_semantic_system_prompt_defines_log_analysis_safety_boundary():

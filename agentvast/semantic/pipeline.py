@@ -458,6 +458,98 @@ def _collapse_lifecycle_candidates(
     return collapsed
 
 
+def _boundary_candidate_view(candidate: Mapping[str, Any]) -> Dict[str, Any]:
+    """Build a compact evidence view specifically for adjacent boundary decisions."""
+    raw_events = [event for event in candidate.get("events") or [] if isinstance(event, dict)]
+    deduplicated: List[Tuple[int, Dict[str, Any]]] = []
+    seen_event_signatures: Set[Tuple[str, str, str]] = set()
+    tool_counts: Dict[str, int] = {}
+    for index, event in enumerate(raw_events):
+        tool = event.get("tool") if isinstance(event.get("tool"), dict) else {}
+        tool_name = str(tool.get("name") or "")
+        if tool_name:
+            tool_counts[tool_name] = tool_counts.get(tool_name, 0) + 1
+        signature = (
+            str(event.get("event_type") or ""),
+            tool_name,
+            _preview(event.get("summary"), 120),
+        )
+        if signature in seen_event_signatures:
+            continue
+        seen_event_signatures.add(signature)
+        deduplicated.append((index, event))
+    prioritized = sorted(
+        deduplicated,
+        key=lambda item: (
+            0
+            if item[1].get("event_type") in {"user_prompt", "subagent_result", "assistant_message"}
+            else 1
+            if item[1].get("status") == "error"
+            else 2,
+            item[0],
+        ),
+    )[:8]
+    selected_events = [event for _, event in sorted(prioritized, key=lambda item: item[0])]
+    event_summaries: List[Dict[str, Any]] = []
+    for event in selected_events:
+        item: Dict[str, Any] = {
+            "event_id": event.get("event_id"),
+            "event_type": event.get("event_type"),
+            "title": _preview(event.get("title"), 120),
+            "summary": _preview(event.get("summary"), 220),
+            "status": event.get("status"),
+        }
+        tool = event.get("tool") if isinstance(event.get("tool"), dict) else {}
+        if tool:
+            tool_input = tool.get("input") if isinstance(tool.get("input"), dict) else {}
+            item["tool"] = {
+                "name": tool.get("name"),
+                "intent_fields": {
+                    key: _bounded_value(tool_input.get(key), 180)
+                    for key in (
+                        "description",
+                        "taskId",
+                        "status",
+                        "file_path",
+                        "path",
+                        "pattern",
+                        "command",
+                    )
+                    if tool_input.get(key) is not None
+                },
+                "is_error": tool.get("is_error"),
+            }
+        subagent = event.get("subagent") if isinstance(event.get("subagent"), dict) else {}
+        if subagent:
+            result_digest = (
+                subagent.get("result") if isinstance(subagent.get("result"), dict) else {}
+            )
+            item["subagent"] = {
+                "task_id": subagent.get("task_id"),
+                "task_summary": subagent.get("task_summary"),
+                "status": subagent.get("status"),
+                "result_signals": {
+                    "headings": list(result_digest.get("headings") or [])[:8],
+                    "key_lines": list(result_digest.get("key_lines") or [])[:8],
+                    "original_length": result_digest.get("original_length"),
+                    "truncated": result_digest.get("truncated"),
+                },
+            }
+        event_summaries.append(item)
+    return {
+        "candidate_episode_id": candidate.get("candidate_episode_id"),
+        "turn_id": candidate.get("turn_id"),
+        "candidate_kind": candidate.get("candidate_kind"),
+        "semantic_anchors": candidate.get("semantic_anchors") or [],
+        "boundary_basis": candidate.get("boundary_basis") or [],
+        "semantic_event_ids": candidate.get("semantic_event_ids") or [],
+        "event_count": len(raw_events),
+        "omitted_event_count": max(0, len(raw_events) - len(selected_events)),
+        "tool_counts": tool_counts,
+        "key_events": event_summaries,
+    }
+
+
 def _tool_events(candidate: Mapping[str, Any]) -> List[Dict[str, Any]]:
     return [
         event
@@ -1872,12 +1964,14 @@ def run_semantic_workflow(
     _write_json(stage_root / "candidate_blocks.json", candidates)
 
     _emit_progress(progress_callback, "boundaries", 16, "判断相邻候选块边界")
-    boundary_prompt = segmentation_prompt(candidates)
+    boundary_candidates = [_boundary_candidate_view(candidate) for candidate in candidates]
+    boundary_prompt = segmentation_prompt(boundary_candidates)
     _write_json(
         stage_root / "boundary_request.json",
         {
             "prompt_version": "semantic-prompts/0.3",
             "candidate_count": len(candidates),
+            "candidate_view": boundary_candidates,
             "prompt": boundary_prompt,
         },
     )
