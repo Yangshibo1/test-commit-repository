@@ -87,6 +87,11 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
         help="Use conservative deterministic annotations without a model",
     )
     semantic.add_argument("--force", action="store_true")
+    semantic.add_argument(
+        "--no-progress",
+        action="store_true",
+        help="Disable the stderr semantic processing progress bar",
+    )
 
     semantic_validate = subparsers.add_parser(
         "semantic-validate",
@@ -103,6 +108,19 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
 
 def _root(value: Optional[str]) -> Path:
     return resolve_user_path(value) if value else default_observations_root()
+
+
+def _semantic_progress(event: Dict[str, Any]) -> None:
+    percent = max(0, min(int(event.get("percent") or 0), 100))
+    width = 24
+    filled = int(width * percent / 100)
+    bar = "#" * filled + "-" * (width - filled)
+    stage = str(event.get("stage") or "semantic")
+    message = str(event.get("message") or "")
+    sys.stderr.write("\r[{0}] {1:3d}% {2}: {3}".format(bar, percent, stage, message))
+    if percent >= 100:
+        sys.stderr.write("\n")
+    sys.stderr.flush()
 
 
 def _resolve_claude(command: str) -> str:
@@ -429,6 +447,9 @@ def execute(args: argparse.Namespace) -> int:
             str(root),
             rules_only=bool(args.rules_only),
             force=bool(args.force),
+            progress_callback=(
+                None if bool(getattr(args, "no_progress", False)) else _semantic_progress
+            ),
         )
         print(
             json.dumps(

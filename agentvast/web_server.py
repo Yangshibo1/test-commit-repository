@@ -562,6 +562,8 @@ def create_app(
         plugin_dir.resolve(),
     )
     review_tasks: Dict[str, asyncio.Task] = {}
+    semantic_tasks: Dict[str, asyncio.Task] = {}
+    semantic_progress: Dict[str, Dict[str, Any]] = {}
 
     def store_for_run(run_id: str) -> Tuple[WorkflowStore, Dict[str, Any]]:
         database_paths = []
@@ -682,19 +684,79 @@ def create_app(
     ) -> Dict[str, Any]:
         from agentvast.semantic.pipeline import run_semantic_workflow
 
-        try:
+        existing = semantic_tasks.get(session_id)
+        if existing is not None and not existing.done():
+            return semantic_progress[session_id]
+
+        semantic_progress[session_id] = {
+            "session_id": session_id,
+            "status": "scheduled",
+            "stage": "scheduled",
+            "percent": 0,
+            "message": "等待语义处理",
+            "current": None,
+            "total": None,
+            "error": None,
+            "inference_id": None,
+        }
+
+        def report_progress(event: Dict[str, Any]) -> None:
+            semantic_progress[session_id].update(event)
+            semantic_progress[session_id]["status"] = "running"
+
+        async def run_in_background() -> None:
             loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(
-                None,
-                functools.partial(
-                    run_semantic_workflow,
-                    session_id,
-                    rules_only=request.rules_only,
-                    force=request.force,
-                ),
-            )
-        except (FileNotFoundError, ValueError, RuntimeError) as error:
-            raise HTTPException(status_code=400, detail=str(error))
+            try:
+                workflow = await loop.run_in_executor(
+                    None,
+                    functools.partial(
+                        run_semantic_workflow,
+                        session_id,
+                        rules_only=request.rules_only,
+                        force=request.force,
+                        progress_callback=report_progress,
+                    ),
+                )
+                semantic_progress[session_id].update(
+                    {
+                        "status": "ready",
+                        "stage": "complete",
+                        "percent": 100,
+                        "message": "Semantic Workflow 已生成",
+                        "inference_id": workflow["inference_run"]["inference_id"],
+                        "error": None,
+                    }
+                )
+            except Exception as error:
+                semantic_progress[session_id].update(
+                    {
+                        "status": "failed",
+                        "message": "语义处理失败",
+                        "error": str(error),
+                    }
+                )
+
+        task = asyncio.create_task(run_in_background())
+        semantic_tasks[session_id] = task
+        task.add_done_callback(lambda _task: semantic_tasks.pop(session_id, None))
+        return semantic_progress[session_id]
+
+    @app.get("/api/observations/{session_id}/semantic/progress")
+    async def observation_semantic_progress(session_id: str) -> Dict[str, Any]:
+        return semantic_progress.get(
+            session_id,
+            {
+                "session_id": session_id,
+                "status": "idle",
+                "stage": "idle",
+                "percent": 0,
+                "message": "没有正在运行的语义任务",
+                "current": None,
+                "total": None,
+                "error": None,
+                "inference_id": None,
+            },
+        )
 
     @app.post("/api/observations/{session_id}/semantic/reviews")
     async def review_observation_semantic_workflow(

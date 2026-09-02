@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import ReactFlow, { Background, Controls, Edge, MiniMap, Node } from 'reactflow';
 import dagre from 'dagre';
 import { ObserverTrace } from '../types/observer';
-import { SemanticNode, SemanticWorkflow } from '../types/semantic';
+import { SemanticNode, SemanticProgress, SemanticWorkflow } from '../types/semantic';
 
 const ACTIVITIES = [
   'Task Understanding',
@@ -23,6 +23,7 @@ interface SemanticWorkflowViewProps {
   trace: ObserverTrace;
   workflow: SemanticWorkflow | null;
   loading: boolean;
+  progress: SemanticProgress | null;
   onGenerate: (rulesOnly: boolean) => Promise<void>;
   onWorkflowChange: (workflow: SemanticWorkflow) => void;
   onEvidence: (eventId: string) => void;
@@ -34,6 +35,7 @@ export default function SemanticWorkflowView({
   trace,
   workflow,
   loading,
+  progress,
   onGenerate,
   onWorkflowChange,
   onEvidence,
@@ -101,6 +103,7 @@ export default function SemanticWorkflowView({
               生成保守规则版
             </button>
           </div>
+          {(loading || progress) && <SemanticProgressBar progress={progress} />}
         </div>
       </div>
     );
@@ -144,6 +147,9 @@ export default function SemanticWorkflowView({
               规则重新生成
             </button>
           </div>
+          {(loading || progress?.status === 'running' || progress?.status === 'scheduled') && (
+            <SemanticProgressBar progress={progress} compact />
+          )}
         </div>
         <div className="flex-1 overflow-auto">
           {workflow.semantic_nodes.map((node) => (
@@ -516,6 +522,35 @@ function SemanticMetric({ label, value }: { label: string; value: string | numbe
     <div className="rounded-2xl border border-line bg-white/80 p-3">
       <div className="ot-stat text-[24px]">{value}</div>
       <div className="ot-meta text-muted mt-1">{label}</div>
+    </div>
+  );
+}
+
+function SemanticProgressBar({
+  progress,
+  compact = false,
+}: {
+  progress: SemanticProgress | null;
+  compact?: boolean;
+}) {
+  const percent = Math.max(0, Math.min(progress?.percent ?? 0, 100));
+  return (
+    <div className={compact ? 'mt-2' : 'mt-6 text-left'}>
+      <div className="flex items-center justify-between gap-3 text-[10px] font-mono text-muted mb-1">
+        <span>{progress?.message || '正在启动语义处理'}</span>
+        <span>{percent}%</span>
+      </div>
+      <div className="h-2 rounded-full bg-stone-200 overflow-hidden">
+        <div
+          className="h-full bg-accent transition-all duration-500"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      {!compact && progress?.current && progress?.total && (
+        <div className="text-[10px] text-muted font-mono mt-1">
+          Episode {progress.current}/{progress.total} · {progress.stage}
+        </div>
+      )}
     </div>
   );
 }

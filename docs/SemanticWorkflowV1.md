@@ -15,7 +15,8 @@ transcript.jsonl
   → Adjacent Boundary Classification（可选模型）
   → Hard-constraint Boundary Validator
   → Frozen Episodes
-  → Semantic Annotation（可选模型）
+  → Evidence Packet（每个 Episode）
+  → Per-Episode Semantic Annotation（可选模型）
   → Relation Extraction（可选模型）
   → Evidence + Granularity Validator（确定性）
   → semantic_workflow.json
@@ -76,7 +77,10 @@ derived/
 │     ├─ boundary_raw_response.json
 │     ├─ validated_boundaries.json
 │     ├─ episodes.json
-│     ├─ annotation_raw_response.json
+│     ├─ annotations/
+│     │  ├─ annotation-001-request.json
+│     │  ├─ annotation-001-raw-response.json
+│     │  └─ annotation-001-validation.json
 │     ├─ semantic_nodes.json
 │     ├─ relation_raw_response.json
 │     └─ validation_report.json
@@ -102,11 +106,28 @@ Episode 最多包含三个 Candidate 和一个 Subagent Result。模型结果缺
 Episode 冻结后实行 `1 Episode → 1 Semantic Node`。Annotation 模型只能解释 Activity、Intent、
 Goal、Summary 和 Outcome，不能再次合并、拆分或重排 Episode。
 
+Annotation 不再一次读取全部 Episode。每个 Episode 独立构造 Evidence Packet 并调用模型，
+内容按重要性排列为：原始用户任务、当前 Episode 的真实关键 Event、前后 Episode 简短上下文、
+输出约束。`model_response` 包装事件不进入语义 Evidence；长工具输出和 Subagent Result 使用
+确定性摘要，保留标题、关键数字行、开头、结尾、原始长度和 SHA-256。
+
 Provider 优先请求 `response_format=json_schema` 且 `strict=true`；不兼容时依次降级到
 `json_object` 和普通 JSON 文本。无论 Provider 是否支持结构化输出，本地都会再次检查固定
 schema version、允许字段、封闭 ID 集合、相邻顺序、Evidence 和业务硬约束。非法输出只允许
 修复一次；边界仍非法时默认 `SPLIT`，Annotation 仍非法时保留 `Uncertain/abstained` Node，
 Relation 仍非法时只保留确定性的 `NEXT`。
+
+## 处理进度
+
+CLI 默认在 stderr 显示进度条，stdout 仍只输出最终 JSON：
+
+```text
+[########----------------] 35% semantic_annotation: 分析 Episode 1/7
+```
+
+可使用 `--no-progress` 关闭。Web 端生成改为后台任务，并通过
+`GET /api/observations/<session-id>/semantic/progress` 轮询阶段、百分比和 Episode 进度；前端在
+语义工作流页面显示相同进度。
 
 ## Evidence 约束
 

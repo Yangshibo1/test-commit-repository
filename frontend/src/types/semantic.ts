@@ -126,3 +126,15 @@ export interface SemanticWorkflow {
     warnings?: string[];
   };
 }
+
+export interface SemanticProgress {
+  session_id: string;
+  status: 'idle' | 'scheduled' | 'running' | 'ready' | 'failed';
+  stage: string;
+  percent: number;
+  message: string;
+  current?: number | null;
+  total?: number | null;
+  error?: string | null;
+  inference_id?: string | null;
+}

@@ -7,7 +7,7 @@ import {
   ObserverSessionSummary,
   ObserverTrace,
 } from '../types/observer';
-import { SemanticWorkflow } from '../types/semantic';
+import { SemanticProgress, SemanticWorkflow } from '../types/semantic';
 import SemanticWorkflowView from '../components/SemanticWorkflowView';
 
 const GRAPH_EVENT_TYPES = new Set([
@@ -24,6 +24,7 @@ function ObserverPage() {
   const [sessions, setSessions] = useState<ObserverSessionSummary[]>([]);
   const [trace, setTrace] = useState<ObserverTrace | null>(null);
   const [semanticWorkflow, setSemanticWorkflow] = useState<SemanticWorkflow | null>(null);
+  const [semanticProgress, setSemanticProgress] = useState<SemanticProgress | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [showInternal, setShowInternal] = useState(false);
@@ -43,6 +44,7 @@ function ObserverPage() {
       const value = await response.json() as ObserverTrace;
       setTrace(value);
       setSelectedSessionId(sessionId);
+      setSemanticProgress(null);
       setSelectedEventId(value.turns[0]?.prompt_event_id || value.events[0]?.event_id || null);
       const semanticResponse = await fetch(`/api/observations/${encodeURIComponent(sessionId)}/semantic`);
       if (semanticResponse.ok) {
@@ -89,6 +91,7 @@ function ObserverPage() {
       }
       setTrace(value);
       setSemanticWorkflow(null);
+      setSemanticProgress(null);
       setSelectedSessionId(value.session.session_id);
       setSelectedEventId(value.turns[0]?.prompt_event_id || value.events[0]?.event_id || null);
     } catch (uploadError) {
@@ -116,7 +119,30 @@ function ObserverPage() {
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.detail || `HTTP ${response.status}`);
-      setSemanticWorkflow(body as SemanticWorkflow);
+      if (body.schema_version) {
+        setSemanticWorkflow(body as SemanticWorkflow);
+        setSemanticProgress(null);
+        return;
+      }
+      let progress = body as SemanticProgress;
+      setSemanticProgress(progress);
+      for (let attempt = 0; attempt < 800; attempt += 1) {
+        if (progress.status === 'ready') {
+          const semanticResponse = await fetch(`/api/observations/${encodeURIComponent(selectedSessionId)}/semantic`);
+          if (!semanticResponse.ok) throw new Error(`Semantic result HTTP ${semanticResponse.status}`);
+          setSemanticWorkflow(await semanticResponse.json() as SemanticWorkflow);
+          return;
+        }
+        if (progress.status === 'failed') {
+          throw new Error(progress.error || '语义工作流生成失败');
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 750));
+        const progressResponse = await fetch(`/api/observations/${encodeURIComponent(selectedSessionId)}/semantic/progress`);
+        if (!progressResponse.ok) throw new Error(`Progress HTTP ${progressResponse.status}`);
+        progress = await progressResponse.json() as SemanticProgress;
+        setSemanticProgress(progress);
+      }
+      throw new Error('语义工作流生成超时');
     } catch (generationError) {
       setError(generationError instanceof Error ? generationError.message : '语义工作流生成失败');
     } finally {
@@ -209,6 +235,7 @@ function ObserverPage() {
             trace={trace}
             workflow={semanticWorkflow}
             loading={loading}
+            progress={semanticProgress}
             onGenerate={generateSemantic}
             onWorkflowChange={setSemanticWorkflow}
             onEvidence={openEvidence}

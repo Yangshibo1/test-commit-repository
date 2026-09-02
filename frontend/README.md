@@ -54,6 +54,9 @@ Passive Observer 页面读取后端只读 Observation API，或离线加载
 模型模式使用相邻 Candidate 的 `MERGE/SPLIT` JSON 决策；前端分别显示 Evidence Validity、
 Granularity Validity、模型置信度、校验后置信度，以及模型边界被硬约束覆盖的原因。
 
+Semantic Annotation 采用逐 Episode 模型调用。点击模型生成后，页面轮询后端进度，显示候选块、
+边界判断、当前 Episode、关系提取和最终验证等阶段，不再让一个长同步请求无反馈地等待。
+
 ## 设计原则
 
 参考 `agentvast/visualization/vis-guide.md`：

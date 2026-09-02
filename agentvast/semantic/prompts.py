@@ -227,21 +227,31 @@ def segmentation_prompt(candidates: List[Dict[str, Any]]) -> str:
     return _prompt("BOUNDARY_CLASSIFICATION", source, BOUNDARY_SCHEMA)
 
 
-def annotation_prompt(episodes: List[Dict[str, Any]]) -> str:
+def annotation_prompt(
+    task_context: Mapping[str, Any],
+    episode: Mapping[str, Any],
+    neighbor_context: Mapping[str, Any],
+) -> str:
     source = {
-        "task": "对每个冻结Episode生成且只生成一个Semantic Node",
-        "allowed_primary_activities": ACTIVITY_TYPES,
-        "episode_order": [episode["episode_id"] for episode in episodes],
-        "rules": [
-            "nodes数量必须等于episodes数量，顺序必须一致",
-            "每个Node的episode_ids必须且只能包含对应的一个episode_id",
-            "不得合并、拆分或重排Episode",
-            "每个语义字段和outcome claim必须引用该Episode内的真实event_id",
-            "禁止推断内部reasoning或未显式出现的Plan",
-            "证据不足时使用Uncertain、abstained=true并说明原因",
-            "模型只能输出model_confidence，本地Validator决定validated confidence",
-        ],
-        "episodes": episodes,
+        "episode_evidence": dict(episode),
+        "task_context": dict(task_context),
+        "neighbor_context": dict(neighbor_context),
+        "output_constraints": {
+            "task": "只分析当前冻结Episode，生成且只生成一个Semantic Node",
+            "allowed_primary_activities": ACTIVITY_TYPES,
+            "must_use_episode_id": episode.get("episode_id"),
+            "allowed_evidence_event_ids": episode.get("allowed_event_ids") or [],
+            "one_episode_one_node": True,
+            "rules": [
+                "nodes数组必须且只能包含一个Node",
+                "Node的episode_ids必须且只能包含当前episode_id",
+                "不得合并、拆分或重排Episode",
+                "每个语义字段和outcome claim必须引用当前Episode内的真实event_id",
+                "禁止推断内部reasoning或未显式出现的Plan",
+                "证据不足时使用Uncertain、abstained=true、model_confidence=low并说明原因",
+                "模型只能输出model_confidence，本地Validator决定validated confidence",
+            ],
+        },
     }
     return _prompt("SEMANTIC_ANNOTATION", source, ANNOTATION_SCHEMA)
 
