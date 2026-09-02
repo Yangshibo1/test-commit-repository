@@ -143,7 +143,14 @@ class SemanticProvider:
                     continue
                 if error.code in {401, 403}:
                     break
-            except (URLError, TimeoutError, ValueError, KeyError) as error:
+            except (URLError, TimeoutError, OSError) as error:
+                last_error = error
+                # Some OpenAI-compatible gateways close the TLS connection instead
+                # of returning HTTP 400 when strict json_schema is unsupported.
+                if response_mode == "json_schema":
+                    response_mode = "json_object"
+                    continue
+            except (ValueError, KeyError) as error:
                 last_error = error
             if attempt < self.config.max_retries - 1:
                 time.sleep(2**attempt)

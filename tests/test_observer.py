@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 
 import pytest
 
@@ -847,6 +847,37 @@ def test_semantic_provider_prefers_json_schema_and_falls_back_to_json_object():
 
     assert provider.payloads[0]["response_format"]["type"] == "json_schema"
     assert provider.payloads[1]["response_format"]["type"] == "json_object"
+    assert value["_semantic_provider_meta"]["response_mode"] == "json_object"
+
+
+def test_semantic_provider_downgrades_json_schema_after_tls_eof():
+    class TlsFallbackProvider(SemanticProvider):
+        def __init__(self):
+            super().__init__(
+                SemanticConfig(
+                    api_base_url="https://semantic.invalid",
+                    api_key="test",
+                    model="test-model",
+                    max_retries=3,
+                )
+            )
+            self.modes = []
+
+        def _post(self, payload):
+            mode = payload.get("response_format", {}).get("type", "text")
+            self.modes.append(mode)
+            if mode == "json_schema":
+                raise URLError("SSL: UNEXPECTED_EOF_WHILE_READING")
+            return {"choices": [{"message": {"content": '{"schema_version":"test","items":[]}'}}]}
+
+    provider = TlsFallbackProvider()
+    value = provider.complete(
+        "return json",
+        "test_tls_stage",
+        json_schema={"type": "object"},
+    )
+
+    assert provider.modes == ["json_schema", "json_object"]
     assert value["_semantic_provider_meta"]["response_mode"] == "json_object"
 
 
