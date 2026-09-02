@@ -88,6 +88,13 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
     )
     semantic.add_argument("--force", action="store_true")
 
+    semantic_validate = subparsers.add_parser(
+        "semantic-validate",
+        help="Recompute semantic evidence and granularity validation without a model call",
+    )
+    semantic_validate.add_argument("session_id")
+    semantic_validate.add_argument("--storage-root")
+
     export = subparsers.add_parser("export", help="Export an observation session as ZIP")
     export.add_argument("session_id")
     export.add_argument("--storage-root")
@@ -436,6 +443,25 @@ def execute(args: argparse.Namespace) -> int:
                     "evidence_valid": workflow["validation"].get("evidence_valid"),
                     "granularity_valid": workflow["validation"].get("granularity_valid"),
                     "warnings": workflow["inference_run"]["warnings"],
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 0
+    if args.observe_command == "semantic-validate":
+        from agentvast.semantic.pipeline import revalidate_semantic_workflow
+
+        workflow = revalidate_semantic_workflow(session_id, str(root))
+        print(
+            json.dumps(
+                {
+                    "session_id": session_id,
+                    "inference_id": workflow["inference_run"]["inference_id"],
+                    "valid": workflow["validation"]["valid"],
+                    "evidence_valid": workflow["validation"]["evidence_valid"],
+                    "granularity_valid": workflow["validation"]["granularity_valid"],
+                    "issues": workflow["validation"]["issues"],
                 },
                 ensure_ascii=False,
                 indent=2,

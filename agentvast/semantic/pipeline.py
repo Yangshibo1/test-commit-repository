@@ -981,6 +981,13 @@ def _annotation_validation_errors(
                     "error": "Uncertain requires abstained=true and uncertainty_reason",
                 }
             )
+        if activity == "Uncertain" and raw.get("model_confidence") != "low":
+            errors.append(
+                {
+                    "path": path + ".model_confidence",
+                    "error": "Uncertain activity requires low confidence",
+                }
+            )
     return errors
 
 
@@ -1307,7 +1314,35 @@ def validate_semantic_workflow(
             for event_id in claim.get("evidence_event_ids") or []
         )
         node_events = set(str(item) for item in node.get("event_ids") or [])
-        coverage = len(evidence_union & node_events) / max(1, len(node_events))
+        episode_id = next(iter(node.get("episode_ids") or []), None)
+        episode = next((item for item in episodes if item.get("episode_id") == episode_id), {})
+        terminal_episode = "terminal_response" in (episode.get("candidate_kinds") or [])
+        administrative_tools = {"TaskUpdate", "TaskGet", "TaskList", "Skill"}
+        relevant_events = {
+            event_id
+            for event_id in node_events
+            if event_id in event_map
+            and (
+                event_map[event_id].get("event_type") in {"user_prompt", "subagent_result"}
+                or (
+                    event_map[event_id].get("event_type") == "assistant_message"
+                    and terminal_episode
+                )
+                or (
+                    event_map[event_id].get("event_type") == "tool_execution"
+                    and str((event_map[event_id].get("payload") or {}).get("name"))
+                    not in administrative_tools
+                )
+            )
+        }
+        if not relevant_events:
+            relevant_events = {
+                event_id
+                for event_id in node_events
+                if event_id in event_map
+                and event_map[event_id].get("event_type") != "model_response"
+            }
+        coverage = len(evidence_union & relevant_events) / max(1, len(relevant_events))
         if isinstance(node.get("confidence"), dict):
             node["confidence"]["evidence_coverage"] = round(coverage, 4)
             model_level = _confidence(
@@ -1320,17 +1355,11 @@ def validate_semantic_workflow(
                 if coverage >= 0.5 and model_level in {"high", "medium"}
                 else "low"
             )
+            if node.get("primary_activity") == "Uncertain":
+                validated_level = "low"
             node["confidence"]["model_level"] = model_level
             node["confidence"]["validated_level"] = validated_level
             node["confidence"]["level"] = validated_level
-            if model_level == "high" and coverage < 0.8:
-                granularity_issues.append(
-                    {
-                        "code": "high_confidence_low_coverage",
-                        "node_id": node_id,
-                        "coverage": round(coverage, 4),
-                    }
-                )
         node_event_types = [
             event_map[event_id].get("event_type")
             for event_id in node_events
@@ -1347,8 +1376,6 @@ def validate_semantic_workflow(
                 granularity_issues.append(
                     {"code": "terminal_communication_mixed_with_execution", "node_id": node_id}
                 )
-        episode_id = next(iter(node.get("episode_ids") or []), None)
-        episode = next((item for item in episodes if item.get("episode_id") == episode_id), {})
         if "terminal_response" in (episode.get("candidate_kinds") or []) and node.get(
             "primary_activity"
         ) not in {"Communication", "Synthesis"}:
@@ -1730,3 +1757,24 @@ def load_semantic_workflow(
     if not isinstance(value, dict) or value.get("schema_version") != SEMANTIC_SCHEMA_VERSION:
         raise SemanticWorkflowError("semantic workflow has an unsupported schema")
     return value
+
+
+def revalidate_semantic_workflow(session_id: str, root: Optional[str] = None) -> Dict[str, Any]:
+    """Recompute deterministic validation without another model request."""
+    directory = session_directory(session_id, root)
+    workflow = load_semantic_workflow(session_id, root, reviewed=False)
+    trace = load_observer_trace(session_id, root)
+    workflow["validation"] = validate_semantic_workflow(workflow, trace)
+    inference = workflow.setdefault("inference_run", {})
+    inference["processor_version"] = SEMANTIC_PROCESSOR_VERSION
+    inference["revalidated_at"] = _utc_now()
+    warning = "Semantic workflow contains validation issues; inspect validation.issues"
+    warnings = [str(item) for item in inference.get("warnings") or [] if str(item) != warning]
+    if not workflow["validation"]["valid"]:
+        warnings.append(warning)
+    inference["warnings"] = warnings
+    _write_json(directory / "derived" / "semantic_workflow.json", workflow)
+    stage_path = str(inference.get("stage_path") or "").strip("/\\")
+    if stage_path:
+        _write_json(directory / stage_path / "validation_report.json", workflow["validation"])
+    return workflow

@@ -48,6 +48,12 @@ $env:AGENTVAST_SEMANTIC_MODEL = "model-name"
 python -m agentvast.cli observe semantic <session-id> --force
 ```
 
+仅修改确定性 Validator 后，可以不重复调用模型，直接重算校验和校验后置信度：
+
+```powershell
+python -m agentvast.cli observe semantic-validate <session-id>
+```
+
 也可以复制仓库中的 `.env.example` 为 `.env`，然后填写同名变量。Semantic Provider 会依次
 读取 `AGENTVAST_ENV_FILE` 指定文件、当前工作目录的 `.env` 和仓库根目录的 `.env`，且不会
 覆盖 PowerShell 中已经设置的环境变量。`.env` 已由 Git 忽略，但仍是明文密钥文件，应限制

@@ -27,8 +27,10 @@ from agentvast.paths import expose_repository_to_python
 from agentvast.semantic.pipeline import (
     _boundary_validation_errors,
     _effective_boundaries,
+    _annotation_validation_errors,
     _materialize_episodes,
     build_candidate_episodes,
+    revalidate_semantic_workflow,
     run_semantic_workflow,
 )
 from agentvast.semantic.provider import SemanticConfig, SemanticProvider
@@ -410,6 +412,9 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
         / model_semantic["inference_run"]["inference_id"]
     )
     assert (stage_root / "boundary_repair_response.json").is_file()
+    revalidated = revalidate_semantic_workflow(session_id, str(root))
+    assert revalidated["validation"]["valid"] is True
+    assert revalidated["inference_run"]["processor_version"] == "0.2.1"
 
     semantic = run_semantic_workflow(session_id, str(root), rules_only=True)
     assert semantic["validation"]["valid"] is True
@@ -643,6 +648,37 @@ def test_subagent_notifications_are_anchors_not_human_turns(tmp_path: Path):
     assert decisions[-1]["override_reason"] == "terminal_response_must_be_independent"
 
     episodes = _materialize_episodes(session_id, candidates, groups, decisions)
+    uncertain_high = {
+        "schema_version": "semantic-annotation/0.1",
+        "nodes": [
+            {
+                "episode_ids": [episode["episode_id"]],
+                "primary_activity": "Uncertain",
+                "activity_tags": [],
+                "specific_intent": {
+                    "value": "证据不足",
+                    "evidence_event_ids": episode["event_ids"],
+                },
+                "goal": {
+                    "value": "等待校正",
+                    "evidence_event_ids": episode["event_ids"],
+                },
+                "summary": {
+                    "value": "无法确定",
+                    "evidence_event_ids": episode["event_ids"],
+                },
+                "outcome_claims": [],
+                "model_confidence": "high",
+                "uncertainty_reason": "现有证据不足",
+                "abstained": True,
+            }
+            for episode in episodes
+        ],
+    }
+    assert any(
+        error["error"] == "Uncertain activity requires low confidence"
+        for error in _annotation_validation_errors(episodes, uncertain_high)
+    )
 
     class OvermergingProvider:
         def complete(self, _prompt, stage, json_schema=None):
