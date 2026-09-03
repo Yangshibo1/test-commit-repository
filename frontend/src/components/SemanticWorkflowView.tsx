@@ -126,16 +126,6 @@ export default function SemanticWorkflowView({
           <div className="flex items-center justify-between">
             <span className="ot-section-title">语义节点 · {workflow.semantic_nodes.length}</span>
           </div>
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            <ValidationBadge
-              label="Evidence"
-              valid={workflow.validation.evidence_valid ?? workflow.validation.valid}
-            />
-            <ValidationBadge
-              label="Granularity"
-              valid={workflow.validation.granularity_valid ?? workflow.validation.valid}
-            />
-          </div>
           <div className="ot-meta text-muted mt-1">
             {workflow.inference_run.method} · {workflow.inference_run.candidate_count ?? '—'} candidates · {workflow.review.review_event_count} 次人工校正
           </div>
@@ -192,15 +182,14 @@ export default function SemanticWorkflowView({
                 <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setSelectedNodeId(node.node_id)}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono text-[10px] text-accent">NODE {node.sequence}</span>
-                    <ConfidencePill level={node.confidence.level} />
+                    <span className="ot-meta text-muted">{node.primary_activity}</span>
                   </div>
-                  <div className="font-semibold text-sm mt-1">{node.specific_intent.value}</div>
-                  <div className="ot-meta text-muted mt-1">{node.primary_activity}</div>
-                  <div className="ot-meta text-muted mt-2 line-clamp-2">{node.summary.value}</div>
+                  <div className="font-semibold text-sm mt-1">{node.title}</div>
+                  <div className="ot-meta text-muted mt-2 line-clamp-2">{node.objective.value}</div>
                   <div className="flex gap-1 mt-2">
                     {node.errors.length > 0 && <Badge text={`${node.errors.length} error`} tone="red" />}
                     {node.review_status !== 'unreviewed' && <Badge text={node.review_status} tone="green" />}
-                    <Badge text={`${node.event_ids.length} evidence`} tone="gray" />
+                    <Badge text={`${node.outcome_claims.length} outcomes`} tone="gray" />
                   </div>
                 </button>
               </div>
@@ -224,8 +213,8 @@ export default function SemanticWorkflowView({
           <SemanticMetric label="Nodes" value={workflow.semantic_nodes.length} />
           <SemanticMetric label="Episodes" value={workflow.episodes.length} />
           <SemanticMetric label="Relations" value={workflow.relations.length} />
-          <SemanticMetric label="Errors" value={workflow.semantic_nodes.reduce((total, node) => total + node.errors.length, 0)} />
-          <SemanticMetric label="Coverage" value={`${averageCoverage(workflow)}%`} />
+          <SemanticMetric label="Outcomes" value={workflow.semantic_nodes.reduce((total, node) => total + node.outcome_claims.length, 0)} />
+          <SemanticMetric label="Key actions" value={workflow.semantic_nodes.reduce((total, node) => total + node.actions.filter((action) => action.semantic_relevance !== 'orchestration').length, 0)} />
         </div>
         <div className="min-h-0 border border-line rounded-3xl bg-panel overflow-hidden shadow-lg">
           <div className="h-12 px-4 border-b border-line bg-white/60 flex items-center justify-between">
@@ -284,13 +273,15 @@ function SemanticNodeInspector({
   onEvidence: (eventId: string) => void;
 }) {
   const [activity, setActivity] = useState(node.primary_activity);
-  const [intent, setIntent] = useState(node.specific_intent.value);
+  const [title, setTitle] = useState(node.title);
+  const [objective, setObjective] = useState(node.objective.value);
   const [summary, setSummary] = useState(node.summary.value);
   const [splitAfter, setSplitAfter] = useState(1);
 
   useEffect(() => {
     setActivity(node.primary_activity);
-    setIntent(node.specific_intent.value);
+    setTitle(node.title);
+    setObjective(node.objective.value);
     setSummary(node.summary.value);
     setSplitAfter(1);
   }, [node.node_id, node.review_status]);
@@ -307,6 +298,15 @@ function SemanticNodeInspector({
     episodeCandidates.has(decision.left_candidate_id)
     || episodeCandidates.has(decision.right_candidate_id)
   ));
+  const orchestrationTools = new Set(['TaskCreate', 'TaskUpdate', 'TaskGet', 'TaskList', 'Skill']);
+  const isOrchestration = (action: SemanticNode['actions'][number]) => (
+    action.semantic_relevance === 'orchestration' || orchestrationTools.has(action.tool_name)
+  );
+  const keyActions = node.actions.filter((action) => !isOrchestration(action));
+  const orchestrationActions = node.actions.filter(isOrchestration);
+  const resources = node.observed_inputs
+    .map((item) => String(item.value || ''))
+    .filter(Boolean);
 
   function splitGroups() {
     const left = node.episode_ids.slice(0, splitAfter);
@@ -314,14 +314,16 @@ function SemanticNodeInspector({
     onSplit([
       {
         episode_ids: left,
+        title: `${title}（前段）`,
         primary_activity: activity,
-        specific_intent: `${intent}（前段）`,
+        objective: `${objective}（前段）`,
         summary: `${summary}（前段）`,
       },
       {
         episode_ids: right,
+        title: `${title}（后段）`,
         primary_activity: activity,
-        specific_intent: `${intent}（后段）`,
+        objective: `${objective}（后段）`,
         summary: `${summary}（后段）`,
       },
     ]);
@@ -332,16 +334,65 @@ function SemanticNodeInspector({
       <div className="px-5 py-4 border-b border-line bg-white/60">
         <div className="flex items-center justify-between">
           <span className="ot-meta font-mono text-accent">SEMANTIC NODE {node.sequence}</span>
-          <ConfidencePill level={node.confidence.level} />
+          <span className="ot-meta text-muted">{node.origin} · {node.inference_method}</span>
         </div>
-        <h2 className="font-serif text-2xl mt-2">{node.specific_intent.value}</h2>
+        <h2 className="font-serif text-2xl mt-2">{node.title}</h2>
         <div className="ot-meta text-muted mt-2">
-          {node.origin} · {node.inference_method} · {node.review_status}
+          {node.primary_activity} · {node.review_status}
         </div>
       </div>
       <div className="flex-1 overflow-auto p-5 space-y-5">
+        <section>
+          <h3 className="ot-section-title mb-2">阶段目标</h3>
+          <p className="rounded-xl border border-line bg-white p-3 text-sm leading-6">
+            {node.objective.value}
+          </p>
+        </section>
+
+        <section>
+          <h3 className="ot-section-title mb-2">行为摘要</h3>
+          <p className="rounded-xl border border-line bg-white p-3 text-sm leading-6">
+            {node.summary.value}
+          </p>
+        </section>
+
+        <section>
+          <h3 className="ot-section-title mb-2">Agent 报告的结果</h3>
+          <p className="text-xs text-muted mb-2">忠实呈现 Agent、Subagent 或工具在记录中给出的结果，不代表 Observer 另行事实认证。</p>
+          {node.outcome_claims.length ? node.outcome_claims.map((claim, index) => (
+            <div key={index} className="rounded-xl border border-line bg-white p-3 text-sm leading-6 mb-2">
+              {claim.text}
+              <div className="ot-meta text-muted mt-2">记录内置信度 {claim.confidence_level}</div>
+            </div>
+          )) : <div className="text-sm text-muted">该阶段没有明确输出结果。</div>}
+        </section>
+
+        {(keyActions.length > 0 || resources.length > 0 || node.errors.length > 0) && (
+          <section>
+            <h3 className="ot-section-title mb-2">关键动作与资源</h3>
+            {keyActions.map((action) => (
+              <button key={action.event_id} type="button" onClick={() => onEvidence(action.event_id)} className="w-full text-left rounded-xl border border-line bg-white p-3 mb-2">
+                <div className="flex justify-between gap-2 text-sm"><span className="font-semibold">{action.tool_name}</span><span>{action.status}</span></div>
+                <div className="ot-meta text-muted mt-1">{action.summary}</div>
+              </button>
+            ))}
+            {resources.map((resource) => (
+              <div key={resource} className="rounded-xl border border-line bg-stone-50 px-3 py-2 mb-2 text-xs font-mono break-all">{resource}</div>
+            ))}
+            {node.errors.map((error) => (
+              <div key={error.event_id} className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 mb-2">
+                {error.summary || '工具错误'} · {error.recovered ? '后续已恢复' : '未观察到恢复'}
+              </div>
+            ))}
+          </section>
+        )}
+
         <section className="space-y-2">
-          <h3 className="ot-section-title">人工接受与修改</h3>
+          <h3 className="ot-section-title">人工校正</h3>
+          <label className="block text-xs text-muted">
+            Short title
+            <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={36} className="w-full mt-1 px-3 py-2 rounded-xl border border-line bg-white text-ink" />
+          </label>
           <label className="block text-xs text-muted">
             Activity
             <select value={activity} onChange={(event) => setActivity(event.target.value)} className="w-full mt-1 px-3 py-2 rounded-xl border border-line bg-white text-ink">
@@ -349,8 +400,8 @@ function SemanticNodeInspector({
             </select>
           </label>
           <label className="block text-xs text-muted">
-            Specific intent
-            <textarea value={intent} onChange={(event) => setIntent(event.target.value)} rows={2} className="w-full mt-1 px-3 py-2 rounded-xl border border-line bg-white text-ink resize-none" />
+            Objective
+            <textarea value={objective} onChange={(event) => setObjective(event.target.value)} rows={2} className="w-full mt-1 px-3 py-2 rounded-xl border border-line bg-white text-ink resize-none" />
           </label>
           <label className="block text-xs text-muted">
             Summary
@@ -358,7 +409,7 @@ function SemanticNodeInspector({
           </label>
           <div className="grid grid-cols-2 gap-2">
             <button type="button" onClick={onAccept} className="px-3 py-2 rounded-xl border border-green-200 bg-green-50 text-green-800 text-xs">接受当前解释</button>
-            <button type="button" onClick={() => onUpdate({ primary_activity: activity, specific_intent: intent, summary })} className="px-3 py-2 rounded-xl bg-accent text-white text-xs">保存人工修正</button>
+            <button type="button" onClick={() => onUpdate({ title, primary_activity: activity, objective, summary })} className="px-3 py-2 rounded-xl bg-accent text-white text-xs">保存人工修正</button>
           </div>
           {node.episode_ids.length > 1 && (
             <div className="grid grid-cols-[1fr_auto] gap-2 pt-2">
@@ -372,12 +423,15 @@ function SemanticNodeInspector({
           )}
         </section>
 
-        <section>
+        <details className="rounded-2xl border border-line bg-white/60 p-3">
+          <summary className="ot-section-title cursor-pointer">技术审计与原始证据</summary>
+          <div className="mt-4 space-y-5">
+          <section>
           <h3 className="ot-section-title mb-2">Confidence & Validation</h3>
           <div className="rounded-xl border border-line bg-white p-3 text-xs space-y-1">
             <div>Model confidence：{node.confidence.model_level || node.confidence.level}</div>
             <div>Validated confidence：{node.confidence.validated_level || node.confidence.level}</div>
-            <div>Evidence coverage：{(node.confidence.evidence_coverage * 100).toFixed(1)}%</div>
+            <div>关键事件引用覆盖率：{(node.confidence.evidence_coverage * 100).toFixed(1)}%</div>
           </div>
           {workflow.validation.issues.length > 0 && (
             <div className="mt-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
@@ -402,28 +456,14 @@ function SemanticNodeInspector({
         </section>
 
         <section>
-          <h3 className="ot-section-title mb-2">Outcome</h3>
-          {node.outcome_claims.length ? node.outcome_claims.map((claim, index) => (
-            <div key={index} className="rounded-xl border border-line bg-white p-3 text-sm mb-2">
-              {claim.text}
-              <div className="ot-meta text-muted mt-2">{claim.confidence_level} · {claim.evidence_event_ids.length} evidence</div>
-            </div>
-          )) : <div className="text-sm text-muted">未形成有证据支持的结果声明。</div>}
-        </section>
-
-        <section>
-          <h3 className="ot-section-title mb-2">Actions & Errors</h3>
-          {node.actions.map((action) => (
+          <h3 className="ot-section-title mb-2">编排动作</h3>
+          {orchestrationActions.map((action) => (
             <button key={action.event_id} type="button" onClick={() => onEvidence(action.event_id)} className="w-full text-left rounded-xl border border-line bg-white p-3 mb-2">
               <div className="flex justify-between gap-2 text-sm"><span className="font-semibold">{action.tool_name}</span><span>{action.status}</span></div>
               <div className="ot-meta text-muted mt-1">{action.summary}</div>
             </button>
           ))}
-          {node.errors.map((error) => (
-            <div key={error.event_id} className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 mb-2">
-              {error.summary || '工具错误'} · {error.recovered ? '已恢复' : '未恢复'}
-            </div>
-          ))}
+          {!orchestrationActions.length && <div className="text-sm text-muted">没有编排动作。</div>}
         </section>
 
         <section>
@@ -435,6 +475,8 @@ function SemanticNodeInspector({
             </button>
           ))}
         </section>
+          </div>
+        </details>
       </div>
     </div>
   );
@@ -460,7 +502,7 @@ function buildSemanticGraph(
       id: semanticNode.node_id,
       position: { x: position.x - 130, y: position.y - 61 },
       data: {
-        label: `${semanticNode.primary_activity}\n${semanticNode.specific_intent.value}\n${semanticNode.outcome_claims[0]?.text || ''}`,
+        label: `${String(semanticNode.sequence).padStart(2, '0')} · ${semanticNode.primary_activity}\n${semanticNode.title}\n${semanticNode.outcome_claims.length} 项结果`,
       },
       style: {
         width: 260,
@@ -505,27 +547,6 @@ function activityColor(activity: string): string {
   if (activity === 'Task Understanding' || activity === 'Data Understanding') return '#0f766e';
   if (activity === 'Analysis' || activity === 'Exploration') return '#2563eb';
   return '#78716c';
-}
-
-function ConfidencePill({ level }: { level: string }) {
-  const style = level === 'high'
-    ? 'text-green-700 bg-green-50 border-green-200'
-    : level === 'medium'
-    ? 'text-amber-700 bg-amber-50 border-amber-200'
-    : 'text-red-700 bg-red-50 border-red-200';
-  return <span className={`px-2 py-0.5 rounded-full border text-[9px] font-mono ${style}`}>{level}</span>;
-}
-
-function ValidationBadge({ label, valid }: { label: string; valid: boolean }) {
-  return (
-    <span className={`px-2 py-0.5 rounded-full border text-[9px] font-mono ${
-      valid
-        ? 'text-green-700 bg-green-50 border-green-200'
-        : 'text-red-700 bg-red-50 border-red-200'
-    }`}>
-      {label}: {valid ? 'VALID' : 'CHECK'}
-    </span>
-  );
 }
 
 function Badge({ text, tone }: { text: string; tone: 'red' | 'green' | 'gray' }) {
@@ -579,15 +600,6 @@ function SemanticProgressBar({
       )}
     </div>
   );
-}
-
-function averageCoverage(workflow: SemanticWorkflow): string {
-  if (!workflow.semantic_nodes.length) return '0';
-  const average = workflow.semantic_nodes.reduce(
-    (total, node) => total + Number(node.confidence.evidence_coverage || 0),
-    0,
-  ) / workflow.semantic_nodes.length;
-  return (average * 100).toFixed(0);
 }
 
 function orderedSelection(workflow: SemanticWorkflow, selected: string[]): string[] {

@@ -120,8 +120,9 @@ Block；`task-notification` 记录为 `subagent_result`，不计作人工 Prompt
 Episode 最多包含三个 Candidate 和一个 Subagent Result。模型结果缺失或一次修复后仍非法时，
 不确定边界默认 `SPLIT`。
 
-Episode 冻结后实行 `1 Episode → 1 Semantic Node`。Annotation 模型只能解释 Activity、Intent、
-Goal、Summary 和 Outcome，不能再次合并、拆分或重排 Episode。
+Episode 冻结后实行 `1 Episode → 1 Semantic Node`。Annotation 模型只能解释短标题、Activity、
+Objective、Summary 和 Outcome，不能再次合并、拆分或重排 Episode。旧版高度重复的 Intent 与
+Goal 已合并为 Objective：Objective 表达该阶段试图完成什么，Summary 表达实际进行了什么。
 
 Annotation 不再一次读取全部 Episode。每个 Episode 独立构造 Evidence Packet 并调用模型，
 内容按重要性排列为：原始用户任务、当前 Episode 的真实关键 Event、前后 Episode 简短上下文、
@@ -165,7 +166,7 @@ AGENTVAST_SEMANTIC_REQUEST_INTERVAL_SECONDS=2
 
 ## Evidence 约束
 
-每个 Node 的 `specific_intent`、`goal`、`summary` 和每条 outcome claim 都必须保存
+每个 Node 的 `objective`、`summary` 和每条 outcome claim 都必须保存
 `evidence_event_ids`。Validator 检查：
 
 - Episode 是否完整、唯一、顺序一致地映射到 Node；
@@ -181,6 +182,39 @@ AGENTVAST_SEMANTIC_REQUEST_INTERVAL_SECONDS=2
 验证结果分别提供 `evidence_valid`、`granularity_valid` 和总体 `valid`。模型产生
 `model_level`，本地 Validator 根据 Evidence Coverage 生成 `validated_level`；页面显示后者。
 置信等级不是校准概率。证据不足时使用 `Uncertain` 和 `abstained=true`。
+
+## 语义字段与审计字段
+
+前端默认展示真正帮助用户理解工作流的语义字段：
+
+| 字段 | 用途 |
+|---|---|
+| `title` | 4—18 个中文字符的阶段名称，用于列表和工作流图 |
+| `primary_activity` | 阶段的主活动类别 |
+| `objective` | Agent 在这一阶段试图完成什么 |
+| `summary` | 记录中可观察到的主要行为 |
+| `outcome_claims` | Agent、Subagent 或工具在记录中给出的结果 |
+| 非 `NEXT` relations | 验证、细化、重试和结果使用等语义联系 |
+| 关键 `actions` | 读取、分析、写入、可视化、Agent 委派等主要行为 |
+| `observed_inputs` | 与阶段理解直接相关的文件和资源路径 |
+
+以下字段保留用于复现、调试和审计，但不进入默认语义阅读主线：
+
+| 字段 | 用途 |
+|---|---|
+| `node_id`、`episode_ids`、`event_ids` | 稳定身份和证据回链 |
+| `boundary_decisions`、`boundary_basis` | Episode 切分审计 |
+| `source_lines`、Provider metadata | 原始记录和调用诊断 |
+| TaskCreate、TaskUpdate、TaskGet、TaskList、Skill | Agent 编排过程 |
+| `reported_outputs` | 完整或截断的原始工具输出 |
+| `model_level`、`validated_level`、coverage | 模型与本地验证诊断 |
+
+`actions.semantic_relevance` 将动作标为 `key_action` 或 `orchestration`。两类动作均被保存，
+但页面默认只突出关键动作，编排动作放入“技术审计与原始证据”折叠区。
+
+Observer 不对 Agent 或 Subagent 结论另行事实认证。`outcome_claims` 的职责是忠实、可回链地
+表达记录中已经出现的结果，允许颗粒度随 Agent 的实际输出而变化。页面因此使用“Agent 报告的
+结果”这一名称，并明确说明这些内容来自观察记录。
 
 ## 关系方向
 

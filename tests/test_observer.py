@@ -34,6 +34,7 @@ from agentvast.semantic.pipeline import (
     revalidate_semantic_workflow,
     run_semantic_workflow,
     SemanticWorkflowPartialError,
+    _upgrade_legacy_semantic_workflow,
 )
 from agentvast.semantic.provider import (
     SYSTEM_PROMPT,
@@ -374,12 +375,9 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
                             "Communication" if index == len(candidates) - 1 else "Analysis"
                         ),
                         "activity_tags": [],
-                        "specific_intent": {
+                        "title": "模型标注阶段",
+                        "objective": {
                             "value": "模型标注意图",
-                            "evidence_event_ids": evidence,
-                        },
-                        "goal": {
-                            "value": "模型标注目标",
                             "evidence_event_ids": evidence,
                         },
                         "summary": {
@@ -393,7 +391,7 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
                     }
                 ]
                 return {
-                    "schema_version": "semantic-annotation/0.1",
+                    "schema_version": "semantic-annotation/0.2",
                     "nodes": nodes,
                 }
             return {
@@ -482,7 +480,7 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
 
     revalidated = revalidate_semantic_workflow(session_id, str(root))
     assert revalidated["validation"]["valid"] is True
-    assert revalidated["inference_run"]["processor_version"] == "0.3.0"
+    assert revalidated["inference_run"]["processor_version"] == "0.4.0"
 
     semantic = run_semantic_workflow(session_id, str(root), rules_only=True)
     assert semantic["validation"]["valid"] is True
@@ -497,11 +495,11 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
         {
             "node_id": first_node["node_id"],
             "primary_activity": "Task Understanding",
-            "specific_intent": "人工修正后的任务理解",
+            "objective": "人工修正后的任务理解",
         },
         str(root),
     )["workflow"]
-    assert updated["semantic_nodes"][0]["specific_intent"]["origin"] == "user_validated"
+    assert updated["semantic_nodes"][0]["objective"]["origin"] == "user_validated"
     accepted = record_semantic_review(
         session_id,
         "accept",
@@ -515,7 +513,7 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
         {
             "node_ids": [first_node["node_id"], second_node["node_id"]],
             "primary_activity": "Task Understanding",
-            "specific_intent": "合并后的任务检查与沟通",
+            "objective": "合并后的任务检查与沟通",
             "summary": "人工合并两个连续节点",
         },
         str(root),
@@ -531,13 +529,13 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
                 {
                     "episode_ids": [merged_node["episode_ids"][0]],
                     "primary_activity": "Task Understanding",
-                    "specific_intent": "读取任务",
+                    "objective": "读取任务",
                     "summary": "任务理解",
                 },
                 {
                     "episode_ids": [merged_node["episode_ids"][1]],
                     "primary_activity": "Communication",
-                    "specific_intent": "输出结果",
+                    "objective": "输出结果",
                     "summary": "结果沟通",
                 },
             ],
@@ -720,18 +718,15 @@ def test_subagent_notifications_are_anchors_not_human_turns(tmp_path: Path):
 
     episodes = _materialize_episodes(session_id, candidates, groups, decisions)
     uncertain_high = {
-        "schema_version": "semantic-annotation/0.1",
+        "schema_version": "semantic-annotation/0.2",
         "nodes": [
             {
                 "episode_ids": [episode["episode_id"]],
+                "title": "证据不足阶段",
                 "primary_activity": "Uncertain",
                 "activity_tags": [],
-                "specific_intent": {
+                "objective": {
                     "value": "证据不足",
-                    "evidence_event_ids": episode["event_ids"],
-                },
-                "goal": {
-                    "value": "等待校正",
                     "evidence_event_ids": episode["event_ids"],
                 },
                 "summary": {
@@ -760,7 +755,7 @@ def test_subagent_notifications_are_anchors_not_human_turns(tmp_path: Path):
                 index = int(stage.rsplit("_", 1)[-1]) - 1
                 episode = episodes[index]
                 return {
-                    "schema_version": "semantic-annotation/0.1",
+                    "schema_version": "semantic-annotation/0.2",
                     "nodes": [
                         {
                             "episode_ids": [episode["episode_id"]],
@@ -768,12 +763,9 @@ def test_subagent_notifications_are_anchors_not_human_turns(tmp_path: Path):
                                 "Communication" if index == len(episodes) - 1 else "Analysis"
                             ),
                             "activity_tags": [],
-                            "specific_intent": {
+                            "title": "受约束语义阶段",
+                            "objective": {
                                 "value": "受约束的语义意图",
-                                "evidence_event_ids": episode["semantic_event_ids"],
-                            },
-                            "goal": {
-                                "value": "受约束的语义目标",
                                 "evidence_event_ids": episode["semantic_event_ids"],
                             },
                             "summary": {
@@ -916,6 +908,47 @@ def test_semantic_system_prompt_defines_log_analysis_safety_boundary():
     assert "不要调用工具" in SYSTEM_PROMPT
     assert "Evidence Event ID" in SYSTEM_PROMPT
     assert "不要输出 chain-of-thought" in SYSTEM_PROMPT
+
+
+def test_legacy_semantic_workflow_is_adapted_without_rewriting_history():
+    legacy = {
+        "schema_version": "semantic-workflow/0.2",
+        "inference_run": {},
+        "semantic_nodes": [
+            {
+                "node_id": "node-1",
+                "event_ids": ["event-1"],
+                "primary_activity": "Analysis",
+                "specific_intent": {
+                    "value": "分析数据并形成结果。后续说明不应进入标题。",
+                    "origin": "inferred",
+                    "evidence_event_ids": ["event-1"],
+                },
+                "goal": {
+                    "value": "完成分析",
+                    "origin": "inferred",
+                    "evidence_event_ids": ["event-1"],
+                },
+                "actions": [
+                    {"tool_name": "TaskUpdate"},
+                    {"tool_name": "Python"},
+                ],
+            }
+        ],
+    }
+
+    upgraded = _upgrade_legacy_semantic_workflow(legacy)
+
+    assert legacy["schema_version"] == "semantic-workflow/0.2"
+    assert upgraded["schema_version"] == "semantic-workflow/0.3"
+    node = upgraded["semantic_nodes"][0]
+    assert node["title"] == "分析数据并形成结果"
+    assert node["objective"]["value"].startswith("分析数据")
+    assert "specific_intent" not in node and "goal" not in node
+    assert [item["semantic_relevance"] for item in node["actions"]] == [
+        "orchestration",
+        "key_action",
+    ]
 
 
 def test_semantic_provider_prefers_json_schema_and_falls_back_to_json_object():

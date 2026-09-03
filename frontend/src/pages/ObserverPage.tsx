@@ -48,7 +48,7 @@ function ObserverPage() {
       setSelectedEventId(value.turns[0]?.prompt_event_id || value.events[0]?.event_id || null);
       const semanticResponse = await fetch(`/api/observations/${encodeURIComponent(sessionId)}/semantic`);
       if (semanticResponse.ok) {
-        setSemanticWorkflow(await semanticResponse.json() as SemanticWorkflow);
+        setSemanticWorkflow(normalizeSemanticWorkflow(await semanticResponse.json()));
       } else {
         setSemanticWorkflow(null);
       }
@@ -142,7 +142,7 @@ function ObserverPage() {
         if (progress.status === 'ready') {
           const semanticResponse = await fetch(`/api/observations/${encodeURIComponent(selectedSessionId)}/semantic`);
           if (!semanticResponse.ok) throw new Error(`Semantic result HTTP ${semanticResponse.status}`);
-          setSemanticWorkflow(await semanticResponse.json() as SemanticWorkflow);
+          setSemanticWorkflow(normalizeSemanticWorkflow(await semanticResponse.json()));
           return;
         }
         if (progress.status === 'failed') {
@@ -569,3 +569,34 @@ function formatPayload(payload: Record<string, any>): string {
 }
 
 export default ObserverPage;
+
+function normalizeSemanticWorkflow(value: unknown): SemanticWorkflow {
+  const workflow = value as SemanticWorkflow & {
+    semantic_nodes?: Array<SemanticWorkflow['semantic_nodes'][number] & {
+      specific_intent?: { value?: string; origin?: string; evidence_event_ids?: string[] };
+      goal?: { value?: string; origin?: string; evidence_event_ids?: string[] };
+    }>;
+  };
+  workflow.semantic_nodes = (workflow.semantic_nodes || []).map((node) => {
+    const legacyNode = node as typeof node & {
+      specific_intent?: { value?: string; origin?: string; evidence_event_ids?: string[] };
+      goal?: { value?: string; origin?: string; evidence_event_ids?: string[] };
+    };
+    const legacyIntent = legacyNode.specific_intent;
+    const legacyGoal = legacyNode.goal;
+    const objective = node.objective || legacyIntent || legacyGoal || {
+      value: '未提取阶段目标',
+      origin: 'inferred',
+      evidence_event_ids: node.event_ids || [],
+    };
+    const titleSource = String(
+      node.title || objective.value || node.primary_activity || '语义阶段',
+    ).replace(/[。！？].*$/, '');
+    return {
+      ...node,
+      title: String(node.title || titleSource).slice(0, 36),
+      objective,
+    };
+  });
+  return workflow;
+}

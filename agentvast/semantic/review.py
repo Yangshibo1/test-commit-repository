@@ -131,7 +131,12 @@ def _update_node(node: Dict[str, Any], payload: Mapping[str, Any], review_id: st
         node["primary_activity"] = str(activity)
     if isinstance(payload.get("activity_tags"), list):
         node["activity_tags"] = [str(item) for item in payload["activity_tags"]][:8]
-    for field_name in ("specific_intent", "goal", "summary"):
+    if payload.get("title") is not None:
+        title = str(payload["title"]).strip()
+        if not title or len(title) > 36:
+            raise SemanticWorkflowError("title must be 1-36 characters")
+        node["title"] = title
+    for field_name in ("objective", "summary"):
         if payload.get(field_name) is None:
             continue
         current = node.get(field_name) if isinstance(node.get(field_name), dict) else {}
@@ -187,13 +192,16 @@ def _combined_node(
     )
     if activity not in ACTIVITY_TYPES:
         raise SemanticWorkflowError("unknown primary_activity")
-    intent = str(
-        payload.get("specific_intent")
+    objective = str(
+        payload.get("objective")
         or "；".join(
-            str((node.get("specific_intent") or {}).get("value") or "") for node in selected
+            str((node.get("objective") or {}).get("value") or "") for node in selected
         )
     ).strip()
-    goal = str(payload.get("goal") or intent).strip()
+    title = str(
+        payload.get("title")
+        or " / ".join(str(node.get("title") or "") for node in selected)
+    ).strip()[:36]
     summary = str(
         payload.get("summary")
         or "；".join(str((node.get("summary") or {}).get("value") or "") for node in selected)
@@ -203,12 +211,12 @@ def _combined_node(
         "sequence": min(int(node.get("sequence") or 0) for node in selected),
         "episode_ids": episode_ids,
         "event_ids": event_ids,
+        "title": title or "合并行为阶段",
         "primary_activity": activity,
         "activity_tags": _ordered_unique(
             str(tag) for node in selected for tag in node.get("activity_tags") or []
         ),
-        "specific_intent": _reviewed_field(intent, event_ids, review_id),
-        "goal": _reviewed_field(goal, event_ids, review_id),
+        "objective": _reviewed_field(objective, event_ids, review_id),
         "summary": _reviewed_field(summary, event_ids, review_id),
         "outcome_claims": [
             claim for node in selected for claim in node.get("outcome_claims") or []

@@ -1208,7 +1208,7 @@ def _rule_nodes(
         final_messages = [
             event for event in episode_events if event.get("event_type") == "assistant_message"
         ]
-        activity, intent, summary, outcome, confidence = _rule_annotation(
+        activity, objective, summary, outcome, confidence = _rule_annotation(
             tools, final_messages, previous
         )
         node_id = stable_id("semantic", session_id, [episode["episode_id"]])
@@ -1218,12 +1218,12 @@ def _rule_nodes(
             "episode_ids": [episode["episode_id"]],
             "event_ids": event_ids,
             "semantic_event_ids": semantic_event_ids,
+            "title": _rule_title(activity, objective),
             "primary_activity": activity,
             "activity_tags": ["Error Recovery"]
             if any(event.get("status") == "error" for event in tools)
             else [],
-            "specific_intent": _field(intent, semantic_event_ids),
-            "goal": _field(intent, semantic_event_ids),
+            "objective": _field(objective, semantic_event_ids),
             "summary": _field(summary, semantic_event_ids),
             "outcome_claims": [
                 {
@@ -1306,10 +1306,27 @@ def _rule_annotation(
     return "Uncertain", "无法从现有证据可靠确定分析意图", "该阶段包含可观察行为，但语义目标证据不足。", "", "low"
 
 
+def _rule_title(activity: str, objective: str) -> str:
+    preferred = {
+        "Task Understanding": "理解任务与材料",
+        "Data Understanding": "理解分析数据",
+        "Data Preparation": "准备分析材料",
+        "Exploration": "探索数据特征",
+        "Analysis": "执行数据分析",
+        "Visualization": "生成可视化",
+        "Validation": "核验分析结果",
+        "Refinement": "修正分析结果",
+        "Synthesis": "综合分析结论",
+        "Communication": "交付分析结果",
+        "Uncertain": "未确定行为阶段",
+    }
+    return preferred.get(activity) or _preview(objective, 36)
+
+
 def _analysis_similarity(joined: str, previous: Optional[Mapping[str, Any]]) -> bool:
     previous_text = " ".join(
         str((previous or {}).get(field, {}).get("value") or "")
-        for field in ("specific_intent", "summary")
+        for field in ("objective", "summary")
         if isinstance((previous or {}).get(field), dict)
     ).lower()
     current_tokens = set(re.findall(r"[a-zA-Z]{4,}|[\u4e00-\u9fff]{2,}", joined))
@@ -1342,6 +1359,7 @@ def _decorate_node(node: Dict[str, Any], episode_events: List[Dict[str, Any]]) -
     inputs: List[Dict[str, Any]] = []
     outputs: List[Dict[str, Any]] = []
     errors: List[Dict[str, Any]] = []
+    orchestration_tools = {"TaskCreate", "TaskUpdate", "TaskGet", "TaskList", "Skill"}
     for event in episode_events:
         if event.get("event_type") != "tool_execution":
             continue
@@ -1353,6 +1371,12 @@ def _decorate_node(node: Dict[str, Any], episode_events: List[Dict[str, Any]]) -
                 "tool_name": payload.get("name") or event.get("title"),
                 "summary": event.get("summary"),
                 "status": event.get("status"),
+                "semantic_relevance": (
+                    "orchestration"
+                    if str(payload.get("name") or event.get("title") or "")
+                    in orchestration_tools
+                    else "key_action"
+                ),
             }
         )
         tool_input = payload.get("input") if isinstance(payload.get("input"), dict) else {}
@@ -1423,10 +1447,10 @@ def _model_nodes(
             "sequence": len(result) + 1,
             "episode_ids": episode_ids,
             "event_ids": event_ids,
+            "title": str(raw["title"]),
             "primary_activity": activity,
             "activity_tags": [str(item) for item in raw.get("activity_tags") or []][:8],
-            "specific_intent": _validated_model_field(raw.get("specific_intent"), event_ids),
-            "goal": _validated_model_field(raw.get("goal"), event_ids),
+            "objective": _validated_model_field(raw.get("objective"), event_ids),
             "summary": _validated_model_field(raw.get("summary"), event_ids),
             "outcome_claims": _validated_claims(raw.get("outcome_claims"), event_ids),
             "confidence": {
@@ -1459,8 +1483,8 @@ def _annotation_validation_errors(
         "$",
         errors,
     )
-    if value.get("schema_version") != "semantic-annotation/0.1":
-        errors.append({"path": "schema_version", "error": "must equal semantic-annotation/0.1"})
+    if value.get("schema_version") != "semantic-annotation/0.2":
+        errors.append({"path": "schema_version", "error": "must equal semantic-annotation/0.2"})
     raw_nodes = value.get("nodes")
     if not isinstance(raw_nodes, list):
         return errors + [{"path": "nodes", "error": "must be an array"}]
@@ -1476,10 +1500,10 @@ def _annotation_validation_errors(
             raw,
             {
                 "episode_ids",
+                "title",
                 "primary_activity",
                 "activity_tags",
-                "specific_intent",
-                "goal",
+                "objective",
                 "summary",
                 "outcome_claims",
                 "model_confidence",
@@ -1502,11 +1526,14 @@ def _annotation_validation_errors(
             errors.append({"path": path + ".primary_activity", "error": "unknown activity"})
         if not isinstance(raw.get("activity_tags"), list):
             errors.append({"path": path + ".activity_tags", "error": "must be an array"})
+        title = str(raw.get("title") or "").strip()
+        if len(title) < 2 or len(title) > 36:
+            errors.append({"path": path + ".title", "error": "must be 2-36 characters"})
         allowed_events = set(
             str(item)
             for item in (episode.get("semantic_event_ids") or episode.get("event_ids") or [])
         )
-        for field_name in ("specific_intent", "goal", "summary"):
+        for field_name in ("objective", "summary"):
             field = raw.get(field_name)
             field_path = path + "." + field_name
             if not isinstance(field, dict) or not str(field.get("value") or "").strip():
@@ -1589,10 +1616,10 @@ def _abstained_nodes(
             "sequence": len(nodes) + 1,
             "episode_ids": [episode["episode_id"]],
             "event_ids": event_ids,
+            "title": "等待人工解释",
             "primary_activity": "Uncertain",
             "activity_tags": [],
-            "specific_intent": _field("语义标注未通过验证", semantic_event_ids),
-            "goal": _field("保留该行为阶段并等待人工校正", semantic_event_ids),
+            "objective": _field("保留该行为阶段并等待人工校正", semantic_event_ids),
             "summary": _field(digest or "该阶段包含可观察行为。", semantic_event_ids),
             "outcome_claims": [],
             "confidence": {
@@ -1854,7 +1881,9 @@ def validate_semantic_workflow(
             granularity_issues.append({"code": "node_must_map_to_one_episode", "node_id": node_id})
         if node.get("primary_activity") not in ACTIVITY_TYPES:
             evidence_issues.append({"code": "unknown_activity", "node_id": node_id})
-        for field_name in ("specific_intent", "goal", "summary"):
+        if not str(node.get("title") or "").strip():
+            evidence_issues.append({"code": "missing_title", "node_id": node_id})
+        for field_name in ("objective", "summary"):
             field = node.get(field_name) if isinstance(node.get(field_name), dict) else {}
             evidence = [str(item) for item in field.get("evidence_event_ids") or []]
             if not str(field.get("value") or "").strip() or not evidence:
@@ -1886,7 +1915,7 @@ def validate_semantic_workflow(
                 )
         evidence_union = {
             str(event_id)
-            for field_name in ("specific_intent", "goal", "summary")
+            for field_name in ("objective", "summary")
             for event_id in (node.get(field_name) or {}).get("evidence_event_ids") or []
         }
         evidence_union.update(
@@ -2093,7 +2122,7 @@ def run_semantic_workflow(
             )
         semantic_provider = SemanticProvider(config)
 
-    prompt_version = "semantic-prompts/0.3"
+    prompt_version = "semantic-prompts/0.4"
     stages_root = directory / "derived" / "semantic_stages"
     stages_root.mkdir(parents=True, exist_ok=True)
     compatibility = {
@@ -2750,9 +2779,47 @@ def load_semantic_workflow(
                 value = reviewed_value
         except (OSError, ValueError, TypeError):
             pass
+    if isinstance(value, dict) and value.get("schema_version") == "semantic-workflow/0.2":
+        value = _upgrade_legacy_semantic_workflow(value)
     if not isinstance(value, dict) or value.get("schema_version") != SEMANTIC_SCHEMA_VERSION:
         raise SemanticWorkflowError("semantic workflow has an unsupported schema")
     return value
+
+
+def _upgrade_legacy_semantic_workflow(value: Dict[str, Any]) -> Dict[str, Any]:
+    """Adapt a v0.2 workflow in memory without rewriting historical evidence."""
+    upgraded = json.loads(json.dumps(value, ensure_ascii=False))
+    upgraded["schema_version"] = SEMANTIC_SCHEMA_VERSION
+    for node in upgraded.get("semantic_nodes") or []:
+        if not isinstance(node, dict):
+            continue
+        legacy_intent = node.get("specific_intent")
+        legacy_goal = node.get("goal")
+        objective = legacy_intent if isinstance(legacy_intent, dict) else legacy_goal
+        if not isinstance(objective, dict):
+            objective = _field("未提取阶段目标", node.get("event_ids") or [])
+        node["objective"] = objective
+        title_source = str(
+            node.get("title")
+            or objective.get("value")
+            or node.get("primary_activity")
+            or "语义阶段"
+        )
+        node["title"] = re.split(r"[。！？]", title_source, maxsplit=1)[0][:36]
+        node.pop("specific_intent", None)
+        node.pop("goal", None)
+        for action in node.get("actions") or []:
+            if not isinstance(action, dict):
+                continue
+            action["semantic_relevance"] = (
+                "orchestration"
+                if action.get("tool_name")
+                in {"TaskCreate", "TaskUpdate", "TaskGet", "TaskList", "Skill"}
+                else "key_action"
+            )
+    inference = upgraded.setdefault("inference_run", {})
+    inference["loaded_with_schema_adapter"] = "semantic-workflow/0.2-to-0.3"
+    return upgraded
 
 
 def revalidate_semantic_workflow(session_id: str, root: Optional[str] = None) -> Dict[str, Any]:

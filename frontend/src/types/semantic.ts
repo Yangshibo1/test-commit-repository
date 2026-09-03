@@ -10,10 +10,10 @@ export interface SemanticNode {
   sequence: number;
   episode_ids: string[];
   event_ids: string[];
+  title: string;
   primary_activity: string;
   activity_tags: string[];
-  specific_intent: EvidenceField;
-  goal: EvidenceField;
+  objective: EvidenceField;
   summary: EvidenceField;
   outcome_claims: Array<{
     text: string;
@@ -38,6 +38,7 @@ export interface SemanticNode {
     tool_name: string;
     summary: string;
     status: string;
+    semantic_relevance?: 'key_action' | 'orchestration';
   }>;
   observed_inputs: Array<Record<string, unknown>>;
   reported_outputs: Array<Record<string, unknown>>;
