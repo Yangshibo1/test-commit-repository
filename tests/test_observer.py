@@ -33,8 +33,14 @@ from agentvast.semantic.pipeline import (
     build_candidate_episodes,
     revalidate_semantic_workflow,
     run_semantic_workflow,
+    SemanticWorkflowPartialError,
 )
-from agentvast.semantic.provider import SYSTEM_PROMPT, SemanticConfig, SemanticProvider
+from agentvast.semantic.provider import (
+    SYSTEM_PROMPT,
+    SemanticConfig,
+    SemanticProvider,
+    SemanticProviderError,
+)
 from agentvast.semantic.review import record_semantic_review
 
 
@@ -421,6 +427,59 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
         event["stage"] == "semantic_annotation" and event.get("current")
         for event in progress_events
     ) >= len(candidates)
+
+    class InterruptingSemanticProvider(FakeSemanticProvider):
+        def complete(self, prompt, stage, json_schema=None):
+            if stage == "semantic_annotation_002":
+                raise SemanticProviderError(
+                    "temporary disconnect",
+                    stage=stage,
+                    retryable=True,
+                    error_type="remote_disconnected",
+                    attempts=5,
+                )
+            return super().complete(prompt, stage, json_schema=json_schema)
+
+    with pytest.raises(SemanticWorkflowPartialError) as partial:
+        run_semantic_workflow(
+            session_id,
+            str(root),
+            force=True,
+            provider=InterruptingSemanticProvider(),
+        )
+    partial_id = partial.value.inference_id
+    partial_root = root / session_id / "derived" / "semantic_stages" / partial_id
+    partial_state = json.loads(
+        (partial_root / "inference_state.json").read_text(encoding="utf-8")
+    )
+    assert partial_state["status"] == "partial"
+    assert partial_state["completed_episode_count"] == 1
+    assert partial_state["failed_episode"] == 2
+
+    class ResumeSemanticProvider(FakeSemanticProvider):
+        def __init__(self):
+            self.stages = []
+
+        def complete(self, prompt, stage, json_schema=None):
+            self.stages.append(stage)
+            return super().complete(prompt, stage, json_schema=json_schema)
+
+    resume_provider = ResumeSemanticProvider()
+    resumed = run_semantic_workflow(
+        session_id,
+        str(root),
+        resume_inference=partial_id,
+        provider=resume_provider,
+    )
+    assert resumed["inference_run"]["inference_id"] == partial_id
+    assert "episode_boundaries" not in resume_provider.stages
+    assert "semantic_annotation_001" not in resume_provider.stages
+    assert "semantic_annotation_002" in resume_provider.stages
+    resumed_state = json.loads(
+        (partial_root / "inference_state.json").read_text(encoding="utf-8")
+    )
+    assert resumed_state["status"] == "completed"
+
     revalidated = revalidate_semantic_workflow(session_id, str(root))
     assert revalidated["validation"]["valid"] is True
     assert revalidated["inference_run"]["processor_version"] == "0.3.0"
@@ -889,6 +948,9 @@ def test_semantic_provider_prefers_json_schema_and_falls_back_to_json_object():
     assert provider.payloads[1]["response_format"]["type"] == "json_object"
     assert value["_semantic_provider_meta"]["response_mode"] == "json_object"
 
+    provider.complete("return json again", "second_stage", json_schema={"type": "object"})
+    assert provider.payloads[2]["response_format"]["type"] == "json_object"
+
 
 def test_semantic_provider_downgrades_json_schema_after_tls_eof():
     class TlsFallbackProvider(SemanticProvider):
@@ -919,6 +981,46 @@ def test_semantic_provider_downgrades_json_schema_after_tls_eof():
 
     assert provider.modes == ["json_schema", "json_object"]
     assert value["_semantic_provider_meta"]["response_mode"] == "json_object"
+
+
+def test_semantic_provider_retries_transient_disconnect_with_progress():
+    class FlakyProvider(SemanticProvider):
+        def __init__(self):
+            super().__init__(
+                SemanticConfig(
+                    api_base_url="https://semantic.invalid",
+                    api_key="test",
+                    model="test-model",
+                    max_retries=4,
+                    use_response_format=True,
+                    retry_base_seconds=0,
+                    retry_max_seconds=0,
+                    retry_jitter_seconds=0,
+                    request_interval_seconds=0,
+                )
+            )
+            self.calls = 0
+            self.restore_response_mode("json_object")
+
+        def _post(self, payload):
+            self.calls += 1
+            if self.calls < 3:
+                raise URLError("Remote end closed connection without response")
+            return {"choices": [{"message": {"content": '{"ok":true}'}}]}
+
+    retries = []
+    provider = FlakyProvider()
+    value = provider.complete(
+        "return json",
+        "retry_stage",
+        json_schema={"type": "object"},
+        retry_callback=retries.append,
+    )
+
+    assert value["ok"] is True
+    assert value["_semantic_provider_meta"]["attempts"] == 3
+    assert [item["attempt"] for item in retries] == [1, 2]
+    assert all(item["error_type"] == "remote_disconnected" for item in retries)
 
 
 def test_otel_collector_preserves_undecodable_protobuf(tmp_path: Path):

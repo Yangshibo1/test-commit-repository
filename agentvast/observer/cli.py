@@ -88,6 +88,16 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
     )
     semantic.add_argument("--force", action="store_true")
     semantic.add_argument(
+        "--resume",
+        nargs="?",
+        const="auto",
+        metavar="INFERENCE_ID",
+        help=(
+            "Resume the latest compatible partial inference, or the specified "
+            "semantic inference ID"
+        ),
+    )
+    semantic.add_argument(
         "--no-progress",
         action="store_true",
         help="Disable the stderr semantic processing progress bar",
@@ -447,6 +457,7 @@ def execute(args: argparse.Namespace) -> int:
             str(root),
             rules_only=bool(args.rules_only),
             force=bool(args.force),
+            resume_inference=getattr(args, "resume", None),
             progress_callback=(
                 None if bool(getattr(args, "no_progress", False)) else _semantic_progress
             ),

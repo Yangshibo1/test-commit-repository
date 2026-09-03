@@ -49,6 +49,21 @@ $env:AGENTVAST_SEMANTIC_MODEL = "model-name"
 python -m agentvast.cli observe semantic <session-id> --force
 ```
 
+如果网络或上游网关在某个 Episode 中断，任务会保存为 `partial`。恢复最新兼容任务：
+
+```powershell
+python -m agentvast.cli observe semantic <session-id> --resume
+```
+
+也可以明确指定失败输出中的 inference ID：
+
+```powershell
+python -m agentvast.cli observe semantic <session-id> --resume semantic-xxxxxxxxxxxx
+```
+
+恢复时会复用已冻结的 Boundary 和已经验证成功的 Episode，只重试失败 Episode 及后续阶段。
+`--force` 用于创建全新推断；`--resume` 用于继续已有推断，两者语义不同。
+
 仅修改确定性 Validator 后，可以不重复调用模型，直接重算校验和校验后置信度：
 
 ```powershell
@@ -73,6 +88,7 @@ derived/
 ├─ semantic_reviews.jsonl
 ├─ semantic_stages/
 │  └─ <inference-id>/
+│     ├─ inference_state.json
 │     ├─ candidate_blocks.json
 │     ├─ boundary_raw_response.json
 │     ├─ validated_boundaries.json
@@ -80,7 +96,8 @@ derived/
 │     ├─ annotations/
 │     │  ├─ annotation-001-request.json
 │     │  ├─ annotation-001-raw-response.json
-│     │  └─ annotation-001-validation.json
+│     │  ├─ annotation-001-validation.json
+│     │  └─ annotation-001-node.json
 │     ├─ semantic_nodes.json
 │     ├─ relation_raw_response.json
 │     └─ validation_report.json
@@ -112,7 +129,8 @@ Annotation 不再一次读取全部 Episode。每个 Episode 独立构造 Eviden
 确定性摘要，保留标题、关键数字行、开头、结尾、原始长度和 SHA-256。
 
 Provider 优先请求 `response_format=json_schema` 且 `strict=true`；不兼容时依次降级到
-`json_object` 和普通 JSON 文本。无论 Provider 是否支持结构化输出，本地都会再次检查固定
+`json_object` 和普通 JSON 文本。一次任务中会缓存已经证实可用的响应模式，后续 Episode 不再
+重复触发不兼容的 `json_schema` 探测。无论 Provider 是否支持结构化输出，本地都会再次检查固定
 schema version、允许字段、封闭 ID 集合、相邻顺序、Evidence 和业务硬约束。非法输出只允许
 修复一次；边界仍非法时默认 `SPLIT`，Annotation 仍非法时保留 `Uncertain/abstained` Node，
 Relation 仍非法时只保留确定性的 `NEXT`。
@@ -128,6 +146,22 @@ CLI 默认在 stderr 显示进度条，stdout 仍只输出最终 JSON：
 可使用 `--no-progress` 关闭。Web 端生成改为后台任务，并通过
 `GET /api/observations/<session-id>/semantic/progress` 轮询阶段、百分比和 Episode 进度；前端在
 语义工作流页面显示相同进度。
+
+TLS EOF、远端关闭、连接重置、超时以及 HTTP 408/429/500/502/503/504 会在当前阶段内按长退避
+重试，并在进度中显示尝试次数。默认最多五次，等待约从 5 秒增长到 60 秒并加入随机抖动；每次
+正常调用之间默认节流 2 秒。所有参数都可以在 `.env` 中调整：
+
+```dotenv
+AGENTVAST_SEMANTIC_MAX_RETRIES=5
+AGENTVAST_SEMANTIC_RETRY_BASE_SECONDS=5
+AGENTVAST_SEMANTIC_RETRY_MAX_SECONDS=60
+AGENTVAST_SEMANTIC_RETRY_JITTER_SECONDS=3
+AGENTVAST_SEMANTIC_REQUEST_INTERVAL_SECONDS=2
+```
+
+每个 Episode 成功后会立即写入规范化 Node 与 Validation 检查点。重试耗尽时
+`inference_state.json` 记录 `completed_episodes`、`failed_episode`、`error_type` 和
+`retryable`。前端将此状态显示为“可继续”，不会把已成功结果当作完全失败丢弃。
 
 ## Evidence 约束
 

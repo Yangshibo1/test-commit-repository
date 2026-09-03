@@ -24,7 +24,7 @@ interface SemanticWorkflowViewProps {
   workflow: SemanticWorkflow | null;
   loading: boolean;
   progress: SemanticProgress | null;
-  onGenerate: (rulesOnly: boolean) => Promise<void>;
+  onGenerate: (rulesOnly: boolean, resumeInference?: string | null) => Promise<void>;
   onWorkflowChange: (workflow: SemanticWorkflow) => void;
   onEvidence: (eventId: string) => void;
   onError: (message: string) => void;
@@ -104,6 +104,16 @@ export default function SemanticWorkflowView({
             </button>
           </div>
           {(loading || progress) && <SemanticProgressBar progress={progress} />}
+          {progress?.status === 'partial' && progress.retryable && progress.inference_id && (
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => void onGenerate(false, progress.inference_id)}
+              className="mt-4 px-5 py-2.5 rounded-full bg-accent text-white text-sm disabled:opacity-50"
+            >
+              从 Episode {progress.failed_episode || '失败位置'} 继续处理
+            </button>
+          )}
         </div>
       </div>
     );
@@ -147,8 +157,18 @@ export default function SemanticWorkflowView({
               规则重新生成
             </button>
           </div>
-          {(loading || progress?.status === 'running' || progress?.status === 'scheduled') && (
+          {(loading || ['running', 'scheduled', 'retrying', 'partial'].includes(progress?.status || '')) && (
             <SemanticProgressBar progress={progress} compact />
+          )}
+          {progress?.status === 'partial' && progress.retryable && progress.inference_id && (
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => void onGenerate(false, progress.inference_id)}
+              className="w-full mt-2 px-2 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-[10px] font-semibold disabled:opacity-40"
+            >
+              继续未完成分析
+            </button>
           )}
         </div>
         <div className="flex-1 overflow-auto">
@@ -549,6 +569,12 @@ function SemanticProgressBar({
       {!compact && progress?.current && progress?.total && (
         <div className="text-[10px] text-muted font-mono mt-1">
           Episode {progress.current}/{progress.total} · {progress.stage}
+        </div>
+      )}
+      {!compact && progress?.status === 'partial' && (
+        <div className="text-[10px] text-orange-700 mt-2">
+          已完成 {progress.completed_episode_count ?? 0}/{progress.total ?? '—'} 个 Episode；
+          当前结果已保存，可从检查点继续。
         </div>
       )}
     </div>

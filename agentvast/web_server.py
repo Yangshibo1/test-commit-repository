@@ -25,6 +25,7 @@ from agentvast.observer.trace_builder import (
     list_observer_sessions,
     load_observer_trace,
 )
+from agentvast.observer.store import session_directory
 from agentvast.workflow_store import WorkflowError, WorkflowStore
 
 
@@ -543,6 +544,7 @@ def create_app(
     class SemanticGenerateRequest(BaseModel):
         rules_only: bool = False
         force: bool = False
+        resume_inference: Optional[str] = None
 
     class SemanticReviewRequest(BaseModel):
         action: str
@@ -564,6 +566,47 @@ def create_app(
     review_tasks: Dict[str, asyncio.Task] = {}
     semantic_tasks: Dict[str, asyncio.Task] = {}
     semantic_progress: Dict[str, Dict[str, Any]] = {}
+
+    def persisted_semantic_progress(session_id: str) -> Optional[Dict[str, Any]]:
+        stages_root = session_directory(session_id) / "derived" / "semantic_stages"
+        if not stages_root.is_dir():
+            return None
+        state_paths = sorted(
+            stages_root.glob("semantic-*/inference_state.json"),
+            key=lambda path: path.stat().st_mtime,
+            reverse=True,
+        )
+        for state_path in state_paths:
+            try:
+                state = json.loads(state_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError, TypeError):
+                continue
+            if not isinstance(state, dict) or state.get("status") not in {
+                "partial",
+                "failed",
+                "running",
+                "retrying",
+            }:
+                continue
+            status = str(state.get("status"))
+            if status in {"running", "retrying"}:
+                # No task exists in this process, so a persisted running state
+                # means the previous process was interrupted and is resumable.
+                status = "partial"
+                state["retryable"] = True
+            return {
+                **state,
+                "session_id": session_id,
+                "status": status,
+                "current": state.get("current_episode"),
+                "total": state.get("episode_count"),
+                "message": (
+                    "发现可恢复的语义任务"
+                    if status == "partial"
+                    else "上次语义任务失败"
+                ),
+            }
+        return None
 
     def store_for_run(run_id: str) -> Tuple[WorkflowStore, Dict[str, Any]]:
         database_paths = []
@@ -714,6 +757,7 @@ def create_app(
                         session_id,
                         rules_only=request.rules_only,
                         force=request.force,
+                        resume_inference=request.resume_inference,
                         progress_callback=report_progress,
                     ),
                 )
@@ -728,11 +772,29 @@ def create_app(
                     }
                 )
             except Exception as error:
+                partial_state = getattr(error, "state", None)
+                if isinstance(partial_state, dict):
+                    semantic_progress[session_id].update(partial_state)
                 semantic_progress[session_id].update(
                     {
-                        "status": "failed",
-                        "message": "语义处理失败",
+                        "status": (
+                            "partial"
+                            if isinstance(partial_state, dict)
+                            and partial_state.get("retryable")
+                            else "failed"
+                        ),
+                        "message": (
+                            "语义处理已暂停，可从检查点继续"
+                            if isinstance(partial_state, dict)
+                            and partial_state.get("retryable")
+                            else "语义处理失败"
+                        ),
                         "error": str(error),
+                        "inference_id": (
+                            partial_state.get("inference_id")
+                            if isinstance(partial_state, dict)
+                            else semantic_progress[session_id].get("inference_id")
+                        ),
                     }
                 )
 
@@ -743,9 +805,13 @@ def create_app(
 
     @app.get("/api/observations/{session_id}/semantic/progress")
     async def observation_semantic_progress(session_id: str) -> Dict[str, Any]:
-        return semantic_progress.get(
-            session_id,
-            {
+        current = semantic_progress.get(session_id)
+        if current is not None:
+            return current
+        persisted = persisted_semantic_progress(session_id)
+        if persisted is not None:
+            return persisted
+        return {
                 "session_id": session_id,
                 "status": "idle",
                 "stage": "idle",
@@ -755,8 +821,7 @@ def create_app(
                 "total": None,
                 "error": None,
                 "inference_id": None,
-            },
-        )
+            }
 
     @app.post("/api/observations/{session_id}/semantic/reviews")
     async def review_observation_semantic_workflow(

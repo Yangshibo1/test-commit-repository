@@ -52,6 +52,11 @@ function ObserverPage() {
       } else {
         setSemanticWorkflow(null);
       }
+      const progressResponse = await fetch(`/api/observations/${encodeURIComponent(sessionId)}/semantic/progress`);
+      if (progressResponse.ok) {
+        const progress = await progressResponse.json() as SemanticProgress;
+        setSemanticProgress(progress.status === 'idle' ? null : progress);
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : '无法读取 Observation');
     } finally {
@@ -107,7 +112,10 @@ function ObserverPage() {
   const selectedEvent = trace?.events.find((event) => event.event_id === selectedEventId) || null;
   const graph = useMemo(() => buildGraph(trace, selectedEventId), [trace, selectedEventId]);
 
-  const generateSemantic = useCallback(async (rulesOnly: boolean) => {
+  const generateSemantic = useCallback(async (
+    rulesOnly: boolean,
+    resumeInference?: string | null,
+  ) => {
     if (!selectedSessionId) return;
     setLoading(true);
     setError(null);
@@ -115,7 +123,11 @@ function ObserverPage() {
       const response = await fetch(`/api/observations/${encodeURIComponent(selectedSessionId)}/semantic/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rules_only: rulesOnly, force: true }),
+        body: JSON.stringify({
+          rules_only: rulesOnly,
+          force: !resumeInference,
+          resume_inference: resumeInference || null,
+        }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.detail || `HTTP ${response.status}`);
@@ -135,6 +147,10 @@ function ObserverPage() {
         }
         if (progress.status === 'failed') {
           throw new Error(progress.error || '语义工作流生成失败');
+        }
+        if (progress.status === 'partial') {
+          setError(progress.error || '语义处理已暂停，可从检查点继续');
+          return;
         }
         await new Promise((resolve) => window.setTimeout(resolve, 750));
         const progressResponse = await fetch(`/api/observations/${encodeURIComponent(selectedSessionId)}/semantic/progress`);

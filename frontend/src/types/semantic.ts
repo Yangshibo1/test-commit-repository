@@ -129,7 +129,7 @@ export interface SemanticWorkflow {
 
 export interface SemanticProgress {
   session_id: string;
-  status: 'idle' | 'scheduled' | 'running' | 'ready' | 'failed';
+  status: 'idle' | 'scheduled' | 'running' | 'retrying' | 'partial' | 'ready' | 'failed';
   stage: string;
   percent: number;
   message: string;
@@ -137,4 +137,13 @@ export interface SemanticProgress {
   total?: number | null;
   error?: string | null;
   inference_id?: string | null;
+  retryable?: boolean;
+  completed_episode_count?: number;
+  failed_episode?: number | null;
+  last_retry?: {
+    attempt?: number;
+    max_attempts?: number;
+    delay_seconds?: number;
+    error_type?: string;
+  };
 }

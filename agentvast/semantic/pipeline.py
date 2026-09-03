@@ -34,7 +34,7 @@ from agentvast.semantic.prompts import (
     repair_prompt,
     segmentation_prompt,
 )
-from agentvast.semantic.provider import SemanticConfig, SemanticProvider
+from agentvast.semantic.provider import SemanticConfig, SemanticProvider, SemanticProviderError
 
 
 ALLOWED_RELATIONS = {"VALIDATES", "REFINES", "USES_RESULT_FROM", "RETRY_OF"}
@@ -42,6 +42,23 @@ ALLOWED_RELATIONS = {"VALIDATES", "REFINES", "USES_RESULT_FROM", "RETRY_OF"}
 
 class SemanticWorkflowError(RuntimeError):
     """Raised when a semantic workflow cannot be safely generated or loaded."""
+
+
+class SemanticWorkflowPartialError(SemanticWorkflowError):
+    """Raised when an inference checkpoint was saved and can be resumed."""
+
+    def __init__(self, message: str, state: Mapping[str, Any]):
+        self.state = dict(state)
+        self.inference_id = str(state.get("inference_id") or "")
+        self.retryable = bool(state.get("retryable"))
+        suffix = (
+            " Inference checkpoint: {0}; resume with --resume {0}.".format(
+                self.inference_id
+            )
+            if self.retryable and self.inference_id
+            else ""
+        )
+        super().__init__(message + suffix)
 
 
 ProgressCallback = Callable[[Dict[str, Any]], None]
@@ -86,6 +103,124 @@ def _write_json(path: Path, value: Any) -> None:
     temporary = path.with_name(path.name + ".tmp-" + uuid.uuid4().hex[:8])
     temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporary.replace(path)
+
+
+def _read_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _value_sha256(value: Any) -> str:
+    encoded = json.dumps(
+        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _write_inference_state(stage_root: Path, state: Dict[str, Any], **updates: Any) -> None:
+    state.update(updates)
+    state["updated_at"] = _utc_now()
+    _write_json(stage_root / "inference_state.json", state)
+
+
+def _load_resumable_stage(
+    stages_root: Path,
+    resume_inference: str,
+    compatibility: Mapping[str, Any],
+) -> Tuple[Path, Dict[str, Any]]:
+    if resume_inference != "auto":
+        if not re.fullmatch(r"semantic-[0-9a-f]{12}", resume_inference):
+            raise SemanticWorkflowError(
+                "Semantic inference ID must match semantic-<12 lowercase hex characters>"
+            )
+        candidates = [stages_root / resume_inference]
+    else:
+        candidates = sorted(
+            (path for path in stages_root.glob("semantic-*") if path.is_dir()),
+            key=lambda path: path.stat().st_mtime,
+            reverse=True,
+        )
+    for stage_root in candidates:
+        state_path = stage_root / "inference_state.json"
+        try:
+            state = (
+                _read_json(state_path)
+                if state_path.is_file()
+                else _migrate_legacy_inference_state(stage_root, compatibility)
+            )
+        except (OSError, ValueError, TypeError):
+            continue
+        if not isinstance(state, dict):
+            continue
+        if all(state.get(key) == value for key, value in compatibility.items()):
+            if state.get("status") in {"partial", "failed", "running", "retrying"}:
+                return stage_root, state
+    requested = "latest compatible partial inference" if resume_inference == "auto" else resume_inference
+    raise SemanticWorkflowError("No resumable semantic inference found: {0}".format(requested))
+
+
+def _migrate_legacy_inference_state(
+    stage_root: Path, compatibility: Mapping[str, Any]
+) -> Optional[Dict[str, Any]]:
+    """Create a checkpoint state for pre-resume semantic stage directories."""
+    candidate_path = stage_root / "candidate_blocks.json"
+    event_path = stage_root / "key_information_events.json"
+    boundary_request_path = stage_root / "boundary_request.json"
+    episodes_path = stage_root / "episodes.json"
+    if not all(
+        path.is_file()
+        for path in (candidate_path, event_path, boundary_request_path, episodes_path)
+    ):
+        return None
+    candidates = _read_json(candidate_path)
+    event_record = _read_json(event_path)
+    boundary_request = _read_json(boundary_request_path)
+    episodes = _read_json(episodes_path)
+    if not isinstance(candidates, list) or not isinstance(episodes, list):
+        return None
+    if _value_sha256(candidates) != compatibility.get("candidate_sha256"):
+        return None
+    if event_record.get("source_trace_sha256") != compatibility.get("source_trace_sha256"):
+        return None
+    if boundary_request.get("prompt_version") != compatibility.get("prompt_version"):
+        return None
+    completed: List[str] = []
+    annotation_root = stage_root / "annotations"
+    for index, episode in enumerate(episodes):
+        validation_path = annotation_root / "annotation-{0:03d}-validation.json".format(index + 1)
+        if not validation_path.is_file():
+            break
+        completed.append(str(episode.get("episode_id") or ""))
+    state = {
+        **compatibility,
+        "inference_id": stage_root.name,
+        "status": "partial",
+        "stage": "semantic_annotation",
+        "percent": 34 + int(46 * len(completed) / max(1, len(episodes))),
+        "episode_count": len(episodes),
+        "completed_episode_count": len(completed),
+        "completed_episodes": completed,
+        "failed_episode": len(completed) + 1 if len(completed) < len(episodes) else None,
+        "retryable": True,
+        "error": "Migrated from a semantic run created before checkpoint support",
+        "created_at": datetime.fromtimestamp(
+            stage_root.stat().st_mtime, timezone.utc
+        ).isoformat(),
+        "migrated_legacy_checkpoint": True,
+    }
+    for response_path in [
+        *sorted(annotation_root.glob("annotation-*-raw-response.json"), reverse=True),
+        stage_root / "boundary_raw_response.json",
+    ]:
+        if not response_path.is_file():
+            continue
+        response = _read_json(response_path)
+        meta = response.get("_semantic_provider_meta") if isinstance(response, dict) else None
+        mode = meta.get("response_mode") if isinstance(meta, dict) else None
+        if mode in {"json_schema", "json_object", "text"}:
+            state["response_mode"] = mode
+            break
+    _write_inference_state(stage_root, state)
+    return state
 
 
 def _preview(value: Any, limit: int = 1000) -> str:
@@ -1881,7 +2016,15 @@ def _provider_complete(
     prompt: str,
     stage: str,
     schema: Dict[str, Any],
+    retry_callback: Optional[ProgressCallback] = None,
 ) -> Dict[str, Any]:
+    if isinstance(provider, SemanticProvider):
+        return provider.complete(
+            prompt,
+            stage,
+            json_schema=schema,
+            retry_callback=retry_callback,
+        )
     return provider.complete(prompt, stage, json_schema=schema)
 
 
@@ -1890,10 +2033,13 @@ def run_semantic_workflow(
     root: Optional[str] = None,
     rules_only: bool = False,
     force: bool = False,
+    resume_inference: Optional[str] = None,
     provider: Optional[SemanticProvider] = None,
     progress_callback: Optional[ProgressCallback] = None,
 ) -> Dict[str, Any]:
     _emit_progress(progress_callback, "prepare", 2, "读取 Observer Trace")
+    if force and resume_inference:
+        raise SemanticWorkflowError("--force and --resume cannot be used together")
     directory = session_directory(session_id, root)
     trace_path = directory / "derived" / "observer_trace.json"
     if not trace_path.is_file():
@@ -1903,7 +2049,7 @@ def run_semantic_workflow(
     config = SemanticConfig.from_env()
     method = "rules" if rules_only else "model"
     current_path = directory / "derived" / "semantic_workflow.json"
-    if current_path.is_file() and not force:
+    if current_path.is_file() and not force and not resume_inference:
         try:
             current = json.loads(current_path.read_text(encoding="utf-8"))
             inference = current.get("inference_run") or {}
@@ -1947,21 +2093,106 @@ def run_semantic_workflow(
             )
         semantic_provider = SemanticProvider(config)
 
-    inference_id = "semantic-{0}".format(uuid.uuid4().hex[:12])
-    stage_root = directory / "derived" / "semantic_stages" / inference_id
-    stage_root.mkdir(parents=True, exist_ok=False)
-    _write_json(
-        stage_root / "key_information_events.json",
-        {
-            "schema_version": "semantic-events/0.1",
-            "source_trace_sha256": trace_sha,
-            "compaction_version": "key-information-events/0.1",
-            "source_event_count": len(trace.get("events") or []),
-            "event_count": len(key_events),
-            "events": key_events,
-        },
-    )
-    _write_json(stage_root / "candidate_blocks.json", candidates)
+    prompt_version = "semantic-prompts/0.3"
+    stages_root = directory / "derived" / "semantic_stages"
+    stages_root.mkdir(parents=True, exist_ok=True)
+    compatibility = {
+        "session_id": session_id,
+        "source_trace_sha256": trace_sha,
+        "method": method,
+        "processor_version": SEMANTIC_PROCESSOR_VERSION,
+        "prompt_version": prompt_version,
+        "candidate_sha256": _value_sha256(candidates),
+    }
+    if resume_inference:
+        stage_root, inference_state = _load_resumable_stage(
+            stages_root, resume_inference, compatibility
+        )
+        inference_id = stage_root.name
+        _write_inference_state(
+            stage_root,
+            inference_state,
+            status="running",
+            retryable=False,
+            error=None,
+        )
+        _emit_progress(
+            progress_callback,
+            "resume",
+            int(inference_state.get("percent") or 12),
+            "恢复语义任务 {0}".format(inference_id),
+            current=inference_state.get("completed_episode_count"),
+            total=inference_state.get("episode_count"),
+        )
+    else:
+        inference_id = "semantic-{0}".format(uuid.uuid4().hex[:12])
+        stage_root = stages_root / inference_id
+        stage_root.mkdir(parents=True, exist_ok=False)
+        inference_state = {
+            **compatibility,
+            "inference_id": inference_id,
+            "status": "running",
+            "stage": "candidate_blocks",
+            "percent": 12,
+            "episode_count": None,
+            "completed_episode_count": 0,
+            "completed_episodes": [],
+            "failed_episode": None,
+            "retryable": False,
+            "error": None,
+            "created_at": _utc_now(),
+        }
+        _write_inference_state(stage_root, inference_state)
+        _write_json(
+            stage_root / "key_information_events.json",
+            {
+                "schema_version": "semantic-events/0.1",
+                "source_trace_sha256": trace_sha,
+                "compaction_version": "key-information-events/0.1",
+                "source_event_count": len(trace.get("events") or []),
+                "event_count": len(key_events),
+                "events": key_events,
+            },
+        )
+        _write_json(stage_root / "candidate_blocks.json", candidates)
+
+    def retry_progress(event: Dict[str, Any]) -> None:
+        delay = event.get("delay_seconds")
+        attempt = event.get("attempt")
+        max_attempts = event.get("max_attempts")
+        message = "网络异常，{0} 秒后重试 {1}/{2}".format(delay, attempt, max_attempts)
+        _write_inference_state(
+            stage_root,
+            inference_state,
+            status="retrying",
+            retryable=True,
+            last_retry=event,
+            response_mode=event.get("response_mode")
+            or inference_state.get("response_mode"),
+        )
+        _emit_progress(
+            progress_callback,
+            "retrying",
+            int(inference_state.get("percent") or 0),
+            message,
+            current=inference_state.get("current_episode"),
+            total=inference_state.get("episode_count"),
+        )
+
+    if resume_inference and isinstance(semantic_provider, SemanticProvider):
+        semantic_provider.restore_response_mode(inference_state.get("response_mode"))
+
+    def remember_response_mode(value: Mapping[str, Any]) -> None:
+        meta = value.get("_semantic_provider_meta")
+        if not isinstance(meta, Mapping):
+            return
+        mode = meta.get("response_mode")
+        if mode in {"json_schema", "json_object", "text"}:
+            _write_inference_state(
+                stage_root,
+                inference_state,
+                response_mode=mode,
+            )
 
     _emit_progress(progress_callback, "boundaries", 16, "判断相邻候选块边界")
     boundary_candidates = [_boundary_candidate_view(candidate) for candidate in candidates]
@@ -1969,7 +2200,7 @@ def run_semantic_workflow(
     _write_json(
         stage_root / "boundary_request.json",
         {
-            "prompt_version": "semantic-prompts/0.3",
+            "prompt_version": prompt_version,
             "candidate_count": len(candidates),
             "candidate_view": boundary_candidates,
             "prompt": boundary_prompt,
@@ -1978,72 +2209,172 @@ def run_semantic_workflow(
     boundary_output: Optional[Dict[str, Any]] = None
     boundary_errors: List[Dict[str, Any]] = []
     boundary_fallback: Optional[str] = None
-    if semantic_provider is not None:
-        boundary_output = _provider_complete(
-            semantic_provider,
-            boundary_prompt,
-            "episode_boundaries",
-            BOUNDARY_SCHEMA,
+    validated_boundaries_path = stage_root / "validated_boundaries.json"
+    episodes_path = stage_root / "episodes.json"
+    if resume_inference and validated_boundaries_path.is_file() and episodes_path.is_file():
+        decisions = _read_json(validated_boundaries_path)
+        episodes = _read_json(episodes_path)
+        groups = []
+        _emit_progress(
+            progress_callback,
+            "boundaries",
+            30,
+            "复用已冻结的 {0} 个 Episode".format(len(episodes)),
         )
-        _write_json(stage_root / "boundary_raw_response.json", boundary_output)
-        boundary_errors = _boundary_validation_errors(candidates, boundary_output)
-        if boundary_errors:
-            repaired = _provider_complete(
-                semantic_provider,
-                repair_prompt(
-                    "BOUNDARY_CLASSIFICATION",
-                    boundary_prompt,
-                    boundary_output,
-                    boundary_errors,
-                    BOUNDARY_SCHEMA,
-                ),
-                "episode_boundaries_repair",
-                BOUNDARY_SCHEMA,
-            )
-            _write_json(stage_root / "boundary_repair_response.json", repaired)
-            repaired_errors = _boundary_validation_errors(candidates, repaired)
-            if repaired_errors:
-                boundary_errors.extend(repaired_errors)
-                boundary_fallback = "model_boundary_output_invalid_after_repair"
-                warnings.append(
-                    "Model boundary output remained invalid; uncertain boundaries defaulted to SPLIT"
-                )
-            else:
-                boundary_output = repaired
-                boundary_errors = []
     else:
-        boundary_fallback = "rules_only_candidate_boundaries"
-    decisions, groups = _effective_boundaries(
-        candidates,
-        boundary_output if not boundary_errors else None,
-        fallback_reason=boundary_fallback,
-    )
+        try:
+            if semantic_provider is not None:
+                boundary_output = _provider_complete(
+                    semantic_provider,
+                    boundary_prompt,
+                    "episode_boundaries",
+                    BOUNDARY_SCHEMA,
+                    retry_progress,
+                )
+                remember_response_mode(boundary_output)
+                _write_json(stage_root / "boundary_raw_response.json", boundary_output)
+                boundary_errors = _boundary_validation_errors(candidates, boundary_output)
+                if boundary_errors:
+                    repaired = _provider_complete(
+                        semantic_provider,
+                        repair_prompt(
+                            "BOUNDARY_CLASSIFICATION",
+                            boundary_prompt,
+                            boundary_output,
+                            boundary_errors,
+                            BOUNDARY_SCHEMA,
+                        ),
+                        "episode_boundaries_repair",
+                        BOUNDARY_SCHEMA,
+                        retry_progress,
+                    )
+                    remember_response_mode(repaired)
+                    _write_json(stage_root / "boundary_repair_response.json", repaired)
+                    repaired_errors = _boundary_validation_errors(candidates, repaired)
+                    if repaired_errors:
+                        boundary_errors.extend(repaired_errors)
+                        boundary_fallback = "model_boundary_output_invalid_after_repair"
+                        warnings.append(
+                            "Model boundary output remained invalid; uncertain boundaries defaulted to SPLIT"
+                        )
+                    else:
+                        boundary_output = repaired
+                        boundary_errors = []
+            else:
+                boundary_fallback = "rules_only_candidate_boundaries"
+        except SemanticProviderError as error:
+            _write_inference_state(
+                stage_root,
+                inference_state,
+                status="partial" if error.retryable else "failed",
+                stage="boundaries",
+                percent=16,
+                retryable=error.retryable,
+                error=str(error),
+                error_type=error.error_type,
+            )
+            raise SemanticWorkflowPartialError(str(error), inference_state) from error
+        decisions, groups = _effective_boundaries(
+            candidates,
+            boundary_output if not boundary_errors else None,
+            fallback_reason=boundary_fallback,
+        )
+        episodes = _materialize_episodes(session_id, candidates, groups, decisions)
     _emit_progress(
         progress_callback,
         "boundaries",
         30,
-        "边界冻结为 {0} 个 Episode".format(len(groups)),
+        "边界冻结为 {0} 个 Episode".format(len(episodes)),
     )
-    _write_json(
-        stage_root / "boundary_validation.json",
-        {
-            "valid": not boundary_errors,
-            "errors": boundary_errors,
-            "fallback": boundary_fallback,
-        },
-    )
+    boundary_validation_path = stage_root / "boundary_validation.json"
+    if not (resume_inference and boundary_validation_path.is_file()):
+        _write_json(
+            boundary_validation_path,
+            {
+                "valid": not boundary_errors,
+                "errors": boundary_errors,
+                "fallback": boundary_fallback,
+            },
+        )
     _write_json(stage_root / "validated_boundaries.json", decisions)
-    episodes = _materialize_episodes(session_id, candidates, groups, decisions)
     _write_json(stage_root / "episodes.json", episodes)
+    _write_inference_state(
+        stage_root,
+        inference_state,
+        status="running",
+        stage="semantic_annotation",
+        percent=30,
+        episode_count=len(episodes),
+        retryable=False,
+        error=None,
+    )
 
     if semantic_provider is not None:
         annotation_root = stage_root / "annotations"
-        annotation_root.mkdir()
+        annotation_root.mkdir(exist_ok=True)
         nodes = []
         annotation_results: List[Dict[str, Any]] = []
         all_annotation_errors: List[Dict[str, Any]] = []
         for index, episode in enumerate(episodes):
             annotation_percent = 34 + int(46 * index / max(1, len(episodes)))
+            prefix = "annotation-{0:03d}".format(index + 1)
+            validation_path = annotation_root / (prefix + "-validation.json")
+            node_path = annotation_root / (prefix + "-node.json")
+            if resume_inference and validation_path.is_file():
+                try:
+                    checkpoint_validation = _read_json(validation_path)
+                    checkpoint_node = _read_json(node_path) if node_path.is_file() else None
+                    if not isinstance(checkpoint_node, dict) and checkpoint_validation.get("valid"):
+                        response_path = annotation_root / (prefix + "-repair-response.json")
+                        if not response_path.is_file():
+                            response_path = annotation_root / (prefix + "-raw-response.json")
+                        checkpoint_output = _read_json(response_path)
+                        if not _annotation_validation_errors([episode], checkpoint_output):
+                            checkpoint_node = _model_nodes(
+                                session_id, trace, [episode], checkpoint_output
+                            )[0]
+                    if isinstance(checkpoint_node, dict):
+                        checkpoint_node["sequence"] = index + 1
+                        nodes.append(checkpoint_node)
+                        annotation_results.append(checkpoint_validation)
+                        if not checkpoint_validation.get("valid"):
+                            all_annotation_errors.extend(
+                                {
+                                    **error,
+                                    "episode_id": episode["episode_id"],
+                                }
+                                for error in checkpoint_validation.get("errors") or []
+                                if isinstance(error, dict)
+                            )
+                        completed = list(inference_state.get("completed_episodes") or [])
+                        if episode["episode_id"] not in completed:
+                            completed.append(episode["episode_id"])
+                        _write_inference_state(
+                            stage_root,
+                            inference_state,
+                            status="running",
+                            stage="semantic_annotation",
+                            percent=annotation_percent,
+                            current_episode=index + 1,
+                            completed_episode_count=len(completed),
+                            completed_episodes=completed,
+                            failed_episode=None,
+                            retryable=False,
+                            error=None,
+                        )
+                        _emit_progress(
+                            progress_callback,
+                            "semantic_annotation",
+                            annotation_percent,
+                            "复用 Episode {0}/{1} 的检查点".format(
+                                index + 1, len(episodes)
+                            ),
+                            current=index + 1,
+                            total=len(episodes),
+                        )
+                        continue
+                except (OSError, ValueError, TypeError, KeyError):
+                    pass
             _emit_progress(
                 progress_callback,
                 "semantic_annotation",
@@ -2052,15 +2383,25 @@ def run_semantic_workflow(
                 current=index + 1,
                 total=len(episodes),
             )
+            _write_inference_state(
+                stage_root,
+                inference_state,
+                status="running",
+                stage="semantic_annotation",
+                percent=annotation_percent,
+                current_episode=index + 1,
+                failed_episode=None,
+                retryable=False,
+                error=None,
+            )
             task_context, evidence_packet, neighbor_context = _episode_evidence_packet(
                 trace, episodes, index, key_events
             )
             semantic_prompt = annotation_prompt(task_context, evidence_packet, neighbor_context)
-            prefix = "annotation-{0:03d}".format(index + 1)
             _write_json(
                 annotation_root / (prefix + "-request.json"),
                 {
-                    "prompt_version": "semantic-prompts/0.3",
+                    "prompt_version": prompt_version,
                     "episode_id": episode["episode_id"],
                     "task_context": task_context,
                     "episode_evidence": evidence_packet,
@@ -2068,12 +2409,30 @@ def run_semantic_workflow(
                     "prompt": semantic_prompt,
                 },
             )
-            annotation_output = _provider_complete(
-                semantic_provider,
-                semantic_prompt,
-                "semantic_annotation_{0:03d}".format(index + 1),
-                ANNOTATION_SCHEMA,
-            )
+            try:
+                annotation_output = _provider_complete(
+                    semantic_provider,
+                    semantic_prompt,
+                    "semantic_annotation_{0:03d}".format(index + 1),
+                    ANNOTATION_SCHEMA,
+                    retry_progress,
+                )
+                remember_response_mode(annotation_output)
+            except SemanticProviderError as error:
+                partial_status = "partial" if error.retryable else "failed"
+                _write_inference_state(
+                    stage_root,
+                    inference_state,
+                    status=partial_status,
+                    stage="semantic_annotation",
+                    percent=annotation_percent,
+                    current_episode=index + 1,
+                    failed_episode=index + 1,
+                    retryable=error.retryable,
+                    error=str(error),
+                    error_type=error.error_type,
+                )
+                raise SemanticWorkflowPartialError(str(error), inference_state) from error
             _write_json(
                 annotation_root / (prefix + "-raw-response.json"),
                 annotation_output,
@@ -2081,18 +2440,35 @@ def run_semantic_workflow(
             annotation_errors = _annotation_validation_errors([episode], annotation_output)
             repaired = False
             if annotation_errors:
-                repaired_annotation = _provider_complete(
-                    semantic_provider,
-                    repair_prompt(
-                        "SEMANTIC_ANNOTATION",
-                        semantic_prompt,
-                        annotation_output,
-                        annotation_errors,
+                try:
+                    repaired_annotation = _provider_complete(
+                        semantic_provider,
+                        repair_prompt(
+                            "SEMANTIC_ANNOTATION",
+                            semantic_prompt,
+                            annotation_output,
+                            annotation_errors,
+                            ANNOTATION_SCHEMA,
+                        ),
+                        "semantic_annotation_{0:03d}_repair".format(index + 1),
                         ANNOTATION_SCHEMA,
-                    ),
-                    "semantic_annotation_{0:03d}_repair".format(index + 1),
-                    ANNOTATION_SCHEMA,
-                )
+                        retry_progress,
+                    )
+                    remember_response_mode(repaired_annotation)
+                except SemanticProviderError as error:
+                    _write_inference_state(
+                        stage_root,
+                        inference_state,
+                        status="partial" if error.retryable else "failed",
+                        stage="semantic_annotation_repair",
+                        percent=annotation_percent,
+                        current_episode=index + 1,
+                        failed_episode=index + 1,
+                        retryable=error.retryable,
+                        error=str(error),
+                        error_type=error.error_type,
+                    )
+                    raise SemanticWorkflowPartialError(str(error), inference_state) from error
                 _write_json(
                     annotation_root / (prefix + "-repair-response.json"),
                     repaired_annotation,
@@ -2118,6 +2494,7 @@ def run_semantic_workflow(
                 episode_nodes = _model_nodes(session_id, trace, [episode], annotation_output)
             episode_nodes[0]["sequence"] = index + 1
             nodes.extend(episode_nodes)
+            _write_json(node_path, episode_nodes[0])
             validation_record = {
                 "episode_id": episode["episode_id"],
                 "valid": not annotation_errors,
@@ -2128,6 +2505,21 @@ def run_semantic_workflow(
             _write_json(
                 annotation_root / (prefix + "-validation.json"),
                 validation_record,
+            )
+            completed = list(inference_state.get("completed_episodes") or [])
+            if episode["episode_id"] not in completed:
+                completed.append(episode["episode_id"])
+            _write_inference_state(
+                stage_root,
+                inference_state,
+                status="running",
+                stage="semantic_annotation",
+                percent=annotation_percent,
+                completed_episode_count=len(completed),
+                completed_episodes=completed,
+                failed_episode=None,
+                retryable=False,
+                error=None,
             )
         _emit_progress(
             progress_callback,
@@ -2161,6 +2553,19 @@ def run_semantic_workflow(
             total=len(episodes),
         )
     _write_json(stage_root / "semantic_nodes.json", nodes)
+    _write_inference_state(
+        stage_root,
+        inference_state,
+        status="running",
+        stage="relations",
+        percent=86,
+        completed_episode_count=len(episodes),
+        completed_episodes=[episode["episode_id"] for episode in episodes],
+        current_episode=None,
+        failed_episode=None,
+        retryable=False,
+        error=None,
+    )
 
     model_relations: Optional[Mapping[str, Any]] = None
     relation_errors: List[Dict[str, Any]] = []
@@ -2171,29 +2576,63 @@ def run_semantic_workflow(
         semantic_relation_prompt = relation_prompt(nodes)
         _write_json(
             stage_root / "relation_request.json",
-            {"prompt_version": "semantic-prompts/0.3", "prompt": semantic_relation_prompt},
+            {"prompt_version": prompt_version, "prompt": semantic_relation_prompt},
         )
-        relation_output = _provider_complete(
-            semantic_provider,
-            semantic_relation_prompt,
-            "semantic_relations",
-            RELATION_SCHEMA,
-        )
-        _write_json(stage_root / "relation_raw_response.json", relation_output)
+        relation_response_path = stage_root / "relation_raw_response.json"
+        if resume_inference and relation_response_path.is_file():
+            relation_output = _read_json(relation_response_path)
+        else:
+            try:
+                relation_output = _provider_complete(
+                    semantic_provider,
+                    semantic_relation_prompt,
+                    "semantic_relations",
+                    RELATION_SCHEMA,
+                    retry_progress,
+                )
+                remember_response_mode(relation_output)
+            except SemanticProviderError as error:
+                _write_inference_state(
+                    stage_root,
+                    inference_state,
+                    status="partial" if error.retryable else "failed",
+                    stage="relations",
+                    percent=86,
+                    retryable=error.retryable,
+                    error=str(error),
+                    error_type=error.error_type,
+                )
+                raise SemanticWorkflowPartialError(str(error), inference_state) from error
+            _write_json(relation_response_path, relation_output)
         relation_errors = _relation_validation_errors(nodes, relation_output)
         if relation_errors:
-            repaired_relations = _provider_complete(
-                semantic_provider,
-                repair_prompt(
-                    "SEMANTIC_RELATIONS",
-                    semantic_relation_prompt,
-                    relation_output,
-                    relation_errors,
+            try:
+                repaired_relations = _provider_complete(
+                    semantic_provider,
+                    repair_prompt(
+                        "SEMANTIC_RELATIONS",
+                        semantic_relation_prompt,
+                        relation_output,
+                        relation_errors,
+                        RELATION_SCHEMA,
+                    ),
+                    "semantic_relations_repair",
                     RELATION_SCHEMA,
-                ),
-                "semantic_relations_repair",
-                RELATION_SCHEMA,
-            )
+                    retry_progress,
+                )
+                remember_response_mode(repaired_relations)
+            except SemanticProviderError as error:
+                _write_inference_state(
+                    stage_root,
+                    inference_state,
+                    status="partial" if error.retryable else "failed",
+                    stage="relation_repair",
+                    percent=88,
+                    retryable=error.retryable,
+                    error=str(error),
+                    error_type=error.error_type,
+                )
+                raise SemanticWorkflowPartialError(str(error), inference_state) from error
             _write_json(stage_root / "relation_repair_response.json", repaired_relations)
             repaired_errors = _relation_validation_errors(nodes, repaired_relations)
             if repaired_errors:
@@ -2232,7 +2671,7 @@ def run_semantic_workflow(
             "method": method,
             "model": configured_model if semantic_provider is not None else None,
             "processor_version": SEMANTIC_PROCESSOR_VERSION,
-            "prompt_version": "semantic-prompts/0.3",
+            "prompt_version": prompt_version,
             "generated_at": _utc_now(),
             "candidate_count": len(candidates),
             "stage_path": "derived/semantic_stages/{0}/".format(inference_id),
@@ -2274,6 +2713,16 @@ def run_semantic_workflow(
             }
         },
         root,
+    )
+    _write_inference_state(
+        stage_root,
+        inference_state,
+        status="completed",
+        stage="complete",
+        percent=100,
+        retryable=False,
+        error=None,
+        completed_at=_utc_now(),
     )
     _emit_progress(progress_callback, "complete", 100, "Semantic Workflow 已生成")
     return workflow
