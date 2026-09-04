@@ -77,6 +77,7 @@ export interface SemanticWorkflow {
     generated_at: string;
     candidate_count?: number;
     stage_path?: string;
+    annotation_guidance?: string;
     warnings: string[];
   };
   boundary_decisions?: Array<{
@@ -138,6 +139,7 @@ export interface SemanticProgress {
   total?: number | null;
   error?: string | null;
   inference_id?: string | null;
+  annotation_guidance?: string;
   retryable?: boolean;
   completed_episode_count?: number;
   failed_episode?: number | null;

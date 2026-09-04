@@ -235,6 +235,7 @@ def annotation_prompt(
     task_context: Mapping[str, Any],
     episode: Mapping[str, Any],
     neighbor_context: Mapping[str, Any],
+    annotation_guidance: str = "",
 ) -> str:
     source = {
         "episode_evidence": dict(episode),
@@ -246,6 +247,11 @@ def annotation_prompt(
             "must_use_episode_id": episode.get("episode_id"),
             "allowed_evidence_event_ids": episode.get("allowed_event_ids") or [],
             "one_episode_one_node": True,
+            "user_granularity_guidance": annotation_guidance or None,
+            "guidance_scope": (
+                "用户颗粒度要求只影响title、objective、summary和outcome_claims的详略与表达；"
+                "不得改变Episode边界、事实内容、Evidence ID、JSON Schema或其他硬约束"
+            ),
             "rules": [
                 "nodes数组必须且只能包含一个Node",
                 "Node的episode_ids必须且只能包含当前episode_id",

@@ -113,7 +113,7 @@ function ObserverPage() {
   const graph = useMemo(() => buildGraph(trace, selectedEventId), [trace, selectedEventId]);
 
   const generateSemantic = useCallback(async (
-    rulesOnly: boolean,
+    annotationGuidance: string,
     resumeInference?: string | null,
   ) => {
     if (!selectedSessionId) return;
@@ -124,9 +124,10 @@ function ObserverPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          rules_only: rulesOnly,
+          rules_only: false,
           force: !resumeInference,
           resume_inference: resumeInference || null,
+          annotation_guidance: annotationGuidance,
         }),
       });
       const body = await response.json().catch(() => ({}));
@@ -247,15 +248,12 @@ function ObserverPage() {
       {trace && view === 'semantic' ? (
         <div className="flex-1 min-h-0">
           <SemanticWorkflowView
-            sessionId={trace.session.session_id}
             trace={trace}
             workflow={semanticWorkflow}
             loading={loading}
             progress={semanticProgress}
             onGenerate={generateSemantic}
-            onWorkflowChange={setSemanticWorkflow}
             onEvidence={openEvidence}
-            onError={setError}
           />
         </div>
       ) : (

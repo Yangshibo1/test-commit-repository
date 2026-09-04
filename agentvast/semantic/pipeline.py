@@ -2063,12 +2063,16 @@ def run_semantic_workflow(
     rules_only: bool = False,
     force: bool = False,
     resume_inference: Optional[str] = None,
+    annotation_guidance: str = "",
     provider: Optional[SemanticProvider] = None,
     progress_callback: Optional[ProgressCallback] = None,
 ) -> Dict[str, Any]:
     _emit_progress(progress_callback, "prepare", 2, "读取 Observer Trace")
     if force and resume_inference:
         raise SemanticWorkflowError("--force and --resume cannot be used together")
+    annotation_guidance = " ".join(str(annotation_guidance or "").split())
+    if len(annotation_guidance) > 1000:
+        raise SemanticWorkflowError("annotation guidance must not exceed 1000 characters")
     directory = session_directory(session_id, root)
     trace_path = directory / "derived" / "observer_trace.json"
     if not trace_path.is_file():
@@ -2122,7 +2126,7 @@ def run_semantic_workflow(
             )
         semantic_provider = SemanticProvider(config)
 
-    prompt_version = "semantic-prompts/0.4"
+    prompt_version = "semantic-prompts/0.5"
     stages_root = directory / "derived" / "semantic_stages"
     stages_root.mkdir(parents=True, exist_ok=True)
     compatibility = {
@@ -2132,6 +2136,9 @@ def run_semantic_workflow(
         "processor_version": SEMANTIC_PROCESSOR_VERSION,
         "prompt_version": prompt_version,
         "candidate_sha256": _value_sha256(candidates),
+        "annotation_guidance_sha256": hashlib.sha256(
+            annotation_guidance.encode("utf-8")
+        ).hexdigest(),
     }
     if resume_inference:
         stage_root, inference_state = _load_resumable_stage(
@@ -2170,6 +2177,7 @@ def run_semantic_workflow(
             "retryable": False,
             "error": None,
             "created_at": _utc_now(),
+            "annotation_guidance": annotation_guidance,
         }
         _write_inference_state(stage_root, inference_state)
         _write_json(
@@ -2426,7 +2434,12 @@ def run_semantic_workflow(
             task_context, evidence_packet, neighbor_context = _episode_evidence_packet(
                 trace, episodes, index, key_events
             )
-            semantic_prompt = annotation_prompt(task_context, evidence_packet, neighbor_context)
+            semantic_prompt = annotation_prompt(
+                task_context,
+                evidence_packet,
+                neighbor_context,
+                annotation_guidance,
+            )
             _write_json(
                 annotation_root / (prefix + "-request.json"),
                 {
@@ -2435,6 +2448,7 @@ def run_semantic_workflow(
                     "task_context": task_context,
                     "episode_evidence": evidence_packet,
                     "neighbor_context": neighbor_context,
+                    "annotation_guidance": annotation_guidance,
                     "prompt": semantic_prompt,
                 },
             )
@@ -2705,6 +2719,7 @@ def run_semantic_workflow(
             "candidate_count": len(candidates),
             "stage_path": "derived/semantic_stages/{0}/".format(inference_id),
             "warnings": warnings,
+            "annotation_guidance": annotation_guidance,
         },
         "boundary_decisions": decisions,
         "episodes": episodes,

@@ -49,6 +49,17 @@ $env:AGENTVAST_SEMANTIC_MODEL = "model-name"
 python -m agentvast.cli observe semantic <session-id> --force
 ```
 
+模型生成可以接收一段可审计的 Node 颗粒度要求：
+
+```powershell
+python -m agentvast.cli observe semantic <session-id> --force `
+  --annotation-guidance "每个Node保留一个核心目标、两句行为摘要和最多三条关键结果；保留数字与限制。"
+```
+
+这段提示只进入逐 Episode Annotation，不进入 Boundary 判断，因此不能改变 Episode 数量、顺序、
+证据 ID 或 JSON Schema。原文和 SHA-256 会写入 inference 状态与最终工作流；恢复同一 inference
+时必须使用相同提示。前端语义工作流页面提供同名输入框，并只保留模型生成入口。
+
 如果网络或上游网关在某个 Episode 中断，任务会保存为 `partial`。恢复最新兼容任务：
 
 ```powershell

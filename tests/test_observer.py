@@ -42,6 +42,7 @@ from agentvast.semantic.provider import (
     SemanticProvider,
     SemanticProviderError,
 )
+from agentvast.semantic.prompts import annotation_prompt
 from agentvast.semantic.review import record_semantic_review
 
 
@@ -404,6 +405,7 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
         session_id,
         str(root),
         force=True,
+        annotation_guidance="每个Node最多保留三条关键结果，并保留数字。",
         provider=FakeSemanticProvider(),
         progress_callback=progress_events.append,
     )
@@ -420,6 +422,19 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
     )
     assert (stage_root / "boundary_repair_response.json").is_file()
     assert len(list((stage_root / "annotations").glob("*-request.json"))) == len(candidates)
+    inference_state = json.loads(
+        (stage_root / "inference_state.json").read_text(encoding="utf-8")
+    )
+    first_request = json.loads(
+        (stage_root / "annotations" / "annotation-001-request.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert inference_state["annotation_guidance"] == "每个Node最多保留三条关键结果，并保留数字。"
+    assert first_request["annotation_guidance"] == inference_state["annotation_guidance"]
+    assert model_semantic["inference_run"]["annotation_guidance"] == inference_state[
+        "annotation_guidance"
+    ]
     assert progress_events[-1]["percent"] == 100
     assert sum(
         event["stage"] == "semantic_annotation" and event.get("current")
@@ -480,7 +495,7 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
 
     revalidated = revalidate_semantic_workflow(session_id, str(root))
     assert revalidated["validation"]["valid"] is True
-    assert revalidated["inference_run"]["processor_version"] == "0.4.0"
+    assert revalidated["inference_run"]["processor_version"] == "0.5.0"
 
     semantic = run_semantic_workflow(session_id, str(root), rules_only=True)
     assert semantic["validation"]["valid"] is True
@@ -908,6 +923,19 @@ def test_semantic_system_prompt_defines_log_analysis_safety_boundary():
     assert "不要调用工具" in SYSTEM_PROMPT
     assert "Evidence Event ID" in SYSTEM_PROMPT
     assert "不要输出 chain-of-thought" in SYSTEM_PROMPT
+
+
+def test_annotation_guidance_is_scoped_to_semantic_granularity():
+    prompt = annotation_prompt(
+        {"original_user_prompt": {"text": "分析数据"}},
+        {"episode_id": "episode-1", "allowed_event_ids": ["event-1"]},
+        {},
+        "每个节点只保留两条关键结果，并保留数字。",
+    )
+
+    assert "每个节点只保留两条关键结果，并保留数字" in prompt
+    assert "不得改变Episode边界" in prompt
+    assert "Evidence ID" in prompt
 
 
 def test_legacy_semantic_workflow_is_adapted_without_rewriting_history():

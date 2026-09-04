@@ -545,6 +545,7 @@ def create_app(
         rules_only: bool = False
         force: bool = False
         resume_inference: Optional[str] = None
+        annotation_guidance: str = ""
 
     class SemanticReviewRequest(BaseModel):
         action: str
@@ -741,6 +742,7 @@ def create_app(
             "total": None,
             "error": None,
             "inference_id": None,
+            "annotation_guidance": request.annotation_guidance,
         }
 
         def report_progress(event: Dict[str, Any]) -> None:
@@ -758,6 +760,7 @@ def create_app(
                         rules_only=request.rules_only,
                         force=request.force,
                         resume_inference=request.resume_inference,
+                        annotation_guidance=request.annotation_guidance,
                         progress_callback=report_progress,
                     ),
                 )

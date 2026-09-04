@@ -4,45 +4,25 @@ import dagre from 'dagre';
 import { ObserverTrace } from '../types/observer';
 import { SemanticNode, SemanticProgress, SemanticWorkflow } from '../types/semantic';
 
-const ACTIVITIES = [
-  'Task Understanding',
-  'Data Understanding',
-  'Data Preparation',
-  'Exploration',
-  'Analysis',
-  'Visualization',
-  'Validation',
-  'Refinement',
-  'Synthesis',
-  'Communication',
-  'Uncertain',
-];
-
 interface SemanticWorkflowViewProps {
-  sessionId: string;
   trace: ObserverTrace;
   workflow: SemanticWorkflow | null;
   loading: boolean;
   progress: SemanticProgress | null;
-  onGenerate: (rulesOnly: boolean, resumeInference?: string | null) => Promise<void>;
-  onWorkflowChange: (workflow: SemanticWorkflow) => void;
+  onGenerate: (annotationGuidance: string, resumeInference?: string | null) => Promise<void>;
   onEvidence: (eventId: string) => void;
-  onError: (message: string) => void;
 }
 
 export default function SemanticWorkflowView({
-  sessionId,
   trace,
   workflow,
   loading,
   progress,
   onGenerate,
-  onWorkflowChange,
   onEvidence,
-  onError,
 }: SemanticWorkflowViewProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [mergeNodeIds, setMergeNodeIds] = useState<string[]>([]);
+  const [annotationGuidance, setAnnotationGuidance] = useState('保持阶段级摘要：标题简短，目标一到两句，行为摘要两到三句，结果保留关键数字与限制。');
 
   useEffect(() => {
     setSelectedNodeId((current) => (
@@ -50,31 +30,24 @@ export default function SemanticWorkflowView({
         ? current
         : workflow?.semantic_nodes[0]?.node_id || null
     ));
-    setMergeNodeIds((current) => current.filter((nodeId) => (
-      workflow?.semantic_nodes.some((node) => node.node_id === nodeId)
-    )));
   }, [workflow?.inference_run.inference_id, workflow?.review.review_event_count]);
+
+  useEffect(() => {
+    const savedGuidance = progress?.annotation_guidance
+      || workflow?.inference_run.annotation_guidance;
+    if (savedGuidance) setAnnotationGuidance(savedGuidance);
+  }, [
+    progress?.inference_id,
+    progress?.annotation_guidance,
+    workflow?.inference_run.inference_id,
+    workflow?.inference_run.annotation_guidance,
+  ]);
 
   const selectedNode = workflow?.semantic_nodes.find((node) => node.node_id === selectedNodeId) || null;
   const graph = useMemo(
     () => buildSemanticGraph(workflow, selectedNodeId),
     [workflow, selectedNodeId],
   );
-
-  async function submitReview(action: string, payload: Record<string, unknown>) {
-    try {
-      const response = await fetch(`/api/observations/${encodeURIComponent(sessionId)}/semantic/reviews`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body.detail || `HTTP ${response.status}`);
-      onWorkflowChange(body.workflow as SemanticWorkflow);
-    } catch (reviewError) {
-      onError(reviewError instanceof Error ? reviewError.message : '人工校正失败');
-    }
-  }
 
   if (!workflow) {
     return (
@@ -83,24 +56,28 @@ export default function SemanticWorkflowView({
           <div className="text-accent font-mono text-xs uppercase">Semantic Workflow</div>
           <h2 className="font-serif text-3xl mt-3">尚未生成语义工作流</h2>
           <p className="text-muted text-sm leading-6 mt-3">
-            模型模式会执行 Episode 边界调整、语义标注、关系提取和证据验证；规则模式不需要外部 API，适合先检查页面与证据映射。
+            模型会执行 Episode 边界判断、逐阶段语义总结、关系提取和证据验证。你可以用下方提示词控制 Node 总结的详略程度。
           </p>
-          <div className="flex items-center justify-center gap-3 mt-6">
+          <label className="block text-left text-xs text-muted mt-6">
+            Node 总结颗粒度要求
+            <textarea
+              value={annotationGuidance}
+              onChange={(event) => setAnnotationGuidance(event.target.value)}
+              maxLength={1000}
+              rows={4}
+              placeholder="例如：每个 Node 只保留一个核心目标、两句行为摘要和最多三条关键结果；保留数字和限制。"
+              className="w-full mt-2 px-3 py-2 rounded-xl border border-line bg-white text-ink text-sm resize-none"
+            />
+            <span className="block mt-1">仅控制语义表述详略，不改变 Episode 边界和证据约束。</span>
+          </label>
+          <div className="flex items-center justify-center mt-4">
             <button
               type="button"
               disabled={loading}
-              onClick={() => void onGenerate(false)}
+              onClick={() => void onGenerate(annotationGuidance)}
               className="px-5 py-2.5 rounded-full bg-accent text-white text-sm disabled:opacity-50"
             >
               使用语义模型生成
-            </button>
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => void onGenerate(true)}
-              className="px-5 py-2.5 rounded-full border border-line-strong bg-white text-sm disabled:opacity-50"
-            >
-              生成保守规则版
             </button>
           </div>
           {(loading || progress) && <SemanticProgressBar progress={progress} />}
@@ -108,7 +85,7 @@ export default function SemanticWorkflowView({
             <button
               type="button"
               disabled={loading}
-              onClick={() => void onGenerate(false, progress.inference_id)}
+              onClick={() => void onGenerate(annotationGuidance, progress.inference_id)}
               className="mt-4 px-5 py-2.5 rounded-full bg-accent text-white text-sm disabled:opacity-50"
             >
               从 Episode {progress.failed_episode || '失败位置'} 继续处理
@@ -127,24 +104,26 @@ export default function SemanticWorkflowView({
             <span className="ot-section-title">语义节点 · {workflow.semantic_nodes.length}</span>
           </div>
           <div className="ot-meta text-muted mt-1">
-            {workflow.inference_run.method} · {workflow.inference_run.candidate_count ?? '—'} candidates · {workflow.review.review_event_count} 次人工校正
+            {workflow.inference_run.method} · {workflow.inference_run.candidate_count ?? '—'} candidates
           </div>
-          <div className="grid grid-cols-2 gap-2 mt-2">
+          <label className="block text-[10px] text-muted mt-3">
+            Node 总结颗粒度要求
+            <textarea
+              value={annotationGuidance}
+              onChange={(event) => setAnnotationGuidance(event.target.value)}
+              maxLength={1000}
+              rows={3}
+              className="w-full mt-1 px-2.5 py-2 rounded-lg border border-line bg-white text-ink text-xs resize-none"
+            />
+          </label>
+          <div className="mt-2">
             <button
               type="button"
               disabled={loading}
-              onClick={() => void onGenerate(false)}
-              className="px-2 py-1.5 rounded-lg bg-accent text-white text-[10px] disabled:opacity-40"
+              onClick={() => void onGenerate(annotationGuidance)}
+              className="w-full px-2 py-1.5 rounded-lg bg-accent text-white text-[10px] disabled:opacity-40"
             >
               模型重新生成
-            </button>
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => void onGenerate(true)}
-              className="px-2 py-1.5 rounded-lg border border-line bg-white text-[10px] disabled:opacity-40"
-            >
-              规则重新生成
             </button>
           </div>
           {(loading || ['running', 'scheduled', 'retrying', 'partial'].includes(progress?.status || '')) && (
@@ -154,7 +133,7 @@ export default function SemanticWorkflowView({
             <button
               type="button"
               disabled={loading}
-              onClick={() => void onGenerate(false, progress.inference_id)}
+              onClick={() => void onGenerate(annotationGuidance, progress.inference_id)}
               className="w-full mt-2 px-2 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-[10px] font-semibold disabled:opacity-40"
             >
               继续未完成分析
@@ -168,17 +147,6 @@ export default function SemanticWorkflowView({
               className={`border-b border-line p-3 ${selectedNodeId === node.node_id ? 'bg-orange-50' : 'hover:bg-white'}`}
             >
               <div className="flex items-start gap-2">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={mergeNodeIds.includes(node.node_id)}
-                  onChange={(event) => setMergeNodeIds((current) => (
-                    event.target.checked
-                      ? [...current, node.node_id]
-                      : current.filter((nodeId) => nodeId !== node.node_id)
-                  ))}
-                  title="选择连续节点进行合并"
-                />
                 <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setSelectedNodeId(node.node_id)}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono text-[10px] text-accent">NODE {node.sequence}</span>
@@ -195,16 +163,6 @@ export default function SemanticWorkflowView({
               </div>
             </div>
           ))}
-        </div>
-        <div className="p-3 border-t border-line bg-white/70">
-          <button
-            type="button"
-            disabled={mergeNodeIds.length < 2}
-            onClick={() => void submitReview('merge', { node_ids: orderedSelection(workflow, mergeNodeIds) })}
-            className="w-full px-3 py-2 rounded-xl border border-line-strong bg-white text-xs disabled:opacity-40"
-          >
-            合并所选连续节点（{mergeNodeIds.length}）
-          </button>
         </div>
       </aside>
 
@@ -242,9 +200,6 @@ export default function SemanticWorkflowView({
             node={selectedNode}
             trace={trace}
             workflow={workflow}
-            onAccept={() => void submitReview('accept', { node_id: selectedNode.node_id })}
-            onUpdate={(payload) => void submitReview('update', { node_id: selectedNode.node_id, ...payload })}
-            onSplit={(groups) => void submitReview('split', { node_id: selectedNode.node_id, groups })}
             onEvidence={onEvidence}
           />
         ) : (
@@ -259,33 +214,13 @@ function SemanticNodeInspector({
   node,
   trace,
   workflow,
-  onAccept,
-  onUpdate,
-  onSplit,
   onEvidence,
 }: {
   node: SemanticNode;
   trace: ObserverTrace;
   workflow: SemanticWorkflow;
-  onAccept: () => void;
-  onUpdate: (payload: Record<string, unknown>) => void;
-  onSplit: (groups: Array<Record<string, unknown>>) => void;
   onEvidence: (eventId: string) => void;
 }) {
-  const [activity, setActivity] = useState(node.primary_activity);
-  const [title, setTitle] = useState(node.title);
-  const [objective, setObjective] = useState(node.objective.value);
-  const [summary, setSummary] = useState(node.summary.value);
-  const [splitAfter, setSplitAfter] = useState(1);
-
-  useEffect(() => {
-    setActivity(node.primary_activity);
-    setTitle(node.title);
-    setObjective(node.objective.value);
-    setSummary(node.summary.value);
-    setSplitAfter(1);
-  }, [node.node_id, node.review_status]);
-
   const evidence = node.event_ids
     .map((eventId) => trace.events.find((event) => event.event_id === eventId))
     .filter((event): event is NonNullable<typeof event> => Boolean(event));
@@ -307,27 +242,6 @@ function SemanticNodeInspector({
   const resources = node.observed_inputs
     .map((item) => String(item.value || ''))
     .filter(Boolean);
-
-  function splitGroups() {
-    const left = node.episode_ids.slice(0, splitAfter);
-    const right = node.episode_ids.slice(splitAfter);
-    onSplit([
-      {
-        episode_ids: left,
-        title: `${title}（前段）`,
-        primary_activity: activity,
-        objective: `${objective}（前段）`,
-        summary: `${summary}（前段）`,
-      },
-      {
-        episode_ids: right,
-        title: `${title}（后段）`,
-        primary_activity: activity,
-        objective: `${objective}（后段）`,
-        summary: `${summary}（后段）`,
-      },
-    ]);
-  }
 
   return (
     <div className="h-full flex flex-col">
@@ -386,42 +300,6 @@ function SemanticNodeInspector({
             ))}
           </section>
         )}
-
-        <section className="space-y-2">
-          <h3 className="ot-section-title">人工校正</h3>
-          <label className="block text-xs text-muted">
-            Short title
-            <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={36} className="w-full mt-1 px-3 py-2 rounded-xl border border-line bg-white text-ink" />
-          </label>
-          <label className="block text-xs text-muted">
-            Activity
-            <select value={activity} onChange={(event) => setActivity(event.target.value)} className="w-full mt-1 px-3 py-2 rounded-xl border border-line bg-white text-ink">
-              {ACTIVITIES.map((item) => <option key={item}>{item}</option>)}
-            </select>
-          </label>
-          <label className="block text-xs text-muted">
-            Objective
-            <textarea value={objective} onChange={(event) => setObjective(event.target.value)} rows={2} className="w-full mt-1 px-3 py-2 rounded-xl border border-line bg-white text-ink resize-none" />
-          </label>
-          <label className="block text-xs text-muted">
-            Summary
-            <textarea value={summary} onChange={(event) => setSummary(event.target.value)} rows={3} className="w-full mt-1 px-3 py-2 rounded-xl border border-line bg-white text-ink resize-none" />
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={onAccept} className="px-3 py-2 rounded-xl border border-green-200 bg-green-50 text-green-800 text-xs">接受当前解释</button>
-            <button type="button" onClick={() => onUpdate({ title, primary_activity: activity, objective, summary })} className="px-3 py-2 rounded-xl bg-accent text-white text-xs">保存人工修正</button>
-          </div>
-          {node.episode_ids.length > 1 && (
-            <div className="grid grid-cols-[1fr_auto] gap-2 pt-2">
-              <select value={splitAfter} onChange={(event) => setSplitAfter(Number(event.target.value))} className="px-3 py-2 rounded-xl border border-line bg-white text-xs">
-                {node.episode_ids.slice(0, -1).map((_, index) => (
-                  <option key={index + 1} value={index + 1}>在 Episode {index + 1} 后拆分</option>
-                ))}
-              </select>
-              <button type="button" onClick={splitGroups} className="px-3 py-2 rounded-xl border border-line-strong bg-white text-xs">拆分节点</button>
-            </div>
-          )}
-        </section>
 
         <details className="rounded-2xl border border-line bg-white/60 p-3">
           <summary className="ot-section-title cursor-pointer">技术审计与原始证据</summary>
@@ -600,11 +478,4 @@ function SemanticProgressBar({
       )}
     </div>
   );
-}
-
-function orderedSelection(workflow: SemanticWorkflow, selected: string[]): string[] {
-  const selectedSet = new Set(selected);
-  return workflow.semantic_nodes
-    .filter((node) => selectedSet.has(node.node_id))
-    .map((node) => node.node_id);
 }

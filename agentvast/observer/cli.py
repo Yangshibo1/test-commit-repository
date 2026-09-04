@@ -88,6 +88,11 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
     )
     semantic.add_argument("--force", action="store_true")
     semantic.add_argument(
+        "--annotation-guidance",
+        default="",
+        help="Optional guidance controlling semantic Node summary granularity",
+    )
+    semantic.add_argument(
         "--resume",
         nargs="?",
         const="auto",
@@ -458,6 +463,7 @@ def execute(args: argparse.Namespace) -> int:
             rules_only=bool(args.rules_only),
             force=bool(args.force),
             resume_inference=getattr(args, "resume", None),
+            annotation_guidance=str(getattr(args, "annotation_guidance", "") or ""),
             progress_callback=(
                 None if bool(getattr(args, "no_progress", False)) else _semantic_progress
             ),
