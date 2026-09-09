@@ -329,7 +329,11 @@ function ObserverPage() {
         </section>
 
         <aside className="min-h-0 border border-line rounded-3xl bg-panel overflow-hidden shadow-lg">
-          <ObserverInspector trace={trace} event={selectedEvent} />
+          {view === 'raw' ? (
+            <RawEvidenceInspector trace={trace} event={selectedEvent} />
+          ) : (
+            <ObserverInspector trace={trace} event={selectedEvent} />
+          )}
         </aside>
       </main>
       )}
@@ -447,6 +451,490 @@ function ObserverInspector({
       </div>
     </div>
   );
+}
+
+function RawEvidenceInspector({
+  trace,
+  event,
+}: {
+  trace: ObserverTrace | null;
+  event: ObserverEvent | null;
+}) {
+  if (!trace) {
+    return <div className="h-full flex items-center justify-center p-8 text-sm text-muted">等待轨迹</div>;
+  }
+  if (!event) {
+    return (
+      <div className="h-full overflow-auto p-5">
+        <h2 className="font-serif text-2xl">原始证据</h2>
+        <p className="text-sm text-muted mt-2">选择一个 Event，查看其真实请求、执行结果及 Transcript 证据。</p>
+      </div>
+    );
+  }
+
+  const linkedTools = resolveToolExecutions(trace, event);
+  const isToolEnvelope = event.event_type === 'model_response' && linkedTools.length > 0;
+
+  return (
+    <div className="h-full flex flex-col">
+      <div className="px-5 py-4 border-b border-line bg-white/60">
+        <div className="ot-meta font-mono text-accent uppercase">{event.event_type}</div>
+        <h2 className="font-serif text-2xl mt-1">
+          {isToolEnvelope ? `模型发起 ${linkedTools.length} 个工具请求` : event.title}
+        </h2>
+        <p className="text-sm text-muted mt-2 break-words">
+          {isToolEnvelope
+            ? linkedTools.map((tool) => toolOperationTitle(tool)).join('；')
+            : event.summary}
+        </p>
+      </div>
+
+      <div className="flex-1 overflow-auto p-5 space-y-5">
+        {event.event_type === 'model_response' && (
+          <ModelResponseOverview event={event} toolCount={linkedTools.length} />
+        )}
+
+        {linkedTools.length > 0 && (
+          <section>
+            <h3 className="ot-section-title mb-2">
+              {event.event_type === 'tool_execution' ? '真实工具请求与结果' : `关联工具调用 · ${linkedTools.length}`}
+            </h3>
+            <div className="space-y-3">
+              {linkedTools.map((tool, index) => (
+                <ToolExecutionDetails key={tool.event_id} event={tool} index={index} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {!linkedTools.length && event.event_type === 'model_response' && (
+          <section className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            该模型响应记录了工具调用意图，但当前 Trace 中没有找到对应的 tool_execution Event。
+          </section>
+        )}
+
+        {event.event_type === 'subagent_result' && <SubagentResultDetails event={event} />}
+
+        {event.event_type !== 'model_response'
+          && event.event_type !== 'tool_execution'
+          && event.event_type !== 'subagent_result'
+          && <ReadableEventDetails event={event} />}
+
+        <details className="rounded-xl border border-line bg-white p-3">
+          <summary className="ot-section-title cursor-pointer">技术审计属性</summary>
+          <div className="mt-3">
+            <KeyValue label="状态" value={event.status} />
+            <KeyValue label="来源类型" value={event.origin} />
+            <KeyValue label="时间" value={formatDate(event.timestamp)} />
+            <KeyValue label="结束时间" value={formatDate(event.ended_at)} />
+            <KeyValue label="Event ID" value={event.event_id} />
+            <KeyValue label="Turn" value={event.turn_id || '—'} />
+            <KeyValue label="Response ID" value={event.response_id || '—'} />
+            <KeyValue label="Tool Use ID" value={event.tool_use_id || '—'} />
+            <KeyValue label="Message UUID" value={event.message_uuid || '—'} />
+            <KeyValue label="Parent UUID" value={event.parent_uuid || '—'} />
+          </div>
+        </details>
+
+        <details className="rounded-xl border border-line bg-white p-3" open={!linkedTools.length}>
+          <summary className="ot-section-title cursor-pointer">Transcript 证据</summary>
+          <div className="mt-3 rounded-xl bg-[#fffaf5] p-3 font-mono text-xs">
+            {event.evidence.map((item) => (
+              <div key={`${item.source}-${item.line_number || item.event_id}`}>
+                {item.source} · line {item.line_number ?? item.event_id}
+              </div>
+            ))}
+          </div>
+        </details>
+
+        <details className="rounded-xl border border-line bg-white p-3">
+          <summary className="ot-section-title cursor-pointer">原始 Event Payload</summary>
+          <pre className="mt-3 rounded-xl bg-[#201d1a] text-[#f8eee5] p-3 text-[11px] leading-5 overflow-auto whitespace-pre-wrap break-words max-h-[440px]">
+            {formatPayload(event.payload)}
+          </pre>
+        </details>
+      </div>
+    </div>
+  );
+}
+
+function ModelResponseOverview({ event, toolCount }: { event: ObserverEvent; toolCount: number }) {
+  const usage = asRecord(event.payload.usage);
+  const visibleText = String(event.payload.text || '').trim();
+  return (
+    <section>
+      <h3 className="ot-section-title mb-2">模型动作概览</h3>
+      <div className="rounded-xl border border-line bg-white p-3">
+        <KeyValue label="模型" value={String(event.payload.model || '—')} />
+        <KeyValue label="推理强度" value={String(event.payload.effort || '—')} />
+        <KeyValue label="停止原因" value={humanStopReason(event.payload.stop_reason)} />
+        <KeyValue label="工具调用" value={`${toolCount} 个`} />
+        <KeyValue label="可见文字" value={visibleText || '无；该响应仅发起工具请求'} />
+        <KeyValue label="输入 Token" value={formatNumber(usage.input_tokens)} />
+        <KeyValue label="输出 Token" value={formatNumber(usage.output_tokens)} />
+      </div>
+    </section>
+  );
+}
+
+function ToolExecutionDetails({ event, index }: { event: ObserverEvent; index: number }) {
+  const payload = event.payload || {};
+  const input = asRecord(payload.input);
+  const toolName = String(payload.name || event.title || 'Unknown Tool');
+  const operation = describeToolOperation(toolName, input);
+  const requestLines = event.source_lines.length ? [event.source_lines[0]] : [];
+  const resultLines = event.source_lines.slice(1);
+  return (
+    <article className={`rounded-2xl border p-4 ${
+      event.status === 'error'
+        ? 'border-red-200 bg-red-50/70'
+        : event.status === 'incomplete'
+        ? 'border-amber-200 bg-amber-50/70'
+        : 'border-line bg-white'
+    }`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="ot-meta font-mono text-accent">TOOL {index + 1} · {toolName}</div>
+          <h4 className="font-semibold text-base mt-1">{operation.title}</h4>
+          {operation.summary && <p className="text-sm text-muted mt-1">{operation.summary}</p>}
+        </div>
+        <StatusPill status={event.status} />
+      </div>
+
+      <div className="mt-3">
+        <KeyValue label="操作类型" value={operation.typeLabel} />
+        {operation.fields.map(([label, value]) => (
+          <KeyValue key={label} label={label} value={value} />
+        ))}
+        <KeyValue label="观察耗时" value={formatDuration(numberOrNull(payload.observed_elapsed_ms))} />
+        <KeyValue label="请求证据" value={formatLines(requestLines)} />
+        <KeyValue label="结果证据" value={formatLines(resultLines)} />
+      </div>
+
+      {operation.primaryText && (
+        <div className="mt-3">
+          <div className="ot-meta font-semibold text-muted mb-1">{operation.primaryTextLabel}</div>
+          <pre className="rounded-xl border border-line bg-[#fffaf5] p-3 text-xs leading-5 overflow-auto whitespace-pre-wrap break-words max-h-[280px]">
+            {operation.primaryText}
+          </pre>
+        </div>
+      )}
+
+      <div className="mt-3">
+        <div className="ot-meta font-semibold text-muted mb-1">工具返回</div>
+        <pre className="rounded-xl border border-line bg-[#fffaf5] p-3 text-xs leading-5 overflow-auto whitespace-pre-wrap break-words max-h-[320px]">
+          {formatReadableValue(payload.output, 12_000) || '未记录工具返回内容'}
+        </pre>
+      </div>
+
+      {payload.structured_result !== null && payload.structured_result !== undefined && (
+        <details className="mt-3 rounded-xl border border-line bg-white/70 p-3">
+          <summary className="ot-meta font-semibold cursor-pointer">结构化结果</summary>
+          <pre className="mt-2 text-xs leading-5 overflow-auto whitespace-pre-wrap break-words max-h-[280px]">
+            {formatReadableValue(payload.structured_result, 12_000)}
+          </pre>
+        </details>
+      )}
+
+      <details className="mt-3 rounded-xl border border-line bg-white/70 p-3">
+        <summary className="ot-meta font-semibold cursor-pointer">完整原始请求参数</summary>
+        <pre className="mt-2 text-xs leading-5 overflow-auto whitespace-pre-wrap break-words max-h-[360px]">
+          {formatReadableValue(input, 20_000)}
+        </pre>
+      </details>
+    </article>
+  );
+}
+
+function SubagentResultDetails({ event }: { event: ObserverEvent }) {
+  const result = event.payload.result;
+  return (
+    <section>
+      <h3 className="ot-section-title mb-2">Subagent 返回结果</h3>
+      <div className="rounded-xl border border-line bg-white p-3">
+        <KeyValue label="任务" value={String(event.payload.task_summary || event.title)} />
+        <KeyValue label="Agent ID" value={String(event.payload.task_id || '—')} />
+        <KeyValue label="状态" value={String(event.payload.status || event.status)} />
+        <KeyValue label="输出文件" value={String(event.payload.output_file || '—')} />
+        <pre className="mt-3 rounded-xl bg-[#fffaf5] p-3 text-xs leading-5 overflow-auto whitespace-pre-wrap break-words max-h-[520px]">
+          {formatReadableValue(result, 30_000) || '未记录 Subagent 结果'}
+        </pre>
+      </div>
+    </section>
+  );
+}
+
+function ReadableEventDetails({ event }: { event: ObserverEvent }) {
+  const content = event.payload.content ?? event.payload.text;
+  return (
+    <section>
+      <h3 className="ot-section-title mb-2">记录内容</h3>
+      <div className="rounded-xl border border-line bg-white p-3 text-sm leading-6 whitespace-pre-wrap break-words">
+        {formatReadableValue(content, 20_000) || event.summary || '没有可见内容'}
+      </div>
+    </section>
+  );
+}
+
+interface ToolOperationDescription {
+  title: string;
+  typeLabel: string;
+  summary: string;
+  fields: Array<[string, string]>;
+  primaryTextLabel?: string;
+  primaryText?: string;
+}
+
+function resolveToolExecutions(trace: ObserverTrace, event: ObserverEvent): ObserverEvent[] {
+  if (event.event_type === 'tool_execution') return [event];
+  if (event.event_type !== 'model_response') return [];
+
+  const invokedEventIds = new Set(
+    trace.relations
+      .filter((relation) => relation.from === event.event_id && relation.type === 'invokes')
+      .map((relation) => relation.to),
+  );
+  const requestedToolIds = new Set(
+    Array.isArray(event.payload.tool_use_ids)
+      ? event.payload.tool_use_ids.map((value: unknown) => String(value))
+      : [],
+  );
+  return trace.events
+    .filter((candidate) => (
+      candidate.event_type === 'tool_execution'
+      && (
+        invokedEventIds.has(candidate.event_id)
+        || Boolean(candidate.tool_use_id && requestedToolIds.has(candidate.tool_use_id))
+      )
+    ))
+    .sort((left, right) => left.sequence - right.sequence);
+}
+
+function toolOperationTitle(event: ObserverEvent): string {
+  const payload = event.payload || {};
+  return describeToolOperation(
+    String(payload.name || event.title || 'Unknown Tool'),
+    asRecord(payload.input),
+  ).title;
+}
+
+function describeToolOperation(toolName: string, input: Record<string, unknown>): ToolOperationDescription {
+  const lower = toolName.toLowerCase();
+  if (lower === 'agent') {
+    const description = firstString(input.description, input.task, '未命名子代理任务');
+    return {
+      title: `启动子代理：${description}`,
+      typeLabel: 'Agent 委派',
+      summary: '主 Agent 请求启动一个子代理执行独立任务。',
+      fields: compactFields([
+        ['任务描述', description],
+        ['子代理类型', firstString(input.subagent_type, '—')],
+        ['请求模型', firstString(input.model, '—')],
+        ['隔离方式', firstString(input.isolation, '—')],
+      ]),
+      primaryTextLabel: '委派 Prompt',
+      primaryText: firstString(input.prompt),
+    };
+  }
+  if (lower === 'read') {
+    const path = firstString(input.file_path, input.path, '未知文件');
+    return {
+      title: `读取文件：${fileName(path)}`,
+      typeLabel: '文件读取',
+      summary: path,
+      fields: compactFields([
+        ['文件', path],
+        ['起始位置', optionalString(input.offset)],
+        ['读取范围', optionalString(input.limit)],
+        ['页码', optionalString(input.pages)],
+      ]),
+    };
+  }
+  if (lower === 'write') {
+    const path = firstString(input.file_path, input.path, '未知文件');
+    const content = firstString(input.content);
+    return {
+      title: `写入文件：${fileName(path)}`,
+      typeLabel: '文件写入',
+      summary: path,
+      fields: compactFields([
+        ['文件', path],
+        ['内容长度', content ? `${content.length.toLocaleString()} 字符` : '—'],
+      ]),
+      primaryTextLabel: '写入内容预览',
+      primaryText: truncateText(content, 8_000),
+    };
+  }
+  if (lower === 'edit' || lower === 'notebookedit') {
+    const path = firstString(input.file_path, input.notebook_path, input.path, '未知文件');
+    const oldText = firstString(input.old_string);
+    const newText = firstString(input.new_string);
+    return {
+      title: `${lower === 'notebookedit' ? '修改 Notebook' : '修改文件'}：${fileName(path)}`,
+      typeLabel: lower === 'notebookedit' ? 'Notebook 修改' : '文件修改',
+      summary: path,
+      fields: compactFields([
+        ['文件', path],
+        ['替换全部', optionalString(input.replace_all)],
+        ['Cell ID', optionalString(input.cell_id)],
+        ['Edit Mode', optionalString(input.edit_mode)],
+      ]),
+      primaryTextLabel: oldText || newText ? '修改内容' : undefined,
+      primaryText: oldText || newText
+        ? `原内容：\n${truncateText(oldText, 4_000)}\n\n新内容：\n${truncateText(newText, 4_000)}`
+        : undefined,
+    };
+  }
+  if (lower === 'glob') {
+    const pattern = firstString(input.pattern, '未提供模式');
+    const path = firstString(input.path, '当前工作目录');
+    return {
+      title: `查找文件：${pattern}`,
+      typeLabel: '文件发现',
+      summary: `在 ${path} 中匹配 ${pattern}`,
+      fields: compactFields([
+        ['目录', path],
+        ['匹配模式', pattern],
+      ]),
+    };
+  }
+  if (lower === 'grep') {
+    const pattern = firstString(input.pattern, '未提供关键词');
+    const path = firstString(input.path, '当前工作目录');
+    return {
+      title: `搜索内容：${truncateText(pattern, 80)}`,
+      typeLabel: '内容搜索',
+      summary: `在 ${path} 中搜索匹配内容。`,
+      fields: compactFields([
+        ['目录', path],
+        ['搜索模式', pattern],
+        ['文件过滤', optionalString(input.glob)],
+        ['输出模式', optionalString(input.output_mode)],
+      ]),
+    };
+  }
+  if (['bash', 'powershell', 'shell', 'terminal'].includes(lower)) {
+    const command = firstString(input.command, input.cmd, '未记录命令');
+    return {
+      title: `执行命令：${commandLabel(command)}`,
+      typeLabel: '命令执行',
+      summary: firstString(input.description),
+      fields: compactFields([
+        ['工作目录', firstString(input.workdir, input.cwd, '—')],
+        ['超时', optionalString(input.timeout)],
+      ]),
+      primaryTextLabel: '真实命令',
+      primaryText: command,
+    };
+  }
+  if (lower === 'taskcreate') {
+    const description = firstString(input.description, input.subject, '未命名任务');
+    return {
+      title: `创建任务：${description}`,
+      typeLabel: '任务编排',
+      summary: firstString(input.activeForm),
+      fields: compactFields([
+        ['任务', description],
+      ]),
+    };
+  }
+  if (lower === 'taskupdate') {
+    return {
+      title: `更新任务：${firstString(input.taskId, input.task_id, '未知任务')}`,
+      typeLabel: '任务编排',
+      summary: '更新任务状态、依赖或描述。',
+      fields: compactFields([
+        ['Task ID', firstString(input.taskId, input.task_id, '—')],
+        ['状态', optionalString(input.status)],
+        ['依赖', formatInlineValue(input.blockedBy ?? input.blocked_by)],
+        ['描述', optionalString(input.description)],
+      ]),
+    };
+  }
+
+  const likelyPath = firstString(input.file_path, input.path);
+  const command = firstString(input.command, input.cmd);
+  return {
+    title: firstString(input.description, input.subject, `${toolName} 工具调用`),
+    typeLabel: '工具调用',
+    summary: '该工具没有专用展示适配器，以下内容来自真实请求参数。',
+    fields: compactFields([
+      ['工具', toolName],
+      ['目标路径', likelyPath],
+    ]),
+    primaryTextLabel: command ? '真实命令' : undefined,
+    primaryText: command || undefined,
+  };
+}
+
+function asRecord(value: unknown): Record<string, any> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, any>
+    : {};
+}
+
+function compactFields(fields: Array<[string, string]>): Array<[string, string]> {
+  return fields.filter(([, value]) => Boolean(value && value !== '—'));
+}
+
+function firstString(...values: unknown[]): string {
+  for (const value of values) {
+    if (value === null || value === undefined) continue;
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  }
+  return '';
+}
+
+function optionalString(value: unknown): string {
+  return value === null || value === undefined || value === '' ? '' : String(value);
+}
+
+function formatInlineValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '';
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value);
+}
+
+function fileName(path: string): string {
+  const parts = path.replace(/\\/g, '/').split('/').filter(Boolean);
+  return parts[parts.length - 1] || path;
+}
+
+function commandLabel(command: string): string {
+  const compact = command.replace(/\s+/g, ' ').trim();
+  return truncateText(compact, 90);
+}
+
+function truncateText(value: string, limit: number): string {
+  return value.length <= limit ? value : `${value.slice(0, limit)}…`;
+}
+
+function formatReadableValue(value: unknown, limit: number): string {
+  if (value === null || value === undefined) return '';
+  const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+  return truncateText(text, limit);
+}
+
+function numberOrNull(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function formatLines(lines: number[]): string {
+  return lines.length ? `Transcript line ${lines.join(', ')}` : '未单独记录';
+}
+
+function formatNumber(value: unknown): string {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value.toLocaleString()
+    : '—';
+}
+
+function humanStopReason(value: unknown): string {
+  const reason = String(value || '');
+  if (reason === 'tool_use') return '调用工具';
+  if (reason === 'end_turn') return '结束当前回答';
+  return reason || '—';
 }
 
 function KeyValue({ label, value }: { label: string; value: string }) {
