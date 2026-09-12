@@ -110,9 +110,10 @@ function ObserverPage() {
     (trace?.events || []).filter((event) => view === 'raw' || showInternal || !event.hidden_by_default)
   ), [trace, showInternal, view]);
   const selectedEvent = trace?.events.find((event) => event.event_id === selectedEventId) || null;
+  const taskRegistry = useMemo(() => buildTaskRegistry(trace), [trace]);
   const graph = useMemo(
-    () => buildGraph(trace, selectedEventId, view === 'raw'),
-    [trace, selectedEventId, view],
+    () => buildGraph(trace, selectedEventId, view === 'raw', taskRegistry),
+    [trace, selectedEventId, view, taskRegistry],
   );
 
   const generateSemantic = useCallback(async (
@@ -297,6 +298,7 @@ function ObserverPage() {
                 key={event.event_id}
                 event={event}
                 trace={trace}
+                taskRegistry={taskRegistry}
                 rawMode={view === 'raw'}
                 selected={event.event_id === selectedEventId}
                 onSelect={setSelectedEventId}
@@ -341,7 +343,11 @@ function ObserverPage() {
 
         <aside className="min-h-0 border border-line rounded-3xl bg-panel overflow-hidden shadow-lg">
           {view === 'raw' ? (
-            <RawEvidenceInspector trace={trace} event={selectedEvent} />
+            <RawEvidenceInspector
+              trace={trace}
+              event={selectedEvent}
+              taskRegistry={taskRegistry}
+            />
           ) : (
             <ObserverInspector trace={trace} event={selectedEvent} />
           )}
@@ -355,12 +361,14 @@ function ObserverPage() {
 function EventCard({
   event,
   trace,
+  taskRegistry,
   rawMode,
   selected,
   onSelect,
 }: {
   event: ObserverEvent;
   trace: ObserverTrace | null;
+  taskRegistry: TaskRegistry;
   rawMode: boolean;
   selected: boolean;
   onSelect: (eventId: string) => void;
@@ -387,7 +395,7 @@ function EventCard({
   }
 
   const display = rawMode && trace
-    ? rawEventDisplay(trace, event)
+    ? rawEventDisplay(trace, event, taskRegistry)
     : {
         typeLabel: eventTypeLabel(event.event_type),
         title: event.title,
@@ -504,9 +512,11 @@ function ObserverInspector({
 function RawEvidenceInspector({
   trace,
   event,
+  taskRegistry,
 }: {
   trace: ObserverTrace | null;
   event: ObserverEvent | null;
+  taskRegistry: TaskRegistry;
 }) {
   if (!trace) {
     return <div className="h-full flex items-center justify-center p-8 text-sm text-muted">等待轨迹</div>;
@@ -532,7 +542,7 @@ function RawEvidenceInspector({
         </h2>
         <p className="text-sm text-muted mt-2 break-words">
           {isToolEnvelope
-            ? linkedTools.map((tool) => toolOperationTitle(tool)).join('；')
+            ? linkedTools.map((tool) => toolOperationTitle(tool, taskRegistry)).join('；')
             : event.summary}
         </p>
       </div>
@@ -549,7 +559,12 @@ function RawEvidenceInspector({
             </h3>
             <div className="space-y-3">
               {linkedTools.map((tool, index) => (
-                <ToolExecutionDetails key={tool.event_id} event={tool} index={index} />
+                <ToolExecutionDetails
+                  key={tool.event_id}
+                  event={tool}
+                  index={index}
+                  taskRegistry={taskRegistry}
+                />
               ))}
             </div>
           </section>
@@ -625,11 +640,19 @@ function ModelResponseOverview({ event, toolCount }: { event: ObserverEvent; too
   );
 }
 
-function ToolExecutionDetails({ event, index }: { event: ObserverEvent; index: number }) {
+function ToolExecutionDetails({
+  event,
+  index,
+  taskRegistry,
+}: {
+  event: ObserverEvent;
+  index: number;
+  taskRegistry: TaskRegistry;
+}) {
   const payload = event.payload || {};
   const input = asRecord(payload.input);
   const toolName = String(payload.name || event.title || 'Unknown Tool');
-  const operation = describeToolOperation(toolName, input);
+  const operation = describeToolOperation(toolName, input, event.payload.structured_result, taskRegistry);
   const requestLines = event.source_lines.length ? [event.source_lines[0]] : [];
   const resultLines = event.source_lines.slice(1);
   return (
@@ -731,11 +754,55 @@ interface EventDisplayDescription {
   context: string;
 }
 
-function rawEventDisplay(trace: ObserverTrace, event: ObserverEvent): EventDisplayDescription {
+interface TaskDefinition {
+  taskId: string;
+  subject: string;
+  description: string;
+  activeForm: string;
+  createEventId: string;
+}
+
+type TaskRegistry = Record<string, TaskDefinition>;
+
+function buildTaskRegistry(trace: ObserverTrace | null): TaskRegistry {
+  if (!trace) return {};
+  const registry: TaskRegistry = {};
+  trace.events
+    .filter((event) => (
+      event.event_type === 'tool_execution'
+      && String(event.payload.name || '').toLowerCase() === 'taskcreate'
+    ))
+    .sort((left, right) => left.sequence - right.sequence)
+    .forEach((event) => {
+      const input = asRecord(event.payload.input);
+      const structured = asRecord(event.payload.structured_result);
+      const structuredTask = asRecord(structured.task);
+      const taskId = firstString(
+        structuredTask.id,
+        structured.taskId,
+        extractTaskId(event.payload.output),
+      );
+      if (!taskId) return;
+      registry[taskId] = {
+        taskId,
+        subject: firstString(input.subject, structuredTask.subject, `任务 #${taskId}`),
+        description: firstString(input.description),
+        activeForm: firstString(input.activeForm),
+        createEventId: event.event_id,
+      };
+    });
+  return registry;
+}
+
+function rawEventDisplay(
+  trace: ObserverTrace,
+  event: ObserverEvent,
+  taskRegistry: TaskRegistry,
+): EventDisplayDescription {
   if (event.event_type === 'model_response') {
     const tools = resolveToolExecutions(trace, event);
     const names = tools.map((tool) => String(tool.payload.name || tool.title || 'Tool'));
-    const operations = tools.map(toolOperationTitle);
+    const operations = tools.map((tool) => toolOperationTitle(tool, taskRegistry));
     return {
       typeLabel: eventTypeLabel(event.event_type),
       title: `发起 ${tools.length || toolUseIds(event).length} 个工具请求`,
@@ -745,7 +812,12 @@ function rawEventDisplay(trace: ObserverTrace, event: ObserverEvent): EventDispl
   }
   if (event.event_type === 'tool_execution') {
     const toolName = String(event.payload.name || event.title || 'Unknown Tool');
-    const operation = describeToolOperation(toolName, asRecord(event.payload.input));
+    const operation = describeToolOperation(
+      toolName,
+      asRecord(event.payload.input),
+      event.payload.structured_result,
+      taskRegistry,
+    );
     return {
       typeLabel: eventTypeLabel(event.event_type),
       title: operation.title,
@@ -865,15 +937,22 @@ function resolveToolExecutions(trace: ObserverTrace, event: ObserverEvent): Obse
     .sort((left, right) => left.sequence - right.sequence);
 }
 
-function toolOperationTitle(event: ObserverEvent): string {
+function toolOperationTitle(event: ObserverEvent, taskRegistry: TaskRegistry): string {
   const payload = event.payload || {};
   return describeToolOperation(
     String(payload.name || event.title || 'Unknown Tool'),
     asRecord(payload.input),
+    payload.structured_result,
+    taskRegistry,
   ).title;
 }
 
-function describeToolOperation(toolName: string, input: Record<string, unknown>): ToolOperationDescription {
+function describeToolOperation(
+  toolName: string,
+  input: Record<string, unknown>,
+  structuredResult: unknown = null,
+  taskRegistry: TaskRegistry = {},
+): ToolOperationDescription {
   const lower = toolName.toLowerCase();
   if (lower === 'agent') {
     const description = firstString(input.description, input.task, '未命名子代理任务');
@@ -983,26 +1062,75 @@ function describeToolOperation(toolName: string, input: Record<string, unknown>)
     };
   }
   if (lower === 'taskcreate') {
-    const description = firstString(input.description, input.subject, '未命名任务');
+    const structured = asRecord(structuredResult);
+    const structuredTask = asRecord(structured.task);
+    const taskId = firstString(
+      structuredTask.id,
+      structured.taskId,
+      extractTaskId(structuredResult),
+    );
+    const subject = firstString(input.subject, structuredTask.subject, '未命名任务');
+    const description = firstString(input.description);
+    const activeForm = firstString(input.activeForm);
     return {
-      title: `创建任务：${description}`,
-      typeLabel: '任务编排',
-      summary: firstString(input.activeForm),
+      title: `制定计划${taskId ? ` #${taskId}` : ''}：${subject}`,
+      typeLabel: '任务计划',
+      summary: description || activeForm || '在任务系统中建立一个新的计划项。',
       fields: compactFields([
-        ['任务', description],
+        ['Task ID', taskId],
+        ['计划名称', subject],
+        ['计划目标', description],
+        ['执行中描述', activeForm],
+        ['创建结果', firstString(asRecord(structuredResult).success) || (taskId ? '已创建' : '')],
       ]),
     };
   }
   if (lower === 'taskupdate') {
+    const taskId = firstString(input.taskId, input.task_id, '未知任务');
+    const task = taskRegistry[taskId];
+    const structured = asRecord(structuredResult);
+    const statusChange = asRecord(structured.statusChange);
+    const dependencies = arrayStrings(input.addBlockedBy ?? input.blockedBy ?? input.blocked_by);
+    const dependencyLabels = dependencies.map((dependencyId) => {
+      const dependency = taskRegistry[dependencyId];
+      return dependency ? `#${dependencyId} ${dependency.subject}` : `#${dependencyId}`;
+    });
+    const updatedFields = arrayStrings(structured.updatedFields);
+    const statusFrom = firstString(statusChange.from);
+    const statusTo = firstString(statusChange.to, input.status);
+    const title = statusTo
+      ? `${statusAction(statusTo)}任务 #${taskId}${task ? `：${task.subject}` : ''}`
+      : dependencyLabels.length
+      ? `设置任务 #${taskId}${task ? `“${task.subject}”` : ''}的前置依赖`
+      : `修改任务 #${taskId}${task ? `：${task.subject}` : ''}`;
+    const changes: string[] = [];
+    if (statusTo) {
+      changes.push(
+        statusFrom
+          ? `状态从 ${statusLabel(statusFrom)} 修改为 ${statusLabel(statusTo)}`
+          : `状态修改为 ${statusLabel(statusTo)}`,
+      );
+    }
+    if (dependencyLabels.length) {
+      changes.push(`新增前置依赖：${dependencyLabels.join('、')}`);
+    }
+    if (input.subject) changes.push(`任务名称修改为：${String(input.subject)}`);
+    if (input.description) changes.push(`任务目标修改为：${String(input.description)}`);
+    if (input.activeForm) changes.push(`执行中描述修改为：${String(input.activeForm)}`);
     return {
-      title: `更新任务：${firstString(input.taskId, input.task_id, '未知任务')}`,
-      typeLabel: '任务编排',
-      summary: '更新任务状态、依赖或描述。',
+      title,
+      typeLabel: '任务更新',
+      summary: changes.join('；') || '更新任务状态、依赖或描述。',
       fields: compactFields([
-        ['Task ID', firstString(input.taskId, input.task_id, '—')],
-        ['状态', optionalString(input.status)],
-        ['依赖', formatInlineValue(input.blockedBy ?? input.blocked_by)],
-        ['描述', optionalString(input.description)],
+        ['Task ID', taskId],
+        ['任务名称', task?.subject || '当前 Trace 中未找到对应 TaskCreate'],
+        ['原计划目标', task?.description || ''],
+        ['状态变化', statusTo ? `${statusFrom ? statusLabel(statusFrom) : '未知'} → ${statusLabel(statusTo)}` : ''],
+        ['新增依赖', dependencyLabels.join('、')],
+        ['修改字段', updatedFields.join('、')],
+        ['新任务名称', optionalString(input.subject)],
+        ['新任务目标', optionalString(input.description)],
+        ['新执行描述', optionalString(input.activeForm)],
       ]),
     };
   }
@@ -1045,10 +1173,35 @@ function optionalString(value: unknown): string {
   return value === null || value === undefined || value === '' ? '' : String(value);
 }
 
-function formatInlineValue(value: unknown): string {
-  if (value === null || value === undefined || value === '') return '';
-  if (typeof value === 'string') return value;
-  return JSON.stringify(value);
+function arrayStrings(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.map((item) => String(item)).filter(Boolean)
+    : value === null || value === undefined || value === ''
+    ? []
+    : [String(value)];
+}
+
+function extractTaskId(value: unknown): string {
+  const text = typeof value === 'string' ? value : JSON.stringify(value || '');
+  return text.match(/Task\s*#?(\d+)/i)?.[1] || '';
+}
+
+function statusAction(status: string): string {
+  return ({
+    pending: '将任务设为待处理：',
+    in_progress: '开始执行',
+    completed: '完成',
+    deleted: '删除',
+  } as Record<string, string>)[status] || '更新';
+}
+
+function statusLabel(status: string): string {
+  return ({
+    pending: '待处理',
+    in_progress: '执行中',
+    completed: '已完成',
+    deleted: '已删除',
+  } as Record<string, string>)[status] || status;
 }
 
 function fileName(path: string): string {
@@ -1114,6 +1267,7 @@ function buildGraph(
   trace: ObserverTrace | null,
   selectedEventId: string | null,
   rawMode = false,
+  taskRegistry: TaskRegistry = {},
 ): { nodes: Node[]; edges: Edge[] } {
   if (!trace) return { nodes: [], edges: [] };
   const events = trace.events.filter((event) => (
@@ -1147,7 +1301,7 @@ function buildGraph(
     const colors = nodeColors(event);
     const size = eventGraphSize(event, rawMode);
     const display = rawMode
-      ? rawEventDisplay(trace, event)
+      ? rawEventDisplay(trace, event, taskRegistry)
       : {
           typeLabel: eventTypeLabel(event.event_type),
           title: event.title,
