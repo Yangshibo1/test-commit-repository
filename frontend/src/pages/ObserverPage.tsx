@@ -27,6 +27,7 @@ function ObserverPage() {
   const [semanticProgress, setSemanticProgress] = useState<SemanticProgress | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedPlanGroupId, setSelectedPlanGroupId] = useState<string | null>(null);
   const [showInternal, setShowInternal] = useState(false);
   const [view, setView] = useState<ObserverView>('semantic');
   const [loading, setLoading] = useState(false);
@@ -45,6 +46,7 @@ function ObserverPage() {
       setTrace(value);
       setSelectedSessionId(sessionId);
       setSemanticProgress(null);
+      setSelectedPlanGroupId(null);
       setSelectedEventId(value.turns[0]?.prompt_event_id || value.events[0]?.event_id || null);
       const semanticResponse = await fetch(`/api/observations/${encodeURIComponent(sessionId)}/semantic`);
       if (semanticResponse.ok) {
@@ -98,6 +100,7 @@ function ObserverPage() {
       setSemanticWorkflow(null);
       setSemanticProgress(null);
       setSelectedSessionId(value.session.session_id);
+      setSelectedPlanGroupId(null);
       setSelectedEventId(value.turns[0]?.prompt_event_id || value.events[0]?.event_id || null);
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : '文件解析失败');
@@ -111,10 +114,40 @@ function ObserverPage() {
   ), [trace, showInternal, view]);
   const selectedEvent = trace?.events.find((event) => event.event_id === selectedEventId) || null;
   const taskRegistry = useMemo(() => buildTaskRegistry(trace), [trace]);
-  const graph = useMemo(
-    () => buildGraph(trace, selectedEventId, view === 'raw', taskRegistry),
-    [trace, selectedEventId, view, taskRegistry],
+  const planGroups = useMemo(
+    () => buildPlanDisplayGroups(trace, taskRegistry),
+    [trace, taskRegistry],
   );
+  const selectedPlanGroup = planGroups.find((group) => group.groupId === selectedPlanGroupId) || null;
+  const rawTimelineItems = useMemo(
+    () => buildRawTimelineItems(visibleEvents, planGroups),
+    [visibleEvents, planGroups],
+  );
+  const graph = useMemo(
+    () => buildGraph(
+      trace,
+      selectedEventId,
+      view === 'raw',
+      taskRegistry,
+      planGroups,
+      selectedPlanGroupId,
+    ),
+    [trace, selectedEventId, view, taskRegistry, planGroups, selectedPlanGroupId],
+  );
+
+  const selectEvent = useCallback((eventId: string) => {
+    setSelectedPlanGroupId(null);
+    setSelectedEventId(eventId);
+  }, []);
+
+  const selectGraphNode = useCallback((nodeId: string) => {
+    if (nodeId.startsWith('plan-group-')) {
+      setSelectedEventId(null);
+      setSelectedPlanGroupId(nodeId);
+      return;
+    }
+    selectEvent(nodeId);
+  }, [selectEvent]);
 
   const generateSemantic = useCallback(async (
     annotationGuidance: string,
@@ -291,19 +324,40 @@ function ObserverPage() {
 
           <section className="min-h-0 overflow-auto">
             <div className="sticky top-0 px-4 py-3 bg-[rgba(255,255,255,0.94)] border-b border-line ot-section-title z-10">
-              {view === 'raw' ? 'Event 证据列表' : '执行时间线'} · {visibleEvents.length}
+              {view === 'raw' ? 'Event 证据列表' : '执行时间线'} · {view === 'raw' ? rawTimelineItems.length : visibleEvents.length}
             </div>
-            {visibleEvents.map((event) => (
-              <EventCard
-                key={event.event_id}
-                event={event}
-                trace={trace}
-                taskRegistry={taskRegistry}
-                rawMode={view === 'raw'}
-                selected={event.event_id === selectedEventId}
-                onSelect={setSelectedEventId}
-              />
-            ))}
+            {view === 'raw'
+              ? rawTimelineItems.map((item) => (
+                  item.kind === 'plan_group' ? (
+                    <PlanGroupCard
+                      key={item.group.groupId}
+                      group={item.group}
+                      selected={item.group.groupId === selectedPlanGroupId}
+                      onSelect={setSelectedPlanGroupId}
+                    />
+                  ) : (
+                    <EventCard
+                      key={item.event.event_id}
+                      event={item.event}
+                      trace={trace}
+                      taskRegistry={taskRegistry}
+                      rawMode
+                      selected={item.event.event_id === selectedEventId}
+                      onSelect={selectEvent}
+                    />
+                  )
+                ))
+              : visibleEvents.map((event) => (
+                  <EventCard
+                    key={event.event_id}
+                    event={event}
+                    trace={trace}
+                    taskRegistry={taskRegistry}
+                    rawMode={false}
+                    selected={event.event_id === selectedEventId}
+                    onSelect={selectEvent}
+                  />
+                ))}
           </section>
         </aside>
 
@@ -327,7 +381,7 @@ function ObserverPage() {
                 fitView
                 minZoom={0.35}
                 maxZoom={1.8}
-                onNodeClick={(_, node) => setSelectedEventId(node.id)}
+                onNodeClick={(_, node) => selectGraphNode(node.id)}
               >
                 <Background color="rgba(217,119,69,0.08)" gap={26} />
                 <Controls />
@@ -343,11 +397,19 @@ function ObserverPage() {
 
         <aside className="min-h-0 border border-line rounded-3xl bg-panel overflow-hidden shadow-lg">
           {view === 'raw' ? (
-            <RawEvidenceInspector
-              trace={trace}
-              event={selectedEvent}
-              taskRegistry={taskRegistry}
-            />
+            selectedPlanGroup ? (
+              <PlanGroupInspector
+                group={selectedPlanGroup}
+                trace={trace!}
+                onSelectEvent={selectEvent}
+              />
+            ) : (
+              <RawEvidenceInspector
+                trace={trace}
+                event={selectedEvent}
+                taskRegistry={taskRegistry}
+              />
+            )
           ) : (
             <ObserverInspector trace={trace} event={selectedEvent} />
           )}
@@ -423,6 +485,135 @@ function EventCard({
         #{event.sequence} · line {event.source_lines.join(', ')}
       </div>
     </button>
+  );
+}
+
+function PlanGroupCard({
+  group,
+  selected,
+  onSelect,
+}: {
+  group: PlanDisplayGroup;
+  selected: boolean;
+  onSelect: (groupId: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(group.groupId)}
+      className={`w-full text-left px-4 py-4 border-b border-line transition-colors ${
+        selected ? 'bg-violet-50' : 'bg-white/50 hover:bg-white'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="ot-meta font-mono text-violet-700 uppercase">展示分组 · 任务规划</span>
+        <StatusPill status={group.status} />
+      </div>
+      <div className="font-semibold text-sm mt-2">{group.title}</div>
+      <div className="ot-meta text-muted mt-1">{group.summary}</div>
+      <div className="ot-meta text-violet-700 mt-2">
+        {group.tasks.length} 项任务 · {group.dependencyCount} 条依赖 · {group.memberEventIds.length} 个原始 Event
+      </div>
+      <div className="ot-meta font-mono text-muted mt-2">
+        #{group.startSequence}–{group.endSequence} · 点击展开计划
+      </div>
+    </button>
+  );
+}
+
+function PlanGroupInspector({
+  group,
+  trace,
+  onSelectEvent,
+}: {
+  group: PlanDisplayGroup;
+  trace: ObserverTrace;
+  onSelectEvent: (eventId: string) => void;
+}) {
+  const eventMap = new Map(trace.events.map((event) => [event.event_id, event]));
+  const members = group.memberEventIds
+    .map((eventId) => eventMap.get(eventId))
+    .filter((event): event is ObserverEvent => Boolean(event));
+  return (
+    <div className="h-full flex flex-col">
+      <div className="px-5 py-4 border-b border-line bg-white/60">
+        <div className="ot-meta font-mono text-violet-700 uppercase">DISPLAY GROUP · PLAN DEFINITION</div>
+        <h2 className="font-serif text-2xl mt-1">{group.title}</h2>
+        <p className="text-sm text-muted mt-2">{group.summary}</p>
+      </div>
+      <div className="flex-1 overflow-auto p-5 space-y-5">
+        <section>
+          <h3 className="ot-section-title mb-2">计划结构</h3>
+          <div className="space-y-3">
+            {group.tasks.map((task) => (
+              <div key={task.taskId} className="rounded-xl border border-line bg-white p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="ot-meta font-mono text-accent">TASK #{task.taskId}</div>
+                    <div className="font-semibold text-sm mt-1">{task.subject}</div>
+                  </div>
+                  <span className="ot-meta text-muted">{task.dependsOn.length ? `${task.dependsOn.length} dependencies` : 'root task'}</span>
+                </div>
+                <p className="text-sm text-muted leading-6 mt-2">{task.description || '未记录计划目标'}</p>
+                {task.activeForm && <div className="ot-meta mt-2">执行中描述：{task.activeForm}</div>}
+                <div className="mt-3">
+                  <div className="ot-meta font-semibold text-muted">前置依赖</div>
+                  <div className="ot-meta mt-1">
+                    {task.dependsOn.length
+                      ? task.dependsOn.map((id) => {
+                          const dependency = group.tasks.find((candidate) => candidate.taskId === id);
+                          return dependency ? `#${id} ${dependency.subject}` : `#${id}`;
+                        }).join('、')
+                      : '无'}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <h3 className="ot-section-title mb-2">依赖关系</h3>
+          <div className="rounded-xl border border-line bg-white p-3 space-y-2">
+            {group.tasks.flatMap((task) => task.dependsOn.map((dependencyId) => {
+              const dependency = group.tasks.find((candidate) => candidate.taskId === dependencyId);
+              return (
+                <div key={`${dependencyId}-${task.taskId}`} className="grid grid-cols-[1fr_auto_1fr] gap-2 items-center text-xs">
+                  <span>#{dependencyId} {dependency?.subject || ''}</span>
+                  <span className="font-mono text-violet-700">→</span>
+                  <span>#{task.taskId} {task.subject}</span>
+                </div>
+              );
+            }))}
+            {!group.dependencyCount && <div className="text-sm text-muted">未设置任务依赖。</div>}
+          </div>
+        </section>
+
+        <details className="rounded-xl border border-line bg-white p-3">
+          <summary className="ot-section-title cursor-pointer">原始 Event · {members.length}</summary>
+          <div className="mt-3 space-y-2">
+            {members.map((event) => (
+              <button
+                key={event.event_id}
+                type="button"
+                onClick={() => onSelectEvent(event.event_id)}
+                className="w-full text-left rounded-xl border border-line bg-[#fffaf5] px-3 py-2 hover:border-accent"
+              >
+                <div className="flex justify-between gap-2">
+                  <span className="ot-meta font-mono text-accent">#{event.sequence} · {eventTypeLabel(event.event_type)}</span>
+                  <span className="ot-meta text-muted">line {event.source_lines.join(', ')}</span>
+                </div>
+                <div className="text-xs mt-1">{event.title} · {event.summary}</div>
+              </button>
+            ))}
+          </div>
+        </details>
+
+        <div className="rounded-xl border border-violet-200 bg-violet-50 p-3 text-xs text-violet-800">
+          这是由 {group.memberEventIds.length} 个真实 Event 确定性组织出的前端展示组，不是新的 Event，也没有修改 observer_trace.json。
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -764,6 +955,26 @@ interface TaskDefinition {
 
 type TaskRegistry = Record<string, TaskDefinition>;
 
+interface PlanTask extends TaskDefinition {
+  dependsOn: string[];
+}
+
+interface PlanDisplayGroup {
+  groupId: string;
+  title: string;
+  summary: string;
+  startSequence: number;
+  endSequence: number;
+  memberEventIds: string[];
+  tasks: PlanTask[];
+  dependencyCount: number;
+  status: 'complete' | 'error' | 'incomplete';
+}
+
+type RawTimelineItem =
+  | { kind: 'event'; event: ObserverEvent }
+  | { kind: 'plan_group'; group: PlanDisplayGroup };
+
 function buildTaskRegistry(trace: ObserverTrace | null): TaskRegistry {
   if (!trace) return {};
   const registry: TaskRegistry = {};
@@ -792,6 +1003,168 @@ function buildTaskRegistry(trace: ObserverTrace | null): TaskRegistry {
       };
     });
   return registry;
+}
+
+function buildPlanDisplayGroups(
+  trace: ObserverTrace | null,
+  taskRegistry: TaskRegistry,
+): PlanDisplayGroup[] {
+  if (!trace) return [];
+  const events = [...trace.events].sort((left, right) => left.sequence - right.sequence);
+  const planningTools = events.filter(isPlanStructureToolEvent);
+  if (!planningTools.length) return [];
+
+  const clusters: ObserverEvent[][] = [];
+  let current: ObserverEvent[] = [];
+  for (const event of planningTools) {
+    const previous = current[current.length - 1];
+    if (
+      previous
+      && (
+        previous.turn_id !== event.turn_id
+        || hasPlanBoundaryBetween(events, previous.sequence, event.sequence)
+      )
+    ) {
+      clusters.push(current);
+      current = [];
+    }
+    current.push(event);
+  }
+  if (current.length) clusters.push(current);
+
+  return clusters.map((toolEvents, groupIndex) => {
+    const memberEvents: ObserverEvent[] = [];
+    for (const toolEvent of toolEvents) {
+      memberEvents.push(toolEvent);
+      const parentResponses = trace.relations
+        .filter((relation) => relation.type === 'invokes' && relation.to === toolEvent.event_id)
+        .map((relation) => events.find((event) => event.event_id === relation.from))
+        .filter((event): event is ObserverEvent => Boolean(event));
+      memberEvents.push(...parentResponses);
+    }
+    const uniqueMembers = [...new Map(memberEvents.map((event) => [event.event_id, event])).values()]
+      .sort((left, right) => left.sequence - right.sequence);
+    const taskIds = new Set<string>();
+    const dependencies = new Map<string, Set<string>>();
+    for (const toolEvent of toolEvents) {
+      const input = asRecord(toolEvent.payload.input);
+      const toolName = String(toolEvent.payload.name || '').toLowerCase();
+      if (toolName === 'taskcreate') {
+        const structured = asRecord(toolEvent.payload.structured_result);
+        const structuredTask = asRecord(structured.task);
+        const taskId = firstString(
+          structuredTask.id,
+          structured.taskId,
+          extractTaskId(toolEvent.payload.output),
+        );
+        if (taskId) taskIds.add(taskId);
+      } else {
+        const taskId = firstString(input.taskId, input.task_id);
+        if (!taskId) continue;
+        taskIds.add(taskId);
+        const values = arrayStrings(input.addBlockedBy ?? input.blockedBy ?? input.blocked_by);
+        const target = dependencies.get(taskId) || new Set<string>();
+        values.forEach((value) => {
+          target.add(value);
+          taskIds.add(value);
+        });
+        dependencies.set(taskId, target);
+      }
+    }
+    const tasks = [...taskIds]
+      .map((taskId) => ({
+        ...(taskRegistry[taskId] || {
+          taskId,
+          subject: `任务 #${taskId}`,
+          description: '',
+          activeForm: '',
+          createEventId: '',
+        }),
+        dependsOn: [...(dependencies.get(taskId) || [])],
+      }))
+      .sort((left, right) => Number(left.taskId) - Number(right.taskId));
+    const dependencyCount = tasks.reduce((total, task) => total + task.dependsOn.length, 0);
+    const status = toolEvents.some((event) => event.status === 'error')
+      ? 'error'
+      : toolEvents.some((event) => event.status === 'incomplete')
+      ? 'incomplete'
+      : 'complete';
+    const startSequence = uniqueMembers[0]?.sequence || toolEvents[0].sequence;
+    const endSequence = uniqueMembers[uniqueMembers.length - 1]?.sequence || toolEvents[toolEvents.length - 1].sequence;
+    return {
+      groupId: `plan-group-${groupIndex + 1}-${startSequence}-${endSequence}`,
+      title: groupIndex === 0 ? '制定分析任务计划' : `修订分析任务计划 ${groupIndex}`,
+      summary: `创建或定义 ${tasks.length} 项任务，设置 ${dependencyCount} 条任务依赖。`,
+      startSequence,
+      endSequence,
+      memberEventIds: uniqueMembers.map((event) => event.event_id),
+      tasks,
+      dependencyCount,
+      status,
+    };
+  });
+}
+
+function hasPlanBoundaryBetween(
+  events: ObserverEvent[],
+  leftSequence: number,
+  rightSequence: number,
+): boolean {
+  return events.some((event) => {
+    if (event.sequence <= leftSequence || event.sequence >= rightSequence) return false;
+    if (event.event_type === 'model_response') return false;
+    if (event.event_type === 'tool_execution') {
+      if (isPlanStructureToolEvent(event)) return false;
+      const toolName = String(event.payload.name || '').toLowerCase();
+      const input = asRecord(event.payload.input);
+      if (toolName === 'taskupdate' && input.status) return true;
+      return !['taskget', 'tasklist'].includes(toolName);
+    }
+    return event.event_type === 'assistant_message'
+      || event.event_type === 'subagent_result'
+      || event.event_type === 'user_prompt';
+  });
+}
+
+function isPlanStructureToolEvent(event: ObserverEvent): boolean {
+  if (event.event_type !== 'tool_execution') return false;
+  const toolName = String(event.payload.name || '').toLowerCase();
+  if (toolName === 'taskcreate') return true;
+  if (toolName !== 'taskupdate') return false;
+  const input = asRecord(event.payload.input);
+  return Boolean(
+    input.addBlockedBy
+    || input.blockedBy
+    || input.blocked_by
+    || input.removeBlockedBy
+    || input.subject
+    || input.description
+    || input.activeForm,
+  ) && !input.status;
+}
+
+function buildRawTimelineItems(
+  events: ObserverEvent[],
+  planGroups: PlanDisplayGroup[],
+): RawTimelineItem[] {
+  const memberToGroup = new Map<string, PlanDisplayGroup>();
+  planGroups.forEach((group) => {
+    group.memberEventIds.forEach((eventId) => memberToGroup.set(eventId, group));
+  });
+  const inserted = new Set<string>();
+  const result: RawTimelineItem[] = [];
+  for (const event of events) {
+    const group = memberToGroup.get(event.event_id);
+    if (!group) {
+      result.push({ kind: 'event', event });
+      continue;
+    }
+    if (!inserted.has(group.groupId)) {
+      result.push({ kind: 'plan_group', group });
+      inserted.add(group.groupId);
+    }
+  }
+  return result;
 }
 
 function rawEventDisplay(
@@ -1268,12 +1641,43 @@ function buildGraph(
   selectedEventId: string | null,
   rawMode = false,
   taskRegistry: TaskRegistry = {},
+  planGroups: PlanDisplayGroup[] = [],
+  selectedPlanGroupId: string | null = null,
 ): { nodes: Node[]; edges: Edge[] } {
   if (!trace) return { nodes: [], edges: [] };
-  const events = trace.events.filter((event) => (
+  const sourceEvents = trace.events.filter((event) => (
     GRAPH_EVENT_TYPES.has(event.event_type) && !event.hidden_by_default
   ));
-  const eventIds = new Set(events.map((event) => event.event_id));
+  const memberToGroup = new Map<string, PlanDisplayGroup>();
+  if (rawMode) {
+    planGroups.forEach((group) => {
+      group.memberEventIds.forEach((eventId) => memberToGroup.set(eventId, group));
+    });
+  }
+  const events = sourceEvents.filter((event) => !memberToGroup.has(event.event_id));
+  const visibleIds = new Set([
+    ...events.map((event) => event.event_id),
+    ...(rawMode ? planGroups.map((group) => group.groupId) : []),
+  ]);
+  const remapId = (eventId: string) => memberToGroup.get(eventId)?.groupId || eventId;
+  const remappedRelations = trace.relations
+    .filter((relation) => ['next', 'invokes'].includes(relation.type))
+    .map((relation) => ({
+      ...relation,
+      from: remapId(relation.from),
+      to: remapId(relation.to),
+    }))
+    .filter((relation) => (
+      relation.from !== relation.to
+      && visibleIds.has(relation.from)
+      && visibleIds.has(relation.to)
+    ));
+  const relations = [...new Map(
+    remappedRelations.map((relation) => [
+      `${relation.from}|${relation.to}|${relation.type}`,
+      relation,
+    ]),
+  ).values()];
   const graph = new dagre.graphlib.Graph();
   graph.setGraph({
     rankdir: 'TB',
@@ -1287,13 +1691,10 @@ function buildGraph(
     const size = eventGraphSize(event, rawMode);
     graph.setNode(event.event_id, size);
   });
-  trace.relations
-    .filter((relation) => (
-      eventIds.has(relation.from)
-      && eventIds.has(relation.to)
-      && ['next', 'invokes'].includes(relation.type)
-    ))
-    .forEach((relation) => graph.setEdge(relation.from, relation.to));
+  if (rawMode) {
+    planGroups.forEach((group) => graph.setNode(group.groupId, { width: 300, height: 132 }));
+  }
+  relations.forEach((relation) => graph.setEdge(relation.from, relation.to));
   dagre.layout(graph);
 
   const nodes: Node[] = events.map<Node>((event) => {
@@ -1334,14 +1735,37 @@ function buildGraph(
       },
     };
   });
-  const edges: Edge[] = trace.relations
-    .filter((relation) => (
-      eventIds.has(relation.from)
-      && eventIds.has(relation.to)
-      && ['next', 'invokes'].includes(relation.type)
-    ))
+  if (rawMode) {
+    planGroups.forEach((group) => {
+      const position = graph.node(group.groupId) || { x: 0, y: 0 };
+      nodes.push({
+        id: group.groupId,
+        position: { x: position.x - 150, y: position.y - 66 },
+        data: {
+          label: `展示分组 · 任务规划\n${group.title}\n${group.tasks.length} 项任务 · ${group.dependencyCount} 条依赖 · ${group.memberEventIds.length} Events`,
+        },
+        style: {
+          width: 300,
+          minHeight: 132,
+          whiteSpace: 'pre-wrap',
+          textAlign: 'left',
+          fontSize: 11,
+          lineHeight: 1.5,
+          borderRadius: 20,
+          borderWidth: selectedPlanGroupId === group.groupId ? 3 : 2,
+          borderColor: group.status === 'error' ? '#dc2626' : '#7c3aed',
+          background: group.status === 'error' ? '#fff1f2' : '#f5f3ff',
+          color: '#2b2520',
+          boxShadow: selectedPlanGroupId === group.groupId
+            ? '0 12px 28px rgba(124,58,237,0.2)'
+            : '0 8px 20px rgba(76,55,32,0.08)',
+        },
+      });
+    });
+  }
+  const edges: Edge[] = relations
     .map((relation) => ({
-      id: relation.relation_id,
+      id: `${relation.relation_id}-${relation.from}-${relation.to}`,
       source: relation.from,
       target: relation.to,
       label: rawMode && relation.type === 'invokes' ? 'INVOKES' : relation.type,
