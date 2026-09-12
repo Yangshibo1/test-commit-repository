@@ -110,7 +110,10 @@ function ObserverPage() {
     (trace?.events || []).filter((event) => view === 'raw' || showInternal || !event.hidden_by_default)
   ), [trace, showInternal, view]);
   const selectedEvent = trace?.events.find((event) => event.event_id === selectedEventId) || null;
-  const graph = useMemo(() => buildGraph(trace, selectedEventId), [trace, selectedEventId]);
+  const graph = useMemo(
+    () => buildGraph(trace, selectedEventId, view === 'raw'),
+    [trace, selectedEventId, view],
+  );
 
   const generateSemantic = useCallback(async (
     annotationGuidance: string,
@@ -287,12 +290,14 @@ function ObserverPage() {
 
           <section className="min-h-0 overflow-auto">
             <div className="sticky top-0 px-4 py-3 bg-[rgba(255,255,255,0.94)] border-b border-line ot-section-title z-10">
-              执行时间线 · {visibleEvents.length}
+              {view === 'raw' ? 'Event 证据列表' : '执行时间线'} · {visibleEvents.length}
             </div>
             {visibleEvents.map((event) => (
               <EventCard
                 key={event.event_id}
                 event={event}
+                trace={trace}
+                rawMode={view === 'raw'}
                 selected={event.event_id === selectedEventId}
                 onSelect={setSelectedEventId}
               />
@@ -304,8 +309,14 @@ function ObserverPage() {
           <MetricStrip trace={trace} />
           <div className="min-h-0 border border-line rounded-3xl bg-panel overflow-hidden shadow-lg">
             <div className="h-12 flex items-center justify-between px-4 border-b border-line bg-white/60">
-              <span className="ot-section-title">Transcript Execution Graph</span>
-              <span className="ot-meta text-muted">橙色：执行顺序 · 紫色：工具调用</span>
+              <span className="ot-section-title">
+                {view === 'raw' ? 'Event Logic Graph' : 'Transcript Execution Graph'}
+              </span>
+              <span className="ot-meta text-muted">
+                {view === 'raw'
+                  ? '蓝色：模型批次 · 紫色：工具执行 · invokes：批次调用关系'
+                  : '橙色：执行顺序 · 紫色：工具调用'}
+              </span>
             </div>
             {trace ? (
               <ReactFlow
@@ -343,13 +354,46 @@ function ObserverPage() {
 
 function EventCard({
   event,
+  trace,
+  rawMode,
   selected,
   onSelect,
 }: {
   event: ObserverEvent;
+  trace: ObserverTrace | null;
+  rawMode: boolean;
   selected: boolean;
   onSelect: (eventId: string) => void;
 }) {
+  if (!rawMode) {
+    return (
+      <button
+        type="button"
+        onClick={() => onSelect(event.event_id)}
+        className={`w-full text-left px-4 py-3 border-b border-line transition-colors ${
+          selected ? 'bg-orange-50' : 'hover:bg-white'
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-semibold text-sm">{event.title}</span>
+          <StatusPill status={event.status} />
+        </div>
+        <div className="ot-meta text-muted mt-1 line-clamp-2">{event.summary || '无摘要'}</div>
+        <div className="ot-meta font-mono text-muted mt-2">
+          #{event.sequence} · line {event.source_lines.join(', ')} · {event.origin}
+        </div>
+      </button>
+    );
+  }
+
+  const display = rawMode && trace
+    ? rawEventDisplay(trace, event)
+    : {
+        typeLabel: eventTypeLabel(event.event_type),
+        title: event.title,
+        summary: event.summary || '无摘要',
+        context: event.origin,
+      };
   return (
     <button
       type="button"
@@ -359,12 +403,16 @@ function EventCard({
       }`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-semibold text-sm">{event.title}</span>
+        <span className="ot-meta font-mono text-accent uppercase">{display.typeLabel}</span>
         <StatusPill status={event.status} />
       </div>
-      <div className="ot-meta text-muted mt-1 line-clamp-2">{event.summary || '无摘要'}</div>
+      <div className="font-semibold text-sm mt-1 line-clamp-2">{display.title}</div>
+      <div className="ot-meta text-muted mt-1 line-clamp-2">{display.summary}</div>
+      {rawMode && display.context && (
+        <div className="ot-meta text-muted mt-2 line-clamp-1">{display.context}</div>
+      )}
       <div className="ot-meta font-mono text-muted mt-2">
-        #{event.sequence} · line {event.source_lines.join(', ')} · {event.origin}
+        #{event.sequence} · line {event.source_lines.join(', ')}
       </div>
     </button>
   );
@@ -676,6 +724,113 @@ function ReadableEventDetails({ event }: { event: ObserverEvent }) {
   );
 }
 
+interface EventDisplayDescription {
+  typeLabel: string;
+  title: string;
+  summary: string;
+  context: string;
+}
+
+function rawEventDisplay(trace: ObserverTrace, event: ObserverEvent): EventDisplayDescription {
+  if (event.event_type === 'model_response') {
+    const tools = resolveToolExecutions(trace, event);
+    const names = tools.map((tool) => String(tool.payload.name || tool.title || 'Tool'));
+    const operations = tools.map(toolOperationTitle);
+    return {
+      typeLabel: eventTypeLabel(event.event_type),
+      title: `发起 ${tools.length || toolUseIds(event).length} 个工具请求`,
+      summary: operations.join('；') || '当前 Trace 中没有找到对应工具执行',
+      context: `${String(event.payload.model || '未知模型')} · ${names.join(' · ') || 'Tool 未解析'}`,
+    };
+  }
+  if (event.event_type === 'tool_execution') {
+    const toolName = String(event.payload.name || event.title || 'Unknown Tool');
+    const operation = describeToolOperation(toolName, asRecord(event.payload.input));
+    return {
+      typeLabel: eventTypeLabel(event.event_type),
+      title: operation.title,
+      summary: toolResultSummary(event),
+      context: `Tool: ${toolName}${event.response_id ? ` · Batch ${shortId(event.response_id)}` : ''}`,
+    };
+  }
+  if (event.event_type === 'assistant_message') {
+    const finalAnswer = event.payload.stop_reason === 'end_turn';
+    return {
+      typeLabel: eventTypeLabel(event.event_type),
+      title: finalAnswer ? '向用户交付最终回答' : '向用户发送阶段消息',
+      summary: firstString(event.payload.text, event.summary, '没有可见文字'),
+      context: `${String(event.payload.model || '未知模型')} · ${humanStopReason(event.payload.stop_reason)}`,
+    };
+  }
+  if (event.event_type === 'subagent_result') {
+    return {
+      typeLabel: eventTypeLabel(event.event_type),
+      title: firstString(event.payload.task_summary, event.title),
+      summary: firstString(event.summary, event.payload.result),
+      context: `Agent: ${firstString(event.payload.task_id, '未知')} · ${firstString(event.payload.status, event.status)}`,
+    };
+  }
+  if (event.event_type === 'user_prompt') {
+    return {
+      typeLabel: eventTypeLabel(event.event_type),
+      title: '用户提出任务或补充要求',
+      summary: firstString(event.payload.content, event.summary),
+      context: `${firstString(event.payload.prompt_source, '未知来源')} · ${firstString(event.payload.permission_mode, '权限模式未知')}`,
+    };
+  }
+  if (event.event_type === 'system_event') {
+    return {
+      typeLabel: eventTypeLabel(event.event_type),
+      title: event.title,
+      summary: event.summary || '系统或生命周期记录',
+      context: firstString(event.payload.subtype, event.payload.type, 'system'),
+    };
+  }
+  if (event.event_type === 'local_command') {
+    return {
+      typeLabel: eventTypeLabel(event.event_type),
+      title: 'Claude 本地命令或命令输出',
+      summary: firstString(event.payload.content, event.summary),
+      context: 'local command',
+    };
+  }
+  return {
+    typeLabel: eventTypeLabel(event.event_type),
+    title: event.title,
+    summary: event.summary || '无摘要',
+    context: event.origin,
+  };
+}
+
+function eventTypeLabel(eventType: string): string {
+  return ({
+    user_prompt: '用户输入',
+    model_response: '模型响应',
+    tool_execution: '工具执行',
+    assistant_message: '助手消息',
+    subagent_result: '子代理结果',
+    system_event: '系统事件',
+    local_command: '本地命令',
+  } as Record<string, string>)[eventType] || eventType;
+}
+
+function toolUseIds(event: ObserverEvent): string[] {
+  return Array.isArray(event.payload.tool_use_ids)
+    ? event.payload.tool_use_ids.map((value: unknown) => String(value))
+    : [];
+}
+
+function toolResultSummary(event: ObserverEvent): string {
+  if (event.status === 'incomplete') return '尚未找到对应 Tool Result';
+  const output = formatReadableValue(event.payload.output, 240).replace(/\s+/g, ' ').trim();
+  if (event.status === 'error') return output ? `执行失败：${output}` : '工具执行失败';
+  return output ? `执行成功：${output}` : '工具执行成功';
+}
+
+function shortId(value: string): string {
+  return value.length <= 14 ? value : `${value.slice(0, 10)}…`;
+}
+
 interface ToolOperationDescription {
   title: string;
   typeLabel: string;
@@ -958,6 +1113,7 @@ function StatusPill({ status }: { status: string }) {
 function buildGraph(
   trace: ObserverTrace | null,
   selectedEventId: string | null,
+  rawMode = false,
 ): { nodes: Node[]; edges: Edge[] } {
   if (!trace) return { nodes: [], edges: [] };
   const events = trace.events.filter((event) => (
@@ -965,9 +1121,18 @@ function buildGraph(
   ));
   const eventIds = new Set(events.map((event) => event.event_id));
   const graph = new dagre.graphlib.Graph();
-  graph.setGraph({ rankdir: 'TB', ranksep: 72, nodesep: 46, marginx: 30, marginy: 30 });
+  graph.setGraph({
+    rankdir: 'TB',
+    ranksep: rawMode ? 92 : 72,
+    nodesep: rawMode ? 58 : 46,
+    marginx: 30,
+    marginy: 30,
+  });
   graph.setDefaultEdgeLabel(() => ({}));
-  events.forEach((event) => graph.setNode(event.event_id, { width: 240, height: 104 }));
+  events.forEach((event) => {
+    const size = eventGraphSize(event, rawMode);
+    graph.setNode(event.event_id, size);
+  });
   trace.relations
     .filter((relation) => (
       eventIds.has(relation.from)
@@ -980,18 +1145,31 @@ function buildGraph(
   const nodes: Node[] = events.map<Node>((event) => {
     const position = graph.node(event.event_id) || { x: 0, y: 0 };
     const colors = nodeColors(event);
+    const size = eventGraphSize(event, rawMode);
+    const display = rawMode
+      ? rawEventDisplay(trace, event)
+      : {
+          typeLabel: eventTypeLabel(event.event_type),
+          title: event.title,
+          summary: event.summary || '',
+          context: '',
+        };
     return {
       id: event.event_id,
-      position: { x: position.x - 120, y: position.y - 52 },
-      data: { label: `${event.title}\n${event.summary || ''}` },
+      position: { x: position.x - size.width / 2, y: position.y - size.height / 2 },
+      data: {
+        label: rawMode
+          ? `${display.typeLabel.toUpperCase()} · #${event.sequence}\n${display.title}\n${truncateText(display.context || display.summary, 110)}`
+          : `${event.title}\n${event.summary || ''}`,
+      },
       style: {
-        width: 240,
-        minHeight: 104,
+        width: size.width,
+        minHeight: size.height,
         whiteSpace: 'pre-wrap',
         textAlign: 'left',
-        fontSize: 12,
+        fontSize: rawMode ? 11 : 12,
         lineHeight: 1.45,
-        borderRadius: 16,
+        borderRadius: event.event_type === 'model_response' && rawMode ? 28 : 16,
         borderWidth: selectedEventId === event.event_id ? 3 : 2,
         borderColor: colors.border,
         background: colors.background,
@@ -1012,13 +1190,21 @@ function buildGraph(
       id: relation.relation_id,
       source: relation.from,
       target: relation.to,
-      label: relation.type,
+      label: rawMode && relation.type === 'invokes' ? 'INVOKES' : relation.type,
       type: 'smoothstep',
       animated: false,
       style: { stroke: relation.type === 'invokes' ? '#8b5cf6' : '#d97745', strokeWidth: 1.8 },
       labelStyle: { fontSize: 9, fill: '#78695c' },
     }));
   return { nodes, edges };
+}
+
+function eventGraphSize(event: ObserverEvent, rawMode: boolean): { width: number; height: number } {
+  if (!rawMode) return { width: 240, height: 104 };
+  if (event.event_type === 'model_response') return { width: 220, height: 94 };
+  if (event.event_type === 'tool_execution') return { width: 280, height: 122 };
+  if (event.event_type === 'subagent_result') return { width: 280, height: 116 };
+  return { width: 250, height: 106 };
 }
 
 function nodeColors(event: ObserverEvent): { border: string; background: string } {
