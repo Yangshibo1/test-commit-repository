@@ -5,6 +5,20 @@ export interface EvidenceField {
   review_id?: string;
 }
 
+export interface SemanticArtifactReference {
+  artifact_id: string;
+  name: string;
+  path: string;
+  artifact_type: string;
+  exists: boolean;
+  evidence_event_ids: string[];
+  operations: Array<{
+    event_id: string;
+    operation: string;
+    source: string;
+  }>;
+}
+
 export interface SemanticNode {
   node_id: string;
   sequence: number;
@@ -36,18 +50,30 @@ export interface SemanticNode {
   actions: Array<{
     event_id: string;
     tool_name: string;
+    action_name?: string;
+    action_type?: 'tool' | 'command' | 'subagent' | 'control';
+    event_type?: string;
+    event_subtype?: string | null;
     summary: string;
     status: string;
     semantic_relevance?: 'key_action' | 'orchestration';
   }>;
   observed_inputs: Array<Record<string, unknown>>;
   reported_outputs: Array<Record<string, unknown>>;
-  verified_artifacts: Array<Record<string, unknown>>;
+  verified_artifacts: SemanticArtifactReference[];
   errors: Array<{
     event_id: string;
     summary: string;
     recovered: boolean;
   }>;
+  event_profile?: SemanticEventProfile;
+}
+
+export interface SemanticEventProfile {
+  event_count: number;
+  event_type_counts: Record<string, number>;
+  event_subtypes: string[];
+  actor_types: string[];
 }
 
 export interface SemanticRelation {
@@ -62,6 +88,15 @@ export interface SemanticRelation {
 
 export interface SemanticWorkflow {
   schema_version: string;
+  source_events?: {
+    session_id: string;
+    path: string;
+    sha256: string;
+    schema_version: string;
+    event_count: number;
+    event_type_counts: Record<string, number>;
+    legacy_fallback?: boolean;
+  };
   source_trace: {
     session_id: string;
     path: string;
@@ -76,6 +111,8 @@ export interface SemanticWorkflow {
     prompt_version: string;
     generated_at: string;
     candidate_count?: number;
+    source_event_count?: number;
+    key_event_count?: number;
     stage_path?: string;
     annotation_guidance?: string;
     warnings: string[];
@@ -100,6 +137,7 @@ export interface SemanticWorkflow {
     boundary_basis: string[];
     candidate_kinds?: string[];
     semantic_anchors?: string[];
+    event_profile?: SemanticEventProfile;
     segmentation?: {
       origin: string;
       internal_boundaries: Array<Record<string, unknown>>;

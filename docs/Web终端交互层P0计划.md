@@ -55,7 +55,7 @@ P0 的验收目标是：用户打开本地网页后，可以像在 Windows 终�
 7. 支持发送 Ctrl+C。
 8. 支持关闭 Claude 进程。
 9. 显示 WebSocket 与 Claude 进程状态。
-10. 默认使用 `--dangerously-skip-permissions` 启动；页面可在启动前关闭该选项。
+10. 统一使用 `--dangerously-skip-permissions` 启动，不提供关闭该模式的页面选项。
 
 ## 4. P0 本地组件
 

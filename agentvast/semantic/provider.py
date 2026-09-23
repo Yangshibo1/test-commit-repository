@@ -68,17 +68,20 @@ class SemanticConfig:
     @classmethod
     def from_env(cls) -> "SemanticConfig":
         load_semantic_env()
+        claude_settings = _claude_settings_env()
         return cls(
             api_base_url=(
                 os.getenv("AGENTVAST_SEMANTIC_API_BASE_URL")
                 or os.getenv("AGENTVAST_REVIEW_API_BASE_URL")
                 or os.getenv("LLM_API_BASE_URL")
+                or claude_settings.get("ANTHROPIC_BASE_URL")
                 or ""
             ).rstrip("/"),
             api_key=(
                 os.getenv("AGENTVAST_SEMANTIC_API_KEY")
                 or os.getenv("AGENTVAST_REVIEW_API_KEY")
                 or os.getenv("LLM_API_KEY")
+                or claude_settings.get("ANTHROPIC_API_KEY")
                 or ""
             ),
             model=(
@@ -346,6 +349,33 @@ def _transport_error_type(error: BaseException) -> str:
     if "remote end closed" in text or isinstance(error, RemoteDisconnected):
         return "remote_disconnected"
     return "network"
+
+
+def _claude_settings_env() -> Dict[str, str]:
+    """Read Claude's existing gateway credentials only after explicit opt-in."""
+    enabled = os.getenv("AGENTVAST_SEMANTIC_USE_CLAUDE_SETTINGS", "").lower()
+    if enabled not in {"1", "true", "yes", "on"}:
+        return {}
+    configured = os.getenv("CLAUDE_CONFIG_DIR", "").strip()
+    settings_path = (
+        Path(configured).expanduser() / "settings.json"
+        if configured
+        else Path.home() / ".claude" / "settings.json"
+    )
+    if not settings_path.is_file():
+        return {}
+    try:
+        settings = json.loads(settings_path.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        return {}
+    values = settings.get("env") if isinstance(settings, dict) else None
+    if not isinstance(values, dict):
+        return {}
+    return {
+        name: str(values.get(name) or "").strip()
+        for name in ("ANTHROPIC_BASE_URL", "ANTHROPIC_API_KEY")
+        if str(values.get(name) or "").strip()
+    }
 
 
 def load_semantic_env(path: Optional[Path] = None) -> Optional[Path]:

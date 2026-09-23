@@ -1,5 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
-import ReactFlow, { Background, Controls, Edge, MiniMap, Node } from 'reactflow';
+import { memo, useEffect, useMemo, useState } from 'react';
+import ReactFlow, {
+  Background,
+  Controls,
+  Edge,
+  Handle,
+  MiniMap,
+  Node,
+  NodeProps,
+  Position,
+  ReactFlowInstance,
+  useViewport,
+} from 'reactflow';
 import dagre from 'dagre';
 import { ObserverTrace } from '../types/observer';
 import { SemanticNode, SemanticProgress, SemanticWorkflow } from '../types/semantic';
@@ -11,7 +22,125 @@ interface SemanticWorkflowViewProps {
   progress: SemanticProgress | null;
   onGenerate: (annotationGuidance: string, resumeInference?: string | null) => Promise<void>;
   onEvidence: (eventId: string) => void;
+  onOpenArtifact: (artifactId: string) => Promise<void>;
 }
+
+const SEMANTIC_NODE_WIDTH = 276;
+const SEMANTIC_NODE_HEIGHT = 116;
+const READING_ZOOM = 0.9;
+
+interface SemanticGraphNodeData {
+  nodeKind: 'semantic';
+  sequence: number;
+  activity: string;
+  activityLabel: string;
+  title: string;
+  eventCount: number;
+  toolCount: number;
+  commandCount: number;
+  outcomeCount: number;
+  artifactCount: number;
+  errorCount: number;
+  reviewStatus: string;
+  origin: string;
+  accent: string;
+}
+
+const SemanticGraphNode = memo(({ data, selected }: NodeProps<SemanticGraphNodeData>) => {
+  const { zoom } = useViewport();
+  const overview = zoom < 0.6;
+  const compact = zoom >= 0.6 && zoom < 0.8;
+  const statusLabel = data.reviewStatus === 'accepted'
+    ? '已确认'
+    : data.reviewStatus === 'corrected'
+    ? '已修订'
+    : data.origin === 'user_validated'
+    ? '已验证'
+    : '待复核';
+  const statusColor = data.reviewStatus === 'accepted' || data.origin === 'user_validated'
+    ? '#15803d'
+    : data.reviewStatus === 'corrected'
+    ? '#7c3aed'
+    : '#a8a29e';
+
+  return (
+    <div
+      className={`relative h-full w-full overflow-hidden rounded-2xl border bg-[#fffdfb] font-sans transition-[box-shadow,border-color] duration-200 ${
+        selected ? 'border-accent shadow-[0_16px_34px_rgba(217,119,69,0.24)]' : 'border-[#e7ded3] shadow-[0_8px_22px_rgba(76,55,32,0.10)]'
+      }`}
+      style={{ borderLeftWidth: 4, borderLeftColor: data.accent }}
+      title={`${String(data.sequence).padStart(2, '0')} · ${data.activityLabel} · ${data.title}`}
+    >
+      {overview ? (
+        <div className="flex h-full items-center gap-4 px-5">
+          <span className="text-3xl font-semibold tabular-nums" style={{ color: data.accent }}>
+            {String(data.sequence).padStart(2, '0')}
+          </span>
+          <div className="min-w-0">
+            <div className="text-base font-semibold text-[#302a25]">{data.activityLabel}</div>
+            <div className="mt-1 h-1.5 w-16 rounded-full" style={{ backgroundColor: data.accent }} />
+          </div>
+        </div>
+      ) : (
+        <div className="flex h-full flex-col px-4 py-3">
+          <div className="flex shrink-0 items-center gap-2">
+            <span
+              className="inline-flex h-6 min-w-8 items-center justify-center rounded-md px-1.5 text-xs font-bold tabular-nums text-white"
+              style={{ backgroundColor: data.accent }}
+            >
+              {String(data.sequence).padStart(2, '0')}
+            </span>
+            <span className="min-w-0 truncate rounded-full bg-stone-100 px-2 py-1 text-[11px] font-semibold text-[#625a52]">
+              {data.activityLabel}
+            </span>
+            <span className="ml-auto flex shrink-0 items-center gap-1.5 text-[10px] font-medium text-[#81776e]">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: statusColor }} />
+              {statusLabel}
+            </span>
+          </div>
+          <div className="mt-2 overflow-hidden text-[15px] font-semibold leading-5 text-[#29241f] line-clamp-2">
+            {data.title}
+          </div>
+          {!compact && (
+            <div className="mt-auto flex min-h-4 shrink-0 items-center gap-3 overflow-hidden text-[11px] font-medium text-[#7a7067]">
+              <span className="whitespace-nowrap">{data.eventCount} Events</span>
+              {data.toolCount > 0 && <span className="whitespace-nowrap">{data.toolCount} Tools</span>}
+              {data.commandCount > 0 && <span className="whitespace-nowrap">{data.commandCount} Commands</span>}
+              {data.artifactCount > 0 && <span className="whitespace-nowrap">{data.artifactCount} 个文件</span>}
+              {data.errorCount > 0 && <span className="whitespace-nowrap text-red-700">{data.errorCount} 个异常</span>}
+            </div>
+          )}
+        </div>
+      )}
+
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="main-in"
+        className="!h-1.5 !w-1.5 !border-0 !opacity-0"
+        style={{ backgroundColor: data.accent }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="main-out"
+        className="!h-1.5 !w-1.5 !border-0 !opacity-0"
+        style={{ backgroundColor: data.accent }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="artifact-out"
+        className="!h-1.5 !w-1.5 !border-0 !opacity-0"
+        style={{ top: 76, backgroundColor: '#0f766e' }}
+      />
+    </div>
+  );
+});
+
+SemanticGraphNode.displayName = 'SemanticGraphNode';
+
+const semanticNodeTypes = { semantic: SemanticGraphNode };
 
 export default function SemanticWorkflowView({
   trace,
@@ -20,8 +149,10 @@ export default function SemanticWorkflowView({
   progress,
   onGenerate,
   onEvidence,
+  onOpenArtifact,
 }: SemanticWorkflowViewProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [annotationGuidance, setAnnotationGuidance] = useState('保持阶段级摘要：标题简短，目标一到两句，行为摘要两到三句，结果保留关键数字与限制。');
 
   useEffect(() => {
@@ -45,9 +176,38 @@ export default function SemanticWorkflowView({
 
   const selectedNode = workflow?.semantic_nodes.find((node) => node.node_id === selectedNodeId) || null;
   const graph = useMemo(
-    () => buildSemanticGraph(workflow, selectedNodeId),
-    [workflow, selectedNodeId],
+    () => buildSemanticGraph(workflow, trace, selectedNodeId, onOpenArtifact),
+    [workflow, trace, selectedNodeId, onOpenArtifact],
   );
+  const sourceEventTypeCounts = useMemo(() => trace.events.reduce<Record<string, number>>(
+    (counts, event) => ({ ...counts, [event.event_type]: (counts[event.event_type] || 0) + 1 }),
+    {},
+  ), [trace.events]);
+
+  const focusNode = (nodeId: string, zoom = READING_ZOOM) => {
+    setSelectedNodeId(nodeId);
+    const target = graph.nodes.find((node) => node.id === nodeId && node.data?.nodeKind === 'semantic');
+    if (!flowInstance || !target) return;
+    void flowInstance.setCenter(
+      target.position.x + SEMANTIC_NODE_WIDTH / 2,
+      target.position.y + SEMANTIC_NODE_HEIGHT / 2,
+      { zoom, duration: 320 },
+    );
+  };
+
+  useEffect(() => {
+    const openingNodes = graph.nodes
+      .filter((node) => node.data?.nodeKind === 'semantic')
+      .slice(0, 3);
+    if (!flowInstance || openingNodes.length === 0) return;
+    void flowInstance.fitView({
+      nodes: openingNodes,
+      padding: 0.08,
+      minZoom: 0.82,
+      maxZoom: READING_ZOOM,
+      duration: 0,
+    });
+  }, [flowInstance, workflow?.inference_run.inference_id]);
 
   if (!workflow) {
     return (
@@ -56,7 +216,7 @@ export default function SemanticWorkflowView({
           <div className="text-accent font-mono text-xs uppercase">Semantic Workflow</div>
           <h2 className="font-serif text-3xl mt-3">尚未生成语义工作流</h2>
           <p className="text-muted text-sm leading-6 mt-3">
-            模型会执行 Episode 边界判断、逐阶段语义总结、关系提取和证据验证。你可以用下方提示词控制 Node 总结的详略程度。
+            模型会读取六类 Event，执行阶段边界判断、逐阶段语义总结、关系提取和证据验证。命令、工具、子 Agent 与控制事件会作为不同证据处理。
           </p>
           <label className="block text-left text-xs text-muted mt-6">
             Node 总结颗粒度要求
@@ -97,14 +257,14 @@ export default function SemanticWorkflowView({
   }
 
   return (
-    <div className="h-full min-h-0 grid grid-cols-[300px_minmax(620px,1fr)_400px] gap-3.5 p-3.5">
+    <div className="h-full min-h-0 grid grid-cols-[240px_minmax(620px,1fr)_320px] gap-2.5 p-2.5">
       <aside className="min-h-0 border border-line rounded-3xl bg-panel overflow-hidden shadow-lg flex flex-col">
         <div className="px-4 py-3 border-b border-line bg-white/70">
           <div className="flex items-center justify-between">
             <span className="ot-section-title">语义节点 · {workflow.semantic_nodes.length}</span>
           </div>
           <div className="ot-meta text-muted mt-1">
-            {workflow.inference_run.method} · {workflow.inference_run.candidate_count ?? '—'} candidates
+            {workflow.inference_run.method} · {workflow.source_events?.event_count || workflow.inference_run.source_event_count || trace.events.length} events → {workflow.inference_run.candidate_count ?? '—'} candidates
           </div>
           <label className="block text-[10px] text-muted mt-3">
             Node 总结颗粒度要求
@@ -147,7 +307,7 @@ export default function SemanticWorkflowView({
               className={`border-b border-line p-3 ${selectedNodeId === node.node_id ? 'bg-orange-50' : 'hover:bg-white'}`}
             >
               <div className="flex items-start gap-2">
-                <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setSelectedNodeId(node.node_id)}>
+                <button type="button" className="min-w-0 flex-1 text-left" onClick={() => focusNode(node.node_id)}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono text-[10px] text-accent">NODE {node.sequence}</span>
                     <span className="ot-meta text-muted">{node.primary_activity}</span>
@@ -166,26 +326,48 @@ export default function SemanticWorkflowView({
         </div>
       </aside>
 
-      <section className="min-h-0 grid grid-rows-[104px_1fr] gap-3.5">
-        <div className="grid grid-cols-5 gap-2.5 p-3 border border-line rounded-3xl bg-white/70">
-          <SemanticMetric label="Nodes" value={workflow.semantic_nodes.length} />
-          <SemanticMetric label="Episodes" value={workflow.episodes.length} />
-          <SemanticMetric label="Relations" value={workflow.relations.length} />
-          <SemanticMetric label="Outcomes" value={workflow.semantic_nodes.reduce((total, node) => total + node.outcome_claims.length, 0)} />
-          <SemanticMetric label="Key actions" value={workflow.semantic_nodes.reduce((total, node) => total + node.actions.filter((action) => action.semantic_relevance !== 'orchestration').length, 0)} />
+      <section className="min-h-0 grid grid-rows-[66px_1fr] gap-2.5">
+        <div className="grid grid-cols-5 gap-2 p-2 border border-line rounded-3xl bg-white/70">
+          <SemanticMetric label="源 Events" value={workflow.source_events?.event_count || workflow.validation.source_event_count || trace.events.length} />
+          <SemanticMetric label="语义节点" value={workflow.semantic_nodes.length} />
+          <SemanticMetric label="Tool" value={workflow.source_events?.event_type_counts?.tool_execution ?? sourceEventTypeCounts.tool_execution ?? 0} />
+          <SemanticMetric label="Command" value={workflow.source_events?.event_type_counts?.command_execution ?? sourceEventTypeCounts.command_execution ?? 0} />
+          <SemanticMetric label="Subagent" value={workflow.source_events?.event_type_counts?.subagent_result ?? sourceEventTypeCounts.subagent_result ?? 0} />
         </div>
         <div className="min-h-0 border border-line rounded-3xl bg-panel overflow-hidden shadow-lg">
-          <div className="h-12 px-4 border-b border-line bg-white/60 flex items-center justify-between">
-            <span className="ot-section-title">Evidence-grounded Semantic Workflow</span>
-            <span className="ot-meta text-muted">NEXT 为布局主干 · 语义关系为虚线</span>
+          <div className="h-12 px-4 border-b border-line bg-white/60 flex items-center justify-between gap-3">
+            <span className="ot-section-title">证据驱动语义工作流</span>
+            <div className="flex items-center gap-2">
+              <span className="hidden xl:inline ot-meta text-muted">仅显示 NEXT 阶段主干</span>
+              <button
+                type="button"
+                disabled={!selectedNodeId}
+                onClick={() => selectedNodeId && focusNode(selectedNodeId)}
+                className="rounded-full border border-line bg-white px-3 py-1 text-[11px] font-semibold text-[#675e56] shadow-sm hover:border-accent disabled:opacity-40"
+              >
+                定位当前
+              </button>
+              <button
+                type="button"
+                onClick={() => void flowInstance?.fitView({ padding: 0.1, minZoom: 0.14, maxZoom: 0.55, duration: 320 })}
+                className="rounded-full border border-line bg-white px-3 py-1 text-[11px] font-semibold text-[#675e56] shadow-sm hover:border-accent"
+              >
+                全览
+              </button>
+            </div>
           </div>
           <ReactFlow
             nodes={graph.nodes}
             edges={graph.edges}
-            fitView
-            minZoom={0.4}
-            maxZoom={1.8}
-            onNodeClick={(_, node) => setSelectedNodeId(node.id)}
+            nodeTypes={semanticNodeTypes}
+            defaultViewport={{ x: 80, y: 12, zoom: READING_ZOOM }}
+            minZoom={0.14}
+            maxZoom={1.25}
+            nodesDraggable={false}
+            onInit={setFlowInstance}
+            onNodeClick={(_, node) => {
+              if (node.data?.nodeKind === 'semantic') focusNode(node.id);
+            }}
           >
             <Background color="rgba(217,119,69,0.08)" gap={26} />
             <Controls />
@@ -242,6 +424,12 @@ function SemanticNodeInspector({
   const resources = node.observed_inputs
     .map((item) => String(item.value || ''))
     .filter(Boolean);
+  const eventTypeCounts = Object.keys(node.event_profile?.event_type_counts || {}).length
+    ? node.event_profile?.event_type_counts || {}
+    : evidence.reduce<Record<string, number>>(
+        (counts, event) => ({ ...counts, [event.event_type]: (counts[event.event_type] || 0) + 1 }),
+        {},
+      );
 
   return (
     <div className="h-full flex flex-col">
@@ -253,6 +441,13 @@ function SemanticNodeInspector({
         <h2 className="font-serif text-2xl mt-2">{node.title}</h2>
         <div className="ot-meta text-muted mt-2">
           {node.primary_activity} · {node.review_status}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-1.5 text-[10px] font-mono text-[#675e56]">
+          <span className="rounded-full bg-stone-100 px-2 py-1">{node.event_profile?.event_count || node.event_ids.length} Events</span>
+          {(eventTypeCounts.tool_execution || 0) > 0 && <span className="rounded-full bg-violet-50 px-2 py-1">{eventTypeCounts.tool_execution} Tools</span>}
+          {(eventTypeCounts.command_execution || 0) > 0 && <span className="rounded-full bg-orange-50 px-2 py-1">{eventTypeCounts.command_execution} Commands</span>}
+          {(eventTypeCounts.subagent_result || 0) > 0 && <span className="rounded-full bg-cyan-50 px-2 py-1">{eventTypeCounts.subagent_result} Subagents</span>}
+          {(eventTypeCounts.control_event || 0) > 0 && <span className="rounded-full bg-amber-50 px-2 py-1">{eventTypeCounts.control_event} Controls</span>}
         </div>
       </div>
       <div className="flex-1 overflow-auto p-5 space-y-5">
@@ -286,7 +481,8 @@ function SemanticNodeInspector({
             <h3 className="ot-section-title mb-2">关键动作与资源</h3>
             {keyActions.map((action) => (
               <button key={action.event_id} type="button" onClick={() => onEvidence(action.event_id)} className="w-full text-left rounded-xl border border-line bg-white p-3 mb-2">
-                <div className="flex justify-between gap-2 text-sm"><span className="font-semibold">{action.tool_name}</span><span>{action.status}</span></div>
+                <div className="flex justify-between gap-2 text-sm"><span className="font-semibold">{action.action_name || action.tool_name}</span><span>{action.status}</span></div>
+                <div className="ot-meta text-accent mt-1">{actionTypeLabel(action.action_type, action.event_type)}{action.event_subtype ? ` · ${action.event_subtype}` : ''}</div>
                 <div className="ot-meta text-muted mt-1">{action.summary}</div>
               </button>
             ))}
@@ -337,7 +533,7 @@ function SemanticNodeInspector({
           <h3 className="ot-section-title mb-2">编排动作</h3>
           {orchestrationActions.map((action) => (
             <button key={action.event_id} type="button" onClick={() => onEvidence(action.event_id)} className="w-full text-left rounded-xl border border-line bg-white p-3 mb-2">
-              <div className="flex justify-between gap-2 text-sm"><span className="font-semibold">{action.tool_name}</span><span>{action.status}</span></div>
+              <div className="flex justify-between gap-2 text-sm"><span className="font-semibold">{action.action_name || action.tool_name}</span><span>{action.status}</span></div>
               <div className="ot-meta text-muted mt-1">{action.summary}</div>
             </button>
           ))}
@@ -349,6 +545,7 @@ function SemanticNodeInspector({
           {evidence.map((event) => (
             <button key={event.event_id} type="button" onClick={() => onEvidence(event.event_id)} className="w-full text-left px-3 py-2 border-b border-line hover:bg-white">
               <div className="text-xs font-semibold">#{event.sequence} {event.title}</div>
+              <div className="ot-meta text-accent mt-1">{event.event_type}{event.event_subtype ? ` · ${event.event_subtype}` : ''}</div>
               <div className="ot-meta text-muted mt-1">line {event.source_lines.join(', ')} · {event.summary}</div>
             </button>
           ))}
@@ -362,61 +559,181 @@ function SemanticNodeInspector({
 
 function buildSemanticGraph(
   workflow: SemanticWorkflow | null,
+  trace: ObserverTrace,
   selectedNodeId: string | null,
+  onOpenArtifact: (artifactId: string) => Promise<void>,
 ): { nodes: Node[]; edges: Edge[] } {
   if (!workflow) return { nodes: [], edges: [] };
   const layout = new dagre.graphlib.Graph();
-  layout.setGraph({ rankdir: 'TB', ranksep: 86, nodesep: 56, marginx: 36, marginy: 36 });
+  layout.setGraph({ rankdir: 'TB', ranksep: 54, nodesep: 56, marginx: 36, marginy: 36 });
   layout.setDefaultEdgeLabel(() => ({}));
-  workflow.semantic_nodes.forEach((node) => layout.setNode(node.node_id, { width: 260, height: 122 }));
+  workflow.semantic_nodes.forEach((node) => layout.setNode(node.node_id, {
+    width: SEMANTIC_NODE_WIDTH,
+    height: SEMANTIC_NODE_HEIGHT,
+  }));
   workflow.relations
     .filter((relation) => relation.type === 'NEXT')
     .forEach((relation) => layout.setEdge(relation.from_node_id, relation.to_node_id));
+  const artifactLinks = (trace.artifacts || []).flatMap((artifact) => (
+    workflow.semantic_nodes.flatMap((semanticNode) => {
+      const eventIds = new Set(semanticNode.event_ids);
+      const operations = artifact.operations.filter((item) => eventIds.has(item.event_id));
+      if (!operations.length) return [];
+      return [{ artifact, semanticNode, operations }];
+    })
+  ));
+  const linkedArtifacts = [...new Map(
+    artifactLinks.map((item) => [item.artifact.artifact_id, item.artifact]),
+  ).values()];
   dagre.layout(layout);
 
   const nodes = workflow.semantic_nodes.map<Node>((semanticNode) => {
     const position = layout.node(semanticNode.node_id) || { x: 0, y: 0 };
+    const artifactCount = new Set(
+      artifactLinks
+        .filter((item) => item.semanticNode.node_id === semanticNode.node_id)
+        .map((item) => item.artifact.artifact_id),
+    ).size;
+    const fallbackEventTypeCounts = semanticNode.event_ids.reduce<Record<string, number>>((counts, eventId) => {
+      const eventType = trace.events.find((event) => event.event_id === eventId)?.event_type;
+      return eventType ? { ...counts, [eventType]: (counts[eventType] || 0) + 1 } : counts;
+    }, {});
+    const eventTypeCounts = Object.keys(semanticNode.event_profile?.event_type_counts || {}).length
+      ? semanticNode.event_profile?.event_type_counts || {}
+      : fallbackEventTypeCounts;
     return {
       id: semanticNode.node_id,
-      position: { x: position.x - 130, y: position.y - 61 },
+      type: 'semantic',
+      selected: selectedNodeId === semanticNode.node_id,
+      position: {
+        x: Math.round(position.x - SEMANTIC_NODE_WIDTH / 2),
+        y: Math.round(position.y - SEMANTIC_NODE_HEIGHT / 2),
+      },
       data: {
-        label: `${String(semanticNode.sequence).padStart(2, '0')} · ${semanticNode.primary_activity}\n${semanticNode.title}\n${semanticNode.outcome_claims.length} 项结果`,
+        nodeKind: 'semantic',
+        sequence: semanticNode.sequence,
+        activity: semanticNode.primary_activity,
+        activityLabel: activityLabel(semanticNode.primary_activity),
+        title: semanticNode.title,
+        eventCount: semanticNode.event_profile?.event_count || semanticNode.event_ids.length,
+        toolCount: eventTypeCounts.tool_execution ?? 0,
+        commandCount: eventTypeCounts.command_execution ?? 0,
+        outcomeCount: semanticNode.outcome_claims.length,
+        artifactCount,
+        errorCount: semanticNode.errors.length,
+        reviewStatus: semanticNode.review_status,
+        origin: semanticNode.origin,
+        accent: activityColor(semanticNode.primary_activity),
+      },
+      style: { width: SEMANTIC_NODE_WIDTH, height: SEMANTIC_NODE_HEIGHT },
+    };
+  });
+  const artifactNodes = linkedArtifacts.map<Node>((artifact) => {
+    const primaryLink = artifactLinks.find(
+      (item) => item.artifact.artifact_id === artifact.artifact_id,
+    );
+    const producerPosition = primaryLink
+      ? layout.node(primaryLink.semanticNode.node_id)
+      : { x: 0, y: 0 };
+    const siblings = primaryLink
+      ? artifactLinks.filter(
+          (item) => item.semanticNode.node_id === primaryLink.semanticNode.node_id,
+        )
+      : [];
+    const index = Math.max(
+      0,
+      siblings.findIndex((item) => item.artifact.artifact_id === artifact.artifact_id),
+    );
+    const rowCount = Math.ceil(Math.max(1, siblings.length) / 2);
+    const column = index % 2;
+    const row = Math.floor(index / 2);
+    return {
+      id: artifact.artifact_id,
+      position: {
+        x: Math.round(producerPosition.x + 192 + column * 214),
+        y: Math.round(producerPosition.y - 33 + (row - (rowCount - 1) / 2) * 82),
+      },
+      targetPosition: Position.Left,
+      data: {
+        nodeKind: 'artifact',
+        label: (
+          <button
+            type="button"
+            title={artifact.path}
+            onClick={(event) => {
+              event.stopPropagation();
+              void onOpenArtifact(artifact.artifact_id);
+            }}
+              className="nodrag block w-full overflow-hidden text-left text-inherit"
+            >
+            <span className="block text-[10px] font-mono uppercase opacity-70">
+              {artifactTypeLabel(artifact.artifact_type)}
+            </span>
+            <span className="mt-1 block truncate font-semibold" title={artifact.name}>{artifact.name}</span>
+            <span className="mt-1 block text-[10px] opacity-60">本地打开 ↗</span>
+          </button>
+        ),
       },
       style: {
-        width: 260,
-        minHeight: 122,
-        whiteSpace: 'pre-wrap',
+        width: 196,
+        height: 66,
+        overflow: 'hidden',
+        borderRadius: 14,
+        border: `2px solid ${artifactColor(artifact.artifact_type)}`,
+        background: '#ffffff',
         textAlign: 'left',
         fontSize: 12,
-        lineHeight: 1.45,
-        borderRadius: 18,
-        borderWidth: selectedNodeId === semanticNode.node_id ? 3 : 2,
-        borderColor: semanticNode.review_status === 'accepted' ? '#15803d' : activityColor(semanticNode.primary_activity),
-        background: semanticNode.origin === 'user_validated' ? '#f0fdf4' : '#fffaf5',
-        boxShadow: selectedNodeId === semanticNode.node_id
-          ? '0 14px 32px rgba(217,119,69,0.22)'
-          : '0 8px 20px rgba(76,55,32,0.08)',
+        lineHeight: 1.25,
+        boxShadow: '0 6px 16px rgba(76,55,32,0.08)',
       },
     };
   });
-  const edges = workflow.relations.map<Edge>((relation) => {
-    const semantic = relation.type !== 'NEXT';
-    return {
+  const semanticEdges = workflow.relations
+    .filter((relation) => relation.type === 'NEXT')
+    .map<Edge>((relation) => ({
       id: relation.relation_id,
       source: relation.from_node_id,
       target: relation.to_node_id,
-      label: relation.type,
-      type: semantic ? 'bezier' : 'smoothstep',
+      type: 'smoothstep',
+      sourceHandle: 'main-out',
+      targetHandle: 'main-in',
       animated: false,
       style: {
-        stroke: semantic ? '#7c3aed' : '#d97745',
-        strokeWidth: semantic ? 1.8 : 2.2,
-        strokeDasharray: semantic ? '6 4' : undefined,
+        stroke: '#d97745',
+        strokeWidth: 2.2,
+        opacity: 0.82,
       },
-      labelStyle: { fontSize: 9, fill: semantic ? '#6d28d9' : '#7c5d49' },
+    }));
+  const artifactEdges = artifactLinks.map<Edge>(({ artifact, semanticNode, operations }) => {
+    const modified = operations.some((item) => item.operation === 'modified');
+    return {
+      id: `artifact-edge-${semanticNode.node_id}-${artifact.artifact_id}`,
+      source: semanticNode.node_id,
+      target: artifact.artifact_id,
+      sourceHandle: 'artifact-out',
+      label: modified ? '修改' : '生成',
+      type: 'smoothstep',
+      style: { stroke: artifactColor(artifact.artifact_type), strokeWidth: 1.8 },
+      labelStyle: { fontSize: 9, fill: '#57534e' },
     };
   });
-  return { nodes, edges };
+  return { nodes: [...nodes, ...artifactNodes], edges: [...semanticEdges, ...artifactEdges] };
+}
+
+function artifactTypeLabel(type: string): string {
+  if (type === 'dataset') return '数据文件';
+  if (type === 'report') return '报告';
+  if (type === 'visualization') return '可视化';
+  if (type === 'code') return '代码';
+  return '文件';
+}
+
+function artifactColor(type: string): string {
+  if (type === 'dataset') return '#2563eb';
+  if (type === 'report') return '#d97745';
+  if (type === 'visualization') return '#7c3aed';
+  if (type === 'code') return '#0f766e';
+  return '#78716c';
 }
 
 function activityColor(activity: string): string {
@@ -425,6 +742,28 @@ function activityColor(activity: string): string {
   if (activity === 'Task Understanding' || activity === 'Data Understanding') return '#0f766e';
   if (activity === 'Analysis' || activity === 'Exploration') return '#2563eb';
   return '#78716c';
+}
+
+function activityLabel(activity: string): string {
+  const labels: Record<string, string> = {
+    Exploration: '探索',
+    'Data Understanding': '数据理解',
+    'Data Preparation': '数据准备',
+    'Task Understanding': '任务理解',
+    Analysis: '分析',
+    Communication: '交付',
+    Synthesis: '综合',
+    Validation: '验证',
+    Refinement: '修订',
+  };
+  return labels[activity] || activity;
+}
+
+function actionTypeLabel(actionType?: string, eventType?: string): string {
+  if (actionType === 'command' || eventType === 'command_execution') return 'Agent Command';
+  if (actionType === 'subagent' || eventType === 'subagent_result') return 'Subagent Result';
+  if (actionType === 'control' || eventType === 'control_event') return 'Control Event';
+  return 'Tool Execution';
 }
 
 function Badge({ text, tone }: { text: string; tone: 'red' | 'green' | 'gray' }) {
@@ -438,9 +777,9 @@ function Badge({ text, tone }: { text: string; tone: 'red' | 'green' | 'gray' })
 
 function SemanticMetric({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-line bg-white/80 p-3">
-      <div className="ot-stat text-[24px]">{value}</div>
-      <div className="ot-meta text-muted mt-1">{label}</div>
+    <div className="flex min-w-0 items-center justify-between gap-2 rounded-2xl border border-line bg-white/80 px-3 py-2">
+      <div className="truncate ot-meta text-muted">{label}</div>
+      <div className="shrink-0 ot-stat text-[21px]">{value}</div>
     </div>
   );
 }

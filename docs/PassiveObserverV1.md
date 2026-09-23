@@ -28,8 +28,10 @@ agentvast observe start `
   --capture-api-bodies
 ```
 
-`observe start` 不提交初始 prompt，也不改变 Claude 的权限模式。Claude 启动后由用户正常输入
-任务。只有显式传入 `--permission-mode` 时，Observer 才把该参数转交 Claude Code。
+`observe start` 不提交初始 prompt，Claude 启动后由用户正常输入任务。所有 Observer 会话
+统一使用 `--dangerously-skip-permissions` 启动 Claude Code，避免权限确认打断长时间数据分析。
+该参数只关闭 Claude Code 的工具权限询问，不会启用 AgentVAST Plan、Node、prompt 注入或
+执行门禁；Observer 仍然只记录可观察事件。
 
 Observer 面向当前 Claude Code Hook schema，启用 MessageDisplay、PostToolBatch、
 PermissionDenied、Subagent、Task 和 async Hook。使用前应执行 `claude update` 并确认
@@ -81,7 +83,8 @@ C:\Users\<用户名>\.agentvast\observations\<session-id>\
 ```text
 manifest.json                           数据源与 Hook profile
 diagnostics/validation_report.json     完整性和降级状态
-derived/canonical_events.jsonl         统一事件轨迹
+derived/canonical_events.jsonl         采集与关联层中间事件（内部使用）
+derived/events.jsonl                   Event Schema 2.0 工作流事件
 derived/tool_calls.jsonl               工具调用
 derived/messages.jsonl                 用户与 Claude 可见消息
 derived/observer_trace.json            Passive Observer 页面数据
@@ -112,6 +115,7 @@ transcript/transcript.jsonl            Claude 原生 transcript 快照
 │  └─ transcript.jsonl
 ├─ derived/
 │  ├─ canonical_events.jsonl
+│  ├─ events.jsonl
 │  ├─ messages.jsonl
 │  ├─ tool_calls.jsonl
 │  ├─ agents.jsonl
@@ -128,6 +132,10 @@ transcript/transcript.jsonl            Claude 原生 transcript 快照
    └─ otel_collector.stderr.log
 ```
 
+`canonical_events.jsonl` 保留采集源合并、去重和关联所需的内部记录；面向语义提取、关系推断与
+可视化的统一输入为 `events.jsonl`。后者只包含 Event Schema 2.0 的六类工作流 Event，不包含
+用户手动命令和常规系统遥测。
+
 可以使用 `--storage-root` 或 `AGENTVAST_OBSERVER_ROOT` 修改根目录。观察文件不写入 Claude
 当前分析项目，避免被 Agent 搜索或读取。
 
@@ -143,13 +151,32 @@ Observer 对 transcript 采用以下顺序处理：
 1. 按 JSONL 行读取并保留原始行号，原文件不覆盖、不清洗；
 2. 只把 `origin.kind=human`、`promptSource=typed/pasted/voice` 或带稳定
    `promptId` 的普通文本识别为人工 Prompt；
-3. 将 `/exit`、`local-command-caveat`、本地命令输出和系统 UI 消息归为默认折叠的内部事件；
-4. 使用 `message.id` 合并同一模型响应中的多个工具调用，重建工具批次；
-5. 使用 `tool_use_id` 精确配对工具调用和结果，保留结构化 `toolUseResult`；
+3. `/exit`、`local-command-caveat` 和用户本地命令不生成工作流 Event；
+4. 使用 `message.id` 合并同一模型响应，并将工具请求、可见文本和最终回答统一为
+   `model_response`；
+5. 使用 `tool_use_id` 精确配对请求和结果；PowerShell、Bash 等 Agent Command 派生为
+   `command_execution`，其余结构化工具派生为 `tool_execution`；
 6. 使用 `uuid/parentUuid` 保存原始父子链，并从 Prompt、Response、Tool、Final Answer
    确定性生成紧凑执行图；
 7. 事件 ID 由 Session、来源行和稳定标识计算，重复 derive 不改变节点 ID；
-8. 成本、模型、权限模式和会话级耗时作为 Session 指标保存。
+8. 普通 `turn_duration`、`stop_hook_summary` 等系统记录进入 `telemetry`；只有权限拒绝、
+   超时、取消、上下文压缩等改变控制流的记录才生成 `control_event`；
+9. 成本、模型、权限模式和会话级耗时作为 Session 指标保存。
+
+`observer-trace/2.0` 的工作流 Event 固定为六类：
+
+```text
+user_prompt
+model_response
+tool_execution
+command_execution
+subagent_result
+control_event
+```
+
+每条 Event 保留稳定公共字段，并增加 `event_class`、`event_subtype`、`actor`、`scope`、
+`time` 和 `provenance`。完整 Event 流同时写入 `derived/events.jsonl`；原始 transcript 继续作为
+不可变证据保存在 `raw/transcript.jsonl`，不会因为 Event 精简而被删除。
 
 `observer_trace.json` 中只有 `observed` 和可重复计算的 `derived` 数据，不生成 Exploration、
 Analysis、Validation 等语义阶段。工具调用到结果之间的 transcript 时间差记录为
@@ -169,9 +196,11 @@ GET /api/observations/<session-id>/trace
 工具错误状态、成本与耗时指标，以及可回溯到 transcript 行号的 Inspector。也可以离线加载单个
 `observer_trace.json`。该页面没有启动、停止、审批或修改 Claude 的控制能力。
 
-页面进一步提供“语义工作流 / 执行轨迹 / 原始证据”三级视图。语义工作流属于独立的事后推断
-层，生成与人工校正规则见 [SemanticWorkflowV1.md](SemanticWorkflowV1.md)。人工校正只写入
-Observer 派生目录，不会向 Claude 发送消息或改变已记录的会话。
+页面提供“语义工作流 / 执行轨迹”两级视图。执行轨迹保留 Event 与 transcript 行号回链，并
+显示工具执行过程中生成的本地文件节点；点击文件节点可由操作系统默认应用直接打开。语义
+工作流属于独立的事后推断层，生成与人工校正规则见
+[SemanticWorkflowV1.md](SemanticWorkflowV1.md)。人工校正只写入 Observer 派生目录，不会
+向 Claude 发送消息或改变已记录的会话。
 
 ## 被动性保证
 

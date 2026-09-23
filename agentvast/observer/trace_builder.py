@@ -21,12 +21,55 @@ from agentvast.observer.store import (
 )
 
 
-TRACE_SCHEMA_VERSION = "observer-trace/1.0"
+TRACE_SCHEMA_VERSION = "observer-trace/2.0"
+SUPPORTED_TRACE_SCHEMA_VERSIONS = {"observer-trace/1.0", TRACE_SCHEMA_VERSION}
 LOCAL_MARKERS = (
     "<local-command-caveat>",
     "<local-command-stdout>",
     "<command-name>",
 )
+COMMAND_TOOL_NAMES = {
+    "bash",
+    "command",
+    "exec",
+    "execute",
+    "powershell",
+    "shell",
+    "terminal",
+}
+CONTROL_EVENT_SUBTYPES = {
+    "context_compacted": ("compact", "compaction"),
+    "execution_cancelled": ("cancel", "cancelled", "canceled"),
+    "execution_interrupted": ("interrupt", "interrupted"),
+    "execution_resumed": ("resume", "resumed"),
+    "model_changed": ("model_change", "model_switch"),
+    "permission_denied": ("permission_denied", "permission denied"),
+    "rate_limited": ("rate_limit", "rate limit"),
+    "session_terminated": ("session_terminated", "session terminated"),
+    "tool_timeout": ("timeout", "timed_out", "timed out"),
+}
+ARTIFACT_SUFFIXES = {
+    ".csv",
+    ".tsv",
+    ".json",
+    ".jsonl",
+    ".parquet",
+    ".xlsx",
+    ".xls",
+    ".md",
+    ".txt",
+    ".docx",
+    ".pdf",
+    ".html",
+    ".htm",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".svg",
+    ".py",
+    ".ipynb",
+}
 
 
 def stable_id(prefix: str, *parts: Any) -> str:
@@ -106,6 +149,99 @@ def _tool_summary(name: str, tool_input: Any) -> str:
     return name
 
 
+def _is_command_tool(name: Any) -> bool:
+    return str(name or "").strip().lower() in COMMAND_TOOL_NAMES
+
+
+def _tool_event_subtype(name: Any) -> str:
+    lowered = str(name or "").strip().lower()
+    if lowered in {"read"}:
+        return "file_read"
+    if lowered in {"write"}:
+        return "file_write"
+    if lowered in {"edit", "multiedit", "notebookedit"}:
+        return "file_modify"
+    if lowered in {"glob", "grep", "search"}:
+        return "path_search"
+    if lowered == "taskcreate":
+        return "task_create"
+    if lowered == "taskupdate":
+        return "task_update"
+    if lowered in {"taskget", "tasklist"}:
+        return "task_query"
+    if lowered in {"agent", "task"}:
+        return "agent_delegation"
+    if lowered == "enterplanmode":
+        return "plan_enter"
+    if lowered == "exitplanmode":
+        return "plan_exit"
+    return "tool_call"
+
+
+def _response_kind(visible_text: str, tool_ids: Iterable[str]) -> str:
+    has_text = bool(str(visible_text or "").strip())
+    has_tools = bool(list(tool_ids))
+    if has_text and has_tools:
+        return "mixed"
+    if has_tools:
+        return "tool_request"
+    return "text"
+
+
+def _control_event_subtype(record: Mapping[str, Any]) -> Optional[str]:
+    searchable = " ".join(
+        str(record.get(key) or "")
+        for key in ("subtype", "event", "reason", "stopReason", "error")
+    ).lower()
+    for subtype, markers in CONTROL_EVENT_SUBTYPES.items():
+        if any(marker in searchable for marker in markers):
+            return subtype
+    return None
+
+
+def _event_actor(actor_type: str, actor_id: Optional[str] = None) -> Dict[str, Any]:
+    return {"type": actor_type, "id": actor_id} if actor_id else {"type": actor_type}
+
+
+def _event_scope(
+    session_id: str,
+    *,
+    turn_id: Optional[str] = None,
+    response_id: Optional[str] = None,
+    tool_use_id: Optional[str] = None,
+    task_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    return {
+        "session_id": session_id,
+        "turn_id": turn_id,
+        "response_id": response_id,
+        "tool_use_id": tool_use_id,
+        "agent_run_id": None,
+        "task_id": task_id,
+    }
+
+
+def _event_time(started_at: Any, ended_at: Any = None, duration_ms: Any = None) -> Dict[str, Any]:
+    return {
+        "started_at": started_at,
+        "ended_at": ended_at,
+        "duration_ms": duration_ms,
+    }
+
+
+def _event_provenance(
+    source_lines: Iterable[int],
+    source_uuids: Iterable[Any] = (),
+) -> Dict[str, Any]:
+    lines = sorted(set(int(line) for line in source_lines))
+    uuids = [str(value) for value in source_uuids if value]
+    return {
+        "source": "transcript",
+        "source_lines": lines,
+        "source_uuids": list(dict.fromkeys(uuids)),
+    }
+
+
 def _evidence(lines: Iterable[int]) -> List[Dict[str, Any]]:
     return [{"source": "transcript", "line_number": int(line)} for line in sorted(set(lines))]
 
@@ -114,6 +250,159 @@ def _write_json_atomic(path: Path, value: Any) -> None:
     temporary = path.with_name(path.name + ".tmp-" + stable_id("write", os.getpid(), path))
     temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(str(temporary), str(path))
+
+
+def _artifact_type(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix in {".csv", ".tsv", ".json", ".jsonl", ".parquet", ".xlsx", ".xls"}:
+        return "dataset"
+    if suffix in {".md", ".txt", ".docx", ".pdf"}:
+        return "report"
+    if suffix in {".html", ".htm", ".png", ".jpg", ".jpeg", ".gif", ".svg"}:
+        return "visualization"
+    if suffix in {".py", ".ipynb"}:
+        return "code"
+    return "file"
+
+
+def _resolved_artifact_path(raw_path: Any, cwd: Optional[str]) -> Optional[Path]:
+    value = str(raw_path or "").strip().strip('"\'')
+    if not value or not cwd:
+        return None
+    try:
+        project_root = Path(cwd).resolve()
+        candidate = Path(os.path.expandvars(value)).expanduser()
+        if not candidate.is_absolute():
+            candidate = project_root / candidate
+        candidate = candidate.resolve()
+        candidate.relative_to(project_root)
+        return candidate
+    except (OSError, RuntimeError, ValueError):
+        return None
+
+
+def _display_artifact_path(path: Path, cwd: Optional[str]) -> str:
+    if cwd:
+        try:
+            return path.relative_to(Path(cwd).resolve()).as_posix()
+        except (OSError, ValueError):
+            pass
+    return str(path)
+
+
+def _reported_path_candidates(value: Any) -> List[str]:
+    if value is None:
+        return []
+    text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, default=str)
+    candidates: List[str] = []
+    creation_markers = re.compile(
+        r"\b(saved?|wrote|written|created?|generated?|exported?|converted|output)\b|"
+        r"保存|写入|创建|生成|导出|输出",
+        flags=re.IGNORECASE,
+    )
+    for line in text.splitlines() or [text]:
+        if not creation_markers.search(line):
+            continue
+        candidates.extend(match[1] for match in re.findall(r"([\"'])(.+?)\1", line))
+        for token in re.split(r"\s+", line):
+            cleaned = token.strip("\"'`()[]{}<>,;:")
+            if cleaned:
+                candidates.append(cleaned)
+    return [
+        candidate
+        for candidate in candidates
+        if Path(candidate).suffix.lower() in ARTIFACT_SUFFIXES
+    ]
+
+
+def _shell_redirect_candidates(command: str) -> List[str]:
+    result: List[str] = []
+    pattern = re.compile(r"(?:^|\s)(?:>|>>)\s*(?:\"([^\"]+)\"|'([^']+)'|([^\s;&|]+))")
+    for match in pattern.finditer(command):
+        value = next((item for item in match.groups() if item), "")
+        if Path(value).suffix.lower() in ARTIFACT_SUFFIXES:
+            result.append(value)
+    return result
+
+
+def derive_trace_artifacts(
+    session_id: str,
+    cwd: Optional[str],
+    events: Iterable[Mapping[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Derive file artifacts already evidenced by transcript tool events."""
+    artifacts: Dict[str, Dict[str, Any]] = {}
+    for event in events:
+        if (
+            event.get("event_type") not in {"tool_execution", "command_execution"}
+            or event.get("status") != "success"
+        ):
+            continue
+        payload = event.get("payload") if isinstance(event.get("payload"), dict) else {}
+        tool_name = str(payload.get("name") or event.get("title") or "")
+        lowered = tool_name.lower()
+        tool_input = payload.get("input") if isinstance(payload.get("input"), dict) else {}
+        candidates: List[Tuple[str, str, str]] = []
+        if lowered == "write":
+            candidates.append(
+                (
+                    str(tool_input.get("file_path") or tool_input.get("path") or ""),
+                    "created",
+                    "tool_input",
+                )
+            )
+        elif lowered in {"edit", "multiedit", "notebookedit"}:
+            candidates.append(
+                (
+                    str(
+                        tool_input.get("file_path")
+                        or tool_input.get("notebook_path")
+                        or tool_input.get("path")
+                        or ""
+                    ),
+                    "modified",
+                    "tool_input",
+                )
+            )
+        elif lowered in {"bash", "shell", "powershell"}:
+            command = str(tool_input.get("command") or "")
+            candidates.extend(
+                (path, "created", "shell_redirect")
+                for path in _shell_redirect_candidates(command)
+            )
+            candidates.extend(
+                (path, "created", "tool_output")
+                for path in _reported_path_candidates(payload.get("output"))
+            )
+
+        for raw_path, operation, source in candidates:
+            resolved = _resolved_artifact_path(raw_path, cwd)
+            if resolved is None or not resolved.is_file():
+                continue
+            normalized = os.path.normcase(str(resolved))
+            artifact = artifacts.setdefault(
+                normalized,
+                {
+                    "artifact_id": stable_id("artifact", session_id, normalized),
+                    "name": resolved.name,
+                    "path": _display_artifact_path(resolved, cwd),
+                    "artifact_type": _artifact_type(resolved),
+                    "exists": True,
+                    "evidence_event_ids": [],
+                    "operations": [],
+                },
+            )
+            event_id = str(event.get("event_id") or "")
+            if event_id and event_id not in artifact["evidence_event_ids"]:
+                artifact["evidence_event_ids"].append(event_id)
+                artifact["operations"].append(
+                    {
+                        "event_id": event_id,
+                        "operation": operation,
+                        "source": source,
+                    }
+                )
+    return list(artifacts.values())
 
 
 def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[str, Any]:
@@ -127,6 +416,7 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             parsed.append((int(envelope.get("line_number") or 0), record))
 
     events: List[Dict[str, Any]] = []
+    telemetry: List[Dict[str, Any]] = []
     relations: List[Dict[str, Any]] = []
     relation_keys: Set[Tuple[str, str, str]] = set()
     turns: List[Dict[str, Any]] = []
@@ -165,7 +455,9 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             prompt_event = {
                 "event_id": event_id,
                 "sequence": 0,
+                "event_class": "interaction",
                 "event_type": "user_prompt",
+                "event_subtype": str(record.get("promptSource") or "human_message"),
                 "timestamp": record.get("timestamp"),
                 "ended_at": None,
                 "turn_id": current_turn,
@@ -175,6 +467,9 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
                 "tool_use_id": None,
                 "status": "observed",
                 "origin": "observed",
+                "actor": _event_actor("user"),
+                "scope": _event_scope(session_id, turn_id=current_turn),
+                "time": _event_time(record.get("timestamp")),
                 "title": "用户任务",
                 "summary": _text_preview(content),
                 "payload": {
@@ -185,6 +480,7 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
                 },
                 "evidence": _evidence([line_number]),
                 "source_lines": [line_number],
+                "provenance": _event_provenance([line_number], [record.get("uuid")]),
                 "hidden_by_default": False,
             }
             events.append(prompt_event)
@@ -217,7 +513,9 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             event = {
                 "event_id": event_id,
                 "sequence": 0,
+                "event_class": "delegation",
                 "event_type": "subagent_result",
+                "event_subtype": "final_result",
                 "timestamp": record.get("timestamp"),
                 "ended_at": None,
                 "turn_id": current_turn,
@@ -227,6 +525,14 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
                 "tool_use_id": _xml_value(content, "tool-use-id"),
                 "status": _xml_value(content, "status") or "observed",
                 "origin": "observed",
+                "actor": _event_actor("subagent", task_id or None),
+                "scope": _event_scope(
+                    session_id,
+                    turn_id=current_turn,
+                    tool_use_id=_xml_value(content, "tool-use-id"),
+                    task_id=task_id,
+                ),
+                "time": _event_time(record.get("timestamp")),
                 "title": "子 Agent 结果 · {0}".format(task_summary),
                 "summary": _text_preview(result_text),
                 "payload": {
@@ -239,6 +545,7 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
                 },
                 "evidence": _evidence([line_number]),
                 "source_lines": [line_number],
+                "provenance": _event_provenance([line_number], [record.get("uuid")]),
                 "hidden_by_default": False,
             }
             events.append(event)
@@ -250,31 +557,6 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             filtered_non_human_users += 1
             if is_local_user_record(record):
                 local_command_count += 1
-                content = str(message_content(record) or "")
-                event_id = stable_id("event", session_id, "local", line_number)
-                event = {
-                    "event_id": event_id,
-                    "sequence": 0,
-                    "event_type": "local_command",
-                    "timestamp": record.get("timestamp"),
-                    "ended_at": None,
-                    "turn_id": None,
-                    "parent_uuid": record.get("parentUuid"),
-                    "message_uuid": record.get("uuid"),
-                    "response_id": None,
-                    "tool_use_id": None,
-                    "status": "observed",
-                    "origin": "observed",
-                    "title": "本地命令",
-                    "summary": _text_preview(content),
-                    "payload": {"content": content},
-                    "evidence": _evidence([line_number]),
-                    "source_lines": [line_number],
-                    "hidden_by_default": True,
-                }
-                events.append(event)
-                if record.get("uuid"):
-                    uuid_to_event[str(record["uuid"])] = event_id
             line_to_turn[line_number] = None
             continue
         line_to_turn[line_number] = current_turn
@@ -379,12 +661,15 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
                 int(tool_uses[tool_id]["block_index"]),
             ),
         )
-        event_type = "model_response" if tools else "assistant_message"
+        response_kind = _response_kind(visible_text, tools)
+        is_final = stop_reason == "end_turn"
         event_id = stable_id("event", session_id, "response", turn_id, response_id)
         event = {
             "event_id": event_id,
             "sequence": 0,
-            "event_type": event_type,
+            "event_class": "interaction",
+            "event_type": "model_response",
+            "event_subtype": response_kind,
             "timestamp": first["record"].get("timestamp"),
             "ended_at": ordered[-1]["record"].get("timestamp"),
             "turn_id": turn_id,
@@ -392,13 +677,23 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             "message_uuid": first["record"].get("uuid"),
             "response_id": response_id,
             "tool_use_id": None,
-            "status": ("complete" if stop_reason == "end_turn" or visible_text else "observed"),
+            "status": ("complete" if is_final or visible_text else "observed"),
             "origin": "derived" if len(ordered) > 1 else "observed",
+            "actor": _event_actor("agent", "main_agent"),
+            "scope": _event_scope(
+                session_id,
+                turn_id=turn_id,
+                response_id=response_id,
+            ),
+            "time": _event_time(
+                first["record"].get("timestamp"),
+                ordered[-1]["record"].get("timestamp"),
+            ),
             "title": (
                 "工具批次 · {0} 个调用".format(len(tools))
                 if tools
                 else "Claude 最终回答"
-                if stop_reason == "end_turn"
+                if is_final
                 else "Claude 消息"
             ),
             "summary": (
@@ -412,6 +707,8 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
                 "model": message.get("model"),
                 "effort": record.get("effort"),
                 "stop_reason": stop_reason,
+                "response_kind": response_kind,
+                "is_final": is_final,
                 "text": visible_text,
                 "usage": message.get("usage"),
                 "tool_use_ids": tools,
@@ -419,6 +716,10 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             },
             "evidence": _evidence(item["line_number"] for item in ordered),
             "source_lines": [item["line_number"] for item in ordered],
+            "provenance": _event_provenance(
+                (item["line_number"] for item in ordered),
+                record_uuids,
+            ),
             "hidden_by_default": False,
         }
         events.append(event)
@@ -448,10 +749,55 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
         source_lines = [int(use["line_number"])]
         if result:
             source_lines.append(int(result["line_number"]))
+        tool_name = str(block.get("name") or "Tool")
+        is_command = _is_command_tool(tool_name)
+        tool_input = block.get("input") if isinstance(block.get("input"), dict) else {}
+        event_type = "command_execution" if is_command else "tool_execution"
+        event_subtype = "shell_command" if is_command else _tool_event_subtype(tool_name)
+        payload = {
+            "name": block.get("name"),
+            "input": block.get("input"),
+            "output": result_block.get("content") if result else None,
+            "is_error": bool(result_block.get("is_error")) if result else None,
+            "structured_result": structured_result,
+            "duration_ms": duration_ms,
+            "observed_elapsed_ms": _iso_milliseconds(
+                use["record"].get("timestamp"),
+                result_record.get("timestamp") if result else None,
+            ),
+            "batch_response_id": use.get("response_id"),
+        }
+        if is_command:
+            payload.update(
+                {
+                    "shell": tool_name.lower(),
+                    "command": tool_input.get("command"),
+                    "working_directory": (
+                        tool_input.get("workdir")
+                        or tool_input.get("cwd")
+                        or manifest.get("cwd")
+                    ),
+                    "exit_code": (
+                        structured_result.get("exitCode")
+                        if isinstance(structured_result, dict)
+                        else None
+                    ),
+                    "stdout": result_block.get("content") if result else None,
+                    "stderr": (
+                        result_block.get("content")
+                        if result and bool(result_block.get("is_error"))
+                        else None
+                    ),
+                    "timed_out": status == "incomplete",
+                    "background": bool(tool_input.get("run_in_background")),
+                }
+            )
         event = {
             "event_id": event_id,
             "sequence": 0,
-            "event_type": "tool_execution",
+            "event_class": "execution",
+            "event_type": event_type,
+            "event_subtype": event_subtype,
             "timestamp": use["record"].get("timestamp"),
             "ended_at": result_record.get("timestamp") if result else None,
             "turn_id": use.get("turn_id"),
@@ -461,23 +807,27 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             "tool_use_id": tool_use_id,
             "status": status,
             "origin": "derived",
-            "title": str(block.get("name") or "Tool"),
-            "summary": _tool_summary(str(block.get("name") or "Tool"), block.get("input")),
-            "payload": {
-                "name": block.get("name"),
-                "input": block.get("input"),
-                "output": result_block.get("content") if result else None,
-                "is_error": bool(result_block.get("is_error")) if result else None,
-                "structured_result": structured_result,
-                "duration_ms": duration_ms,
-                "observed_elapsed_ms": _iso_milliseconds(
-                    use["record"].get("timestamp"),
-                    result_record.get("timestamp") if result else None,
-                ),
-                "batch_response_id": use.get("response_id"),
-            },
+            "actor": _event_actor("agent", "main_agent"),
+            "scope": _event_scope(
+                session_id,
+                turn_id=use.get("turn_id"),
+                response_id=use.get("response_id"),
+                tool_use_id=tool_use_id,
+            ),
+            "time": _event_time(
+                use["record"].get("timestamp"),
+                result_record.get("timestamp") if result else None,
+                duration_ms,
+            ),
+            "title": tool_name,
+            "summary": _tool_summary(tool_name, block.get("input")),
+            "payload": payload,
             "evidence": _evidence(source_lines),
             "source_lines": sorted(source_lines),
+            "provenance": _event_provenance(
+                source_lines,
+                [use["record"].get("uuid"), result_record.get("uuid")],
+            ),
             "hidden_by_default": False,
         }
         events.append(event)
@@ -489,7 +839,10 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             uuid_to_event[str(result_record["uuid"])] = event_id
         add_relation(response_event_by_key.get(use["response_key"], ""), event_id, "invokes")
 
-    # Build a compact turn graph including asynchronous Subagent results.
+    # Build a compact turn graph including asynchronous Subagent results. Keep
+    # ``next`` for temporal audit compatibility, while also emitting the
+    # deterministic causal edges used by the execution DAG.
+    event_by_id = {str(event.get("event_id") or ""): event for event in events}
     for turn in turns:
         turn_id = turn["turn_id"]
         stage_items = sorted(
@@ -498,7 +851,7 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
                 for event in events
                 if event.get("turn_id") == turn_id
                 and event.get("event_type")
-                in {"model_response", "assistant_message", "subagent_result"}
+                in {"model_response", "subagent_result"}
             ),
             key=lambda item: (min(item.get("source_lines") or [0]), item["event_id"]),
         )
@@ -506,6 +859,12 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
         for stage in stage_items:
             for source in cursor:
                 add_relation(source, stage["event_id"], "next")
+                source_event = event_by_id.get(source, {})
+                source_type = str(source_event.get("event_type") or "")
+                if source == prompt_event_by_turn[turn_id]:
+                    add_relation(source, stage["event_id"], "prompts")
+                elif source_type in {"tool_execution", "command_execution", "subagent_result"}:
+                    add_relation(source, stage["event_id"], "result_feeds")
             if stage.get("event_type") == "subagent_result":
                 cursor = [stage["event_id"]]
                 continue
@@ -515,6 +874,16 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
                 if tool_id in tool_event_by_id
             ]
             cursor = tools or [stage["event_id"]]
+
+    # A task notification carries the originating Agent tool-use id when the
+    # transcript provides one. This is stronger evidence than parentUuid and
+    # avoids treating the raw message-storage chain as an execution dependency.
+    for event in events:
+        if event.get("event_type") != "subagent_result":
+            continue
+        tool_use_id = str(event.get("tool_use_id") or "")
+        if tool_use_id and tool_use_id in tool_event_by_id:
+            add_relation(tool_event_by_id[tool_use_id], event["event_id"], "spawns")
 
     # Preserve raw parent relationships separately from the compact execution graph.
     known_uuids = {str(record.get("uuid")) for _, record in parsed if record.get("uuid")}
@@ -529,7 +898,8 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
         if parent_event and child_event:
             add_relation(parent_event, child_event, "parent")
 
-    # Retain selected system evidence without mixing it into the task graph.
+    # Promote only system records that alter control flow. Routine lifecycle
+    # records remain compact telemetry and never become workflow nodes.
     system_event_count = 0
     for line_number, record in parsed:
         record_type = str(record.get("type") or "")
@@ -537,41 +907,88 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             is_local = record.get("subtype") == "local_command"
             if is_local:
                 local_command_count += 1
+                continue
+            system_event_count += 1
+            control_subtype = _control_event_subtype(record)
+            if control_subtype:
+                event_id = stable_id("event", session_id, "control", line_number)
+                events.append(
+                    {
+                        "event_id": event_id,
+                        "sequence": 0,
+                        "event_class": "control",
+                        "event_type": "control_event",
+                        "event_subtype": control_subtype,
+                        "timestamp": record.get("timestamp"),
+                        "ended_at": None,
+                        "turn_id": line_to_turn.get(line_number),
+                        "parent_uuid": record.get("parentUuid"),
+                        "message_uuid": record.get("uuid"),
+                        "response_id": None,
+                        "tool_use_id": record.get("toolUseID"),
+                        "status": (
+                            "error"
+                            if control_subtype
+                            in {
+                                "execution_cancelled",
+                                "execution_interrupted",
+                                "permission_denied",
+                                "rate_limited",
+                                "session_terminated",
+                                "tool_timeout",
+                            }
+                            else "observed"
+                        ),
+                        "origin": "observed",
+                        "actor": _event_actor("system"),
+                        "scope": _event_scope(
+                            session_id,
+                            turn_id=line_to_turn.get(line_number),
+                            tool_use_id=record.get("toolUseID"),
+                        ),
+                        "time": _event_time(record.get("timestamp")),
+                        "title": "控制事件 · {0}".format(control_subtype),
+                        "summary": _text_preview(
+                            record.get("content") or record.get("stopReason")
+                        ),
+                        "payload": {
+                            "control_kind": control_subtype,
+                            "reason": record.get("stopReason") or record.get("reason"),
+                            "system_subtype": record.get("subtype"),
+                        },
+                        "evidence": _evidence([line_number]),
+                        "source_lines": [line_number],
+                        "provenance": _event_provenance(
+                            [line_number], [record.get("uuid")]
+                        ),
+                        "hidden_by_default": False,
+                    }
+                )
+                if record.get("uuid"):
+                    uuid_to_event[str(record["uuid"])] = event_id
             else:
-                system_event_count += 1
-            event_id = stable_id("event", session_id, "system", line_number)
-            event = {
-                "event_id": event_id,
-                "sequence": 0,
-                "event_type": "local_command" if is_local else "system_event",
-                "timestamp": record.get("timestamp"),
-                "ended_at": None,
-                "turn_id": line_to_turn.get(line_number),
-                "parent_uuid": record.get("parentUuid"),
-                "message_uuid": record.get("uuid"),
-                "response_id": None,
-                "tool_use_id": record.get("toolUseID"),
-                "status": "observed",
-                "origin": "observed",
-                "title": (
-                    "本地命令" if is_local else "系统事件 · {0}".format(record.get("subtype") or "system")
-                ),
-                "summary": _text_preview(record.get("content") or record.get("stopReason")),
-                "payload": record,
-                "evidence": _evidence([line_number]),
-                "source_lines": [line_number],
-                "hidden_by_default": True,
-            }
-            events.append(event)
+                telemetry.append(
+                    {
+                        "telemetry_id": stable_id(
+                            "telemetry", session_id, line_number
+                        ),
+                        "timestamp": record.get("timestamp"),
+                        "turn_id": line_to_turn.get(line_number),
+                        "subtype": record.get("subtype") or "system",
+                        "duration_ms": record.get("durationMs"),
+                        "hook_count": record.get("hookCount"),
+                        "stop_reason": record.get("stopReason"),
+                        "source_lines": [line_number],
+                    }
+                )
 
     event_priority = {
         "user_prompt": 0,
         "model_response": 1,
         "tool_execution": 2,
-        "assistant_message": 3,
+        "command_execution": 2,
         "subagent_result": 1,
-        "system_event": 8,
-        "local_command": 9,
+        "control_event": 3,
     }
     events.sort(
         key=lambda item: (
@@ -588,7 +1005,10 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
         turn_events = [event for event in events if event.get("turn_id") == turn["turn_id"]]
         visible = [event for event in turn_events if not event.get("hidden_by_default")]
         turn["event_ids"] = [event["event_id"] for event in visible]
-        turn["tool_call_count"] = sum(event["event_type"] == "tool_execution" for event in visible)
+        turn["tool_call_count"] = sum(
+            event["event_type"] in {"tool_execution", "command_execution"}
+            for event in visible
+        )
         turn["error_count"] = sum(event.get("status") == "error" for event in visible)
         turn["ended_at"] = next(
             (
@@ -601,8 +1021,8 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
         turn["status"] = (
             "complete"
             if any(
-                event.get("event_type") == "assistant_message"
-                and event.get("payload", {}).get("stop_reason") == "end_turn"
+                event.get("event_type") == "model_response"
+                and bool(event.get("payload", {}).get("is_final"))
                 for event in visible
             )
             else "incomplete"
@@ -629,7 +1049,14 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
     record_types = Counter(str(record.get("type") or "unknown") for _, record in parsed)
     incomplete_tools = sorted(set(tool_uses) - set(tool_results))
     orphan_result_ids = set(tool_results) - set(tool_uses)
-    tool_events = [event for event in events if event["event_type"] == "tool_execution"]
+    tool_events = [
+        event
+        for event in events
+        if event["event_type"] in {"tool_execution", "command_execution"}
+    ]
+    command_events = [
+        event for event in events if event["event_type"] == "command_execution"
+    ]
     visible_events = [event for event in events if not event.get("hidden_by_default")]
     trace = {
         "schema_version": TRACE_SCHEMA_VERSION,
@@ -658,19 +1085,26 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
                 item["type"],
             ),
         ),
-        "artifacts": [],
+        "artifacts": derive_trace_artifacts(
+            session_id,
+            manifest.get("cwd")
+            or next((record.get("cwd") for _, record in parsed if record.get("cwd")), None),
+            events,
+        ),
+        "telemetry": telemetry,
         "metrics": {
             "human_prompt_count": len(turns),
             "visible_event_count": len(visible_events),
             "model_response_count": sum(
-                event["event_type"] in {"model_response", "assistant_message"}
-                for event in visible_events
+                event["event_type"] == "model_response" for event in visible_events
             ),
             "tool_call_count": len(tool_events),
+            "command_execution_count": len(command_events),
             "tool_error_count": sum(event["status"] == "error" for event in tool_events),
             "incomplete_tool_count": len(incomplete_tools),
             "local_command_count": local_command_count,
             "system_event_count": system_event_count,
+            "telemetry_record_count": len(telemetry),
             "subagent_result_count": subagent_result_count,
             "total_cost_usd": cost_state.get("totalCostUSD"),
             "total_duration_ms": cost_state.get("totalDuration"),
@@ -698,9 +1132,22 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
     }
     output = directory / "derived" / "observer_trace.json"
     _write_json_atomic(output, trace)
+    events_output = directory / "derived" / "events.jsonl"
+    events_output.write_text(
+        "".join(
+            json.dumps(event, ensure_ascii=False, default=str) + "\n"
+            for event in events
+        ),
+        encoding="utf-8",
+    )
     update_manifest(
         session_id,
-        {"files": {"observer_trace": "derived/observer_trace.json"}},
+        {
+            "files": {
+                "observer_trace": "derived/observer_trace.json",
+                "workflow_events": "derived/events.jsonl",
+            }
+        },
         root,
     )
     return trace
@@ -715,8 +1162,16 @@ def load_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[str
             )
         )
     value = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(value, dict) or value.get("schema_version") != TRACE_SCHEMA_VERSION:
+    if (
+        not isinstance(value, dict)
+        or value.get("schema_version") not in SUPPORTED_TRACE_SCHEMA_VERSIONS
+    ):
         raise ValueError("observer_trace.json has an unsupported schema")
+    value["artifacts"] = derive_trace_artifacts(
+        session_id,
+        (value.get("session") or {}).get("cwd"),
+        value.get("events") or [],
+    )
     return value
 
 

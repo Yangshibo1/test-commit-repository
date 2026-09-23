@@ -2,6 +2,11 @@ import json
 from pathlib import Path
 
 from agentvast.cli import _claude_environment, main
+from agentvast.web_server import (
+    _open_local_file,
+    _pty_arguments,
+    _resolve_observer_artifact_file,
+)
 from agentvast.workflow_store import WorkflowStore
 
 
@@ -35,6 +40,60 @@ def test_run_no_launch_creates_bound_run(tmp_path: Path, capsys):
     assert "--dangerously-skip-permissions" in payload["launch_command"]
     assert "--session-id" in payload["launch_command"]
     assert str(data.resolve()) in payload["launch_command"][-1]
+
+
+def test_web_terminal_always_uses_full_permissions(tmp_path: Path, monkeypatch):
+    claude = tmp_path / "claude.exe"
+    claude.write_bytes(b"")
+    monkeypatch.setattr("agentvast.web_server._resolve_claude", lambda _command: str(claude))
+
+    arguments = _pty_arguments(
+        "claude",
+        "session-web",
+        tmp_path / "plugin",
+        False,
+    )
+
+    assert arguments[1] == "--dangerously-skip-permissions"
+
+
+def test_observer_artifact_link_only_opens_recorded_project_file(tmp_path: Path):
+    project = tmp_path / "project"
+    project.mkdir()
+    artifact = project / "report.md"
+    artifact.write_text("# report\n", encoding="utf-8")
+    trace = {
+        "session": {"cwd": str(project)},
+        "artifacts": [{"artifact_id": "artifact-1", "path": "report.md"}],
+    }
+
+    assert _resolve_observer_artifact_file(trace, "artifact-1") == artifact.resolve()
+
+    outside = tmp_path / "outside.md"
+    outside.write_text("outside\n", encoding="utf-8")
+    trace["artifacts"] = [{"artifact_id": "artifact-2", "path": str(outside)}]
+    try:
+        _resolve_observer_artifact_file(trace, "artifact-2")
+    except PermissionError:
+        pass
+    else:
+        raise AssertionError("artifact links must not escape the observed project")
+
+
+def test_open_local_file_uses_windows_default_application(tmp_path: Path, monkeypatch):
+    artifact = tmp_path / "report.md"
+    artifact.write_text("# report\n", encoding="utf-8")
+    opened = []
+    monkeypatch.setattr("agentvast.web_server.sys.platform", "win32")
+    monkeypatch.setattr(
+        "agentvast.web_server.os.startfile",
+        lambda value: opened.append(value),
+        raising=False,
+    )
+
+    _open_local_file(artifact)
+
+    assert opened == [str(artifact)]
 
 
 def test_abort_command_keeps_failed_run_history(tmp_path: Path, capsys):

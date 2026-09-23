@@ -34,7 +34,9 @@ agentvast observe start --project "C:\path\to\analysis-project"
 ```
 
 观察数据默认保存在 `~/.agentvast/observations/<session-id>/`，原始 Hook、OTel 和 Transcript
-始终与 derived canonical events 分开。详见 [Passive Observer V1](docs/PassiveObserverV1.md)。
+始终与 derived canonical events 分开。Observer 统一使用
+`--dangerously-skip-permissions` 启动 Claude Code；这只关闭工具权限询问，不会注入或执行
+Plan/Node 约束。详见 [Passive Observer V1](docs/PassiveObserverV1.md)。
 
 ## 快速安装
 

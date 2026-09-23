@@ -10,6 +10,7 @@ function Workbench() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden text-ink">
+      {page !== 'observer' && (
       <header className="h-16 shrink-0 flex items-center gap-6 px-6 border-b border-[rgba(184,165,143,0.55)] bg-[rgba(255,250,240,0.9)] backdrop-blur-2xl z-20">
         <div className="flex items-center gap-3 min-w-[246px]">
           <div className="w-10 h-10 border border-[rgba(217,119,69,0.42)] rounded-xl flex items-center justify-center bg-gradient-to-br from-white to-[#fff6ef] shadow-md">
@@ -47,11 +48,7 @@ function Workbench() {
           <button
             type="button"
             onClick={() => setPage('observer')}
-            className={`px-5 py-2 rounded-lg text-sm transition-all ${
-              page === 'observer'
-                ? 'bg-white text-accent shadow-sm font-semibold'
-                : 'text-muted hover:text-ink'
-            }`}
+            className="px-5 py-2 rounded-lg text-sm transition-all text-muted hover:text-ink"
           >
             被动观察
           </button>
@@ -61,13 +58,14 @@ function Workbench() {
           CLAUDE · WORKFLOW · OBSERVER
         </div>
       </header>
+      )}
 
       <main className="flex-1 min-h-0">
         {page === 'claude'
           ? <ClaudeTerminalPage />
           : page === 'records'
           ? <RecordPage />
-          : <ObserverPage />}
+          : <ObserverPage onNavigate={setPage} />}
       </main>
     </div>
   );

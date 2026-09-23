@@ -21,7 +21,11 @@ from agentvast.observer.store import (
     register_session_root,
 )
 from agentvast.observer.transcript_reader import snapshot_transcript
-from agentvast.observer.trace_builder import list_observer_sessions, stable_id
+from agentvast.observer.trace_builder import (
+    derive_trace_artifacts,
+    list_observer_sessions,
+    stable_id,
+)
 from agentvast.observer.validation import validate_session
 from agentvast.paths import expose_repository_to_python
 from agentvast.semantic.pipeline import (
@@ -98,6 +102,47 @@ def test_transcript_snapshot_keeps_raw_and_invalid_lines(tmp_path: Path):
         "parsed": False,
         "raw_line": "not-json",
     }
+
+
+def test_trace_artifacts_are_derived_from_existing_file_events(tmp_path: Path):
+    output = tmp_path / "result" / "summary.csv"
+    output.parent.mkdir()
+    output.write_text("value\n1\n", encoding="utf-8")
+    report = tmp_path / "result" / "report.md"
+    report.write_text("# Result\n", encoding="utf-8")
+    events = [
+        {
+            "event_id": "event-write",
+            "event_type": "tool_execution",
+            "status": "success",
+            "title": "Write",
+            "payload": {
+                "name": "Write",
+                "input": {"file_path": "result/summary.csv"},
+                "output": "created",
+            },
+        },
+        {
+            "event_id": "event-bash",
+            "event_type": "tool_execution",
+            "status": "success",
+            "title": "Bash",
+            "payload": {
+                "name": "Bash",
+                "input": {"command": "python analyze.py"},
+                "output": "Saved result/report.md",
+            },
+        },
+    ]
+
+    artifacts = derive_trace_artifacts("session-artifacts", str(tmp_path), events)
+
+    assert [(item["path"], item["artifact_type"]) for item in artifacts] == [
+        ("result/summary.csv", "dataset"),
+        ("result/report.md", "report"),
+    ]
+    assert artifacts[0]["evidence_event_ids"] == ["event-write"]
+    assert artifacts[1]["operations"][0]["source"] == "tool_output"
 
 
 def test_transcript_only_session_builds_degraded_canonical_trajectory(tmp_path: Path):
@@ -315,17 +360,33 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
     assert first["metrics"]["tool_error_count"] == 1
     assert first["diagnostics"]["filtered_non_human_user_records"] == 1
     responses = [item for item in first["events"] if item["event_type"] == "model_response"]
-    assert len(responses) == 1
-    assert responses[0]["payload"]["tool_use_ids"] == ["tool-a", "tool-b"]
+    assert len(responses) == 2
+    batch = next(item for item in responses if item["payload"]["tool_use_ids"])
+    assert batch["payload"]["tool_use_ids"] == ["tool-a", "tool-b"]
+    assert batch["payload"]["response_kind"] == "tool_request"
     tools = [item for item in first["events"] if item["event_type"] == "tool_execution"]
     glob = next(item for item in tools if item["tool_use_id"] == "tool-a")
     assert glob["payload"]["duration_ms"] == 25
     assert glob["payload"]["structured_result"]["filenames"] == ["data.txt"]
+    prompt = next(item for item in first["events"] if item["event_type"] == "user_prompt")
+    final = next(item for item in responses if item["payload"]["is_final"])
+    assert final["payload"]["response_kind"] == "text"
+    assert first["schema_version"] == "observer-trace/2.0"
+    assert not any(item["event_type"] == "local_command" for item in first["events"])
+    relation_triples = {
+        (item["from"], item["to"], item["type"]) for item in first["relations"]
+    }
+    assert (prompt["event_id"], batch["event_id"], "prompts") in relation_triples
+    for tool in tools:
+        assert (batch["event_id"], tool["event_id"], "invokes") in relation_triples
+        assert (tool["event_id"], final["event_id"], "result_feeds") in relation_triples
     assert first_ids == [item["event_id"] for item in second["events"]]
     assert first_canonical_ids == [item["event_id"] for item in iter_jsonl(canonical_path)]
     sessions = list_observer_sessions(str(root))
     assert sessions[0]["session_id"] == session_id
     assert sessions[0]["metrics"]["human_prompt_count"] == 1
+    workflow_events = list(iter_jsonl(root / session_id / "derived" / "events.jsonl"))
+    assert [item["event_id"] for item in workflow_events] == first_ids
     messages = list(iter_jsonl(root / session_id / "derived" / "messages.jsonl"))
     assert [item["event_type"] for item in messages] == [
         "user_prompt",
@@ -432,6 +493,10 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
     )
     assert inference_state["annotation_guidance"] == "每个Node最多保留三条关键结果，并保留数字。"
     assert first_request["annotation_guidance"] == inference_state["annotation_guidance"]
+    assert "model_responses" in first_request["episode_evidence"]["evidence"]
+    assert "command_executions" in first_request["episode_evidence"]["evidence"]
+    assert "control_events" in first_request["episode_evidence"]["evidence"]
+    assert model_semantic["source_events"]["path"] == "derived/events.jsonl"
     assert model_semantic["inference_run"]["annotation_guidance"] == inference_state[
         "annotation_guidance"
     ]
@@ -495,7 +560,7 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
 
     revalidated = revalidate_semantic_workflow(session_id, str(root))
     assert revalidated["validation"]["valid"] is True
-    assert revalidated["inference_run"]["processor_version"] == "0.5.0"
+    assert revalidated["inference_run"]["processor_version"] == "0.6.0"
 
     semantic = run_semantic_workflow(session_id, str(root), rules_only=True)
     assert semantic["validation"]["valid"] is True
@@ -560,6 +625,148 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
     assert len(split["semantic_nodes"]) == 2
     assert split["validation"]["valid"] is True
     assert split["review"]["review_event_count"] == 4
+
+
+def test_event_schema_v2_separates_agent_commands_and_system_telemetry(tmp_path: Path):
+    session_id = "session-event-schema-v2"
+    root = tmp_path / "observations"
+    source = tmp_path / "trace.jsonl"
+    records = [
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "uuid": "prompt",
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "origin": {"kind": "human"},
+            "promptSource": "typed",
+            "message": {"role": "user", "content": "运行分析脚本"},
+        },
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "response",
+            "parentUuid": "prompt",
+            "timestamp": "2026-01-01T00:00:01+00:00",
+            "message": {
+                "id": "response-command",
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "command-1",
+                        "name": "PowerShell",
+                        "input": {"command": "python analyze.py", "workdir": "C:/project"},
+                    }
+                ],
+            },
+        },
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "uuid": "command-result",
+            "parentUuid": "response",
+            "timestamp": "2026-01-01T00:00:02+00:00",
+            "toolUseResult": {"durationMs": 80, "exitCode": 0},
+            "message": {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": "command-1",
+                        "content": "rows=10",
+                    }
+                ],
+            },
+        },
+        {
+            "type": "system",
+            "subtype": "turn_duration",
+            "uuid": "duration",
+            "timestamp": "2026-01-01T00:00:02.100000+00:00",
+            "durationMs": 2100,
+        },
+        {
+            "type": "system",
+            "subtype": "permission_denied",
+            "uuid": "permission",
+            "timestamp": "2026-01-01T00:00:02.200000+00:00",
+            "reason": "command blocked",
+        },
+        {
+            "type": "user",
+            "uuid": "local-exit",
+            "timestamp": "2026-01-01T00:00:02.300000+00:00",
+            "message": {"role": "user", "content": "<command-name>/exit</command-name>"},
+        },
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "final",
+            "parentUuid": "command-result",
+            "timestamp": "2026-01-01T00:00:03+00:00",
+            "message": {
+                "id": "response-final",
+                "role": "assistant",
+                "stop_reason": "end_turn",
+                "content": [{"type": "text", "text": "分析完成"}],
+            },
+        },
+    ]
+    source.write_text(
+        "".join(json.dumps(item, ensure_ascii=False) + "\n" for item in records),
+        encoding="utf-8",
+    )
+    create_session(session_id, tmp_path, root)
+    snapshot_transcript(session_id, source, root, attempts=1, delay=0)
+    derive_session(session_id, str(root))
+    trace = json.loads(
+        (root / session_id / "derived" / "observer_trace.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    command = next(
+        event for event in trace["events"] if event["event_type"] == "command_execution"
+    )
+    control = next(
+        event for event in trace["events"] if event["event_type"] == "control_event"
+    )
+    final = next(
+        event
+        for event in trace["events"]
+        if event["event_type"] == "model_response" and event["payload"]["is_final"]
+    )
+
+    assert command["event_class"] == "execution"
+    assert command["event_subtype"] == "shell_command"
+    assert command["payload"]["command"] == "python analyze.py"
+    assert command["payload"]["exit_code"] == 0
+    assert command["scope"]["tool_use_id"] == "command-1"
+    assert control["event_subtype"] == "permission_denied"
+    assert control["event_class"] == "control"
+    assert final["payload"]["response_kind"] == "text"
+    assert [item["subtype"] for item in trace["telemetry"]] == ["turn_duration"]
+    assert trace["metrics"]["command_execution_count"] == 1
+    assert trace["metrics"]["telemetry_record_count"] == 1
+    assert not any(event["event_type"] == "local_command" for event in trace["events"])
+
+    semantic = run_semantic_workflow(
+        session_id, str(root), rules_only=True, force=True
+    )
+    assert semantic["schema_version"] == "semantic-workflow/0.4"
+    assert semantic["source_events"]["path"] == "derived/events.jsonl"
+    assert semantic["source_events"]["event_count"] == len(trace["events"])
+    assert semantic["source_events"]["event_type_counts"]["command_execution"] == 1
+    assert any(
+        action.get("action_type") == "command"
+        for node in semantic["semantic_nodes"]
+        for action in node["actions"]
+    )
+    assert any(
+        action.get("action_type") == "control"
+        for node in semantic["semantic_nodes"]
+        for action in node["actions"]
+    )
 
 
 def test_otel_collector_preserves_exact_body_and_decodes_json(tmp_path: Path):
@@ -812,17 +1019,22 @@ def test_subagent_notifications_are_anchors_not_human_turns(tmp_path: Path):
 
 
 def _task_notification_record(
-    session_id: str, task_id: str, summary: str, parent_uuid: str, second: int
+    session_id: str,
+    task_id: str,
+    summary: str,
+    parent_uuid: str,
+    second: int,
+    tool_use_id: str | None = None,
 ):
     content = (
         "<task-notification>"
         "<task-id>{0}</task-id>"
-        "<tool-use-id>tool-{0}</tool-use-id>"
+        "<tool-use-id>{2}</tool-use-id>"
         "<status>completed</status>"
         "<summary>{1}</summary>"
         "<result>{1}已完成</result>"
         "</task-notification>"
-    ).format(task_id, summary)
+    ).format(task_id, summary, tool_use_id or "tool-{0}".format(task_id))
     return {
         "type": "user",
         "sessionId": session_id,
@@ -875,6 +1087,150 @@ def test_semantic_provider_loads_gitignored_env_file(tmp_path: Path):
         "base": "https://semantic.invalid",
         "model": "test-model",
         "configured": True,
+    }
+
+
+def test_observer_trace_links_agent_tool_to_subagent_result(tmp_path: Path):
+    session_id = "session-subagent-spawn"
+    root = tmp_path / "observations"
+    source = tmp_path / "subagent-spawn.jsonl"
+    records = [
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "uuid": "prompt",
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "origin": {"kind": "human"},
+            "promptSource": "typed",
+            "message": {"role": "user", "content": "委派分析任务"},
+        },
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "agent-call",
+            "parentUuid": "prompt",
+            "timestamp": "2026-01-01T00:00:01+00:00",
+            "message": {
+                "id": "response-agent",
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "tool-agent",
+                        "name": "Agent",
+                        "input": {"description": "分析数据"},
+                    }
+                ],
+            },
+        },
+        {
+            "type": "user",
+            "sessionId": session_id,
+            "uuid": "agent-result",
+            "parentUuid": "agent-call",
+            "timestamp": "2026-01-01T00:00:02+00:00",
+            "message": {
+                "role": "user",
+                "content": [
+                    {"type": "tool_result", "tool_use_id": "tool-agent", "content": "started"}
+                ],
+            },
+        },
+        _task_notification_record(
+            session_id,
+            "task-a",
+            "分析数据",
+            "agent-result",
+            3,
+            tool_use_id="tool-agent",
+        ),
+        {
+            "type": "assistant",
+            "sessionId": session_id,
+            "uuid": "final",
+            "parentUuid": "task-a-uuid",
+            "timestamp": "2026-01-01T00:00:04+00:00",
+            "message": {
+                "id": "response-final",
+                "role": "assistant",
+                "stop_reason": "end_turn",
+                "content": [{"type": "text", "text": "任务完成"}],
+            },
+        },
+    ]
+    source.write_text(
+        "".join(json.dumps(item, ensure_ascii=False) + "\n" for item in records),
+        encoding="utf-8",
+    )
+    create_session(session_id, tmp_path, root)
+    snapshot_transcript(session_id, source, root, attempts=1, delay=0)
+    derive_session(session_id, str(root))
+    trace = json.loads(
+        (root / session_id / "derived" / "observer_trace.json").read_text(encoding="utf-8")
+    )
+    agent_tool = next(
+        event
+        for event in trace["events"]
+        if event["event_type"] == "tool_execution" and event["tool_use_id"] == "tool-agent"
+    )
+    subagent = next(event for event in trace["events"] if event["event_type"] == "subagent_result")
+    relation_types = {
+        relation["type"]
+        for relation in trace["relations"]
+        if relation["from"] == agent_tool["event_id"] and relation["to"] == subagent["event_id"]
+    }
+
+    assert {"result_feeds", "spawns"}.issubset(relation_types)
+
+
+def test_semantic_provider_can_reuse_claude_gateway_credentials(tmp_path: Path):
+    config_dir = tmp_path / "claude"
+    config_dir.mkdir()
+    (config_dir / "settings.json").write_text(
+        json.dumps(
+            {
+                "env": {
+                    "ANTHROPIC_BASE_URL": "https://gateway.invalid",
+                    "ANTHROPIC_API_KEY": "claude-key",
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "AGENTVAST_SEMANTIC_USE_CLAUDE_SETTINGS=true\n"
+        "AGENTVAST_SEMANTIC_MODEL=gpt-test\n",
+        encoding="utf-8",
+    )
+    environment = os.environ.copy()
+    environment["AGENTVAST_ENV_FILE"] = str(env_file)
+    environment["CLAUDE_CONFIG_DIR"] = str(config_dir)
+    for name in (
+        "AGENTVAST_SEMANTIC_API_BASE_URL",
+        "AGENTVAST_SEMANTIC_API_KEY",
+        "AGENTVAST_SEMANTIC_MODEL",
+        "AGENTVAST_SEMANTIC_USE_CLAUDE_SETTINGS",
+    ):
+        environment.pop(name, None)
+    code = (
+        "import json; "
+        "from agentvast.semantic.provider import SemanticConfig; "
+        "c=SemanticConfig.from_env(); "
+        "print(json.dumps({'base':c.api_base_url,'key':c.api_key,'model':c.model}))"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=str(Path(__file__).resolve().parents[1]),
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert json.loads(result.stdout) == {
+        "base": "https://gateway.invalid",
+        "key": "claude-key",
+        "model": "gpt-test",
     }
 
 
@@ -968,7 +1324,7 @@ def test_legacy_semantic_workflow_is_adapted_without_rewriting_history():
     upgraded = _upgrade_legacy_semantic_workflow(legacy)
 
     assert legacy["schema_version"] == "semantic-workflow/0.2"
-    assert upgraded["schema_version"] == "semantic-workflow/0.3"
+    assert upgraded["schema_version"] == "semantic-workflow/0.4"
     node = upgraded["semantic_nodes"][0]
     assert node["title"] == "分析数据并形成结果"
     assert node["objective"]["value"].startswith("分析数据")
@@ -977,6 +1333,7 @@ def test_legacy_semantic_workflow_is_adapted_without_rewriting_history():
         "orchestration",
         "key_action",
     ]
+    assert all(item["action_type"] == "tool" for item in node["actions"])
 
 
 def test_semantic_provider_prefers_json_schema_and_falls_back_to_json_object():
@@ -1342,6 +1699,7 @@ def test_observe_cli_no_launch_creates_passive_manifest(tmp_path: Path, capsys, 
         "session-cli",
         "--plugin-dir",
         str(plugin.resolve()),
+        "--dangerously-skip-permissions",
     ]
     manifest = read_manifest("session-cli", root)
     assert manifest["cwd"] == str(project.resolve())

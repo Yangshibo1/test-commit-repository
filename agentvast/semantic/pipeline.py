@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import uuid
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import (
@@ -21,7 +22,7 @@ from typing import (
     Tuple,
 )
 
-from agentvast.observer.store import session_directory, update_manifest
+from agentvast.observer.store import iter_jsonl, session_directory, update_manifest
 from agentvast.observer.trace_builder import load_observer_trace, stable_id
 from agentvast.semantic import SEMANTIC_PROCESSOR_VERSION, SEMANTIC_SCHEMA_VERSION
 from agentvast.semantic.prompts import (
@@ -38,6 +39,26 @@ from agentvast.semantic.provider import SemanticConfig, SemanticProvider, Semant
 
 
 ALLOWED_RELATIONS = {"VALIDATES", "REFINES", "USES_RESULT_FROM", "RETRY_OF"}
+EXECUTION_EVENT_TYPES = {"tool_execution", "command_execution"}
+MODEL_RESPONSE_EVENT_TYPES = {"model_response", "assistant_message"}
+WORKFLOW_EVENT_TYPES = {
+    "user_prompt",
+    "model_response",
+    "tool_execution",
+    "command_execution",
+    "subagent_result",
+    "control_event",
+}
+
+
+def _is_tool_envelope(event: Mapping[str, Any]) -> bool:
+    payload = event.get("payload") if isinstance(event.get("payload"), dict) else {}
+    return bool(payload.get("tool_use_ids")) and not bool(str(payload.get("text") or "").strip())
+
+
+def _is_final_response(event: Mapping[str, Any]) -> bool:
+    payload = event.get("payload") if isinstance(event.get("payload"), dict) else {}
+    return bool(payload.get("is_final")) or payload.get("stop_reason") == "end_turn"
 
 
 class SemanticWorkflowError(RuntimeError):
@@ -179,7 +200,13 @@ def _migrate_legacy_inference_state(
         return None
     if _value_sha256(candidates) != compatibility.get("candidate_sha256"):
         return None
-    if event_record.get("source_trace_sha256") != compatibility.get("source_trace_sha256"):
+    recorded_source_hash = event_record.get("source_events_sha256") or event_record.get(
+        "source_trace_sha256"
+    )
+    expected_source_hash = compatibility.get("source_events_sha256") or compatibility.get(
+        "source_trace_sha256"
+    )
+    if recorded_source_hash != expected_source_hash:
         return None
     if boundary_request.get("prompt_version") != compatibility.get("prompt_version"):
         return None
@@ -244,18 +271,43 @@ def _event_payload_for_model(
     lineage_event_ids: Optional[Sequence[str]] = None,
     source_response_event_id: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """Project one observed Event into bounded, model-visible semantic evidence."""
+    """Project one Schema 2.0 Event into bounded, model-visible evidence."""
     payload = event.get("payload") if isinstance(event.get("payload"), dict) else {}
+    actor = event.get("actor") if isinstance(event.get("actor"), dict) else {}
+    scope = event.get("scope") if isinstance(event.get("scope"), dict) else {}
+    timing = event.get("time") if isinstance(event.get("time"), dict) else {}
+    provenance = (
+        event.get("provenance") if isinstance(event.get("provenance"), dict) else {}
+    )
     result: Dict[str, Any] = {
         "event_id": event.get("event_id"),
         "sequence": event.get("sequence"),
         "turn_id": event.get("turn_id"),
+        "event_class": event.get("event_class"),
         "event_type": event.get("event_type"),
+        "event_subtype": event.get("event_subtype"),
         "title": _preview(event.get("title"), 240),
         "summary": _preview(event.get("summary"), 600),
         "status": event.get("status"),
         "origin": event.get("origin"),
-        "source_lines": event.get("source_lines") or [],
+        "actor": {
+            "type": actor.get("type"),
+            "id": actor.get("id"),
+        },
+        "scope": {
+            key: scope.get(key)
+            for key in ("turn_id", "response_id", "tool_use_id", "agent_run_id", "task_id")
+            if scope.get(key) is not None
+        },
+        "time": {
+            "started_at": timing.get("started_at") or event.get("timestamp"),
+            "ended_at": timing.get("ended_at") or event.get("ended_at"),
+            "duration_ms": timing.get("duration_ms"),
+        },
+        "provenance": {
+            "source": provenance.get("source"),
+            "source_lines": provenance.get("source_lines") or event.get("source_lines") or [],
+        },
         "lineage_event_ids": _ordered_unique(
             lineage_event_ids or [str(event.get("event_id") or "")]
         ),
@@ -271,16 +323,51 @@ def _event_payload_for_model(
             "output": _evidence_digest(payload.get("output"), 2400),
             "is_error": bool(payload.get("is_error")),
         }
+    elif event.get("event_type") == "command_execution":
+        command_input = payload.get("input") if isinstance(payload.get("input"), dict) else {}
+        compact_input, input_meta = _bounded_value_with_meta(command_input, 1200)
+        result["command"] = {
+            "shell": payload.get("shell") or payload.get("name"),
+            "command": _preview(
+                payload.get("command") or command_input.get("command"),
+                2400,
+            ),
+            "working_directory": payload.get("working_directory"),
+            "input": compact_input,
+            "input_meta": input_meta,
+            "stdout": _evidence_digest(
+                payload.get("stdout") if payload.get("stdout") is not None else payload.get("output"),
+                2400,
+            ),
+            "stderr": _evidence_digest(payload.get("stderr"), 1200),
+            "exit_code": payload.get("exit_code"),
+            "timed_out": bool(payload.get("timed_out")),
+            "background": bool(payload.get("background")),
+            "is_error": bool(payload.get("is_error")) or event.get("status") == "error",
+        }
     elif event.get("event_type") == "user_prompt":
         result["text"] = _evidence_digest(payload.get("content"), 4000)
-    elif event.get("event_type") == "assistant_message":
+    elif event.get("event_type") in MODEL_RESPONSE_EVENT_TYPES:
         result["text"] = _evidence_digest(payload.get("text"), 4000)
+        result["response"] = {
+            "kind": payload.get("response_kind"),
+            "is_final": bool(payload.get("is_final")),
+            "stop_reason": payload.get("stop_reason"),
+            "tool_use_ids": payload.get("tool_use_ids") or [],
+        }
     elif event.get("event_type") == "subagent_result":
         result["subagent"] = {
             "task_id": payload.get("task_id"),
             "task_summary": _preview(payload.get("task_summary"), 500),
             "status": payload.get("status"),
             "result": _evidence_digest(payload.get("result"), 6000),
+        }
+    elif event.get("event_type") == "control_event":
+        compact_payload, payload_meta = _bounded_value_with_meta(payload, 1600)
+        result["control"] = {
+            "kind": event.get("event_subtype") or payload.get("kind"),
+            "details": compact_payload,
+            "details_meta": payload_meta,
         }
     return result
 
@@ -303,13 +390,19 @@ def build_key_information_events(trace: Mapping[str, Any]) -> List[Dict[str, Any
             response_by_tool[tool_id] = response_id
 
     key_events: List[Dict[str, Any]] = []
-    allowed_types = {"user_prompt", "tool_execution", "subagent_result", "assistant_message"}
+    allowed_types = set(WORKFLOW_EVENT_TYPES)
+    if trace.get("schema_version") == "observer-trace/1.0":
+        allowed_types.add("assistant_message")
     for event in events:
         if (
             not isinstance(event, dict)
             or event.get("hidden_by_default")
             or event.get("event_type") not in allowed_types
             or not event.get("event_id")
+            or (
+                event.get("event_type") == "model_response"
+                and _is_tool_envelope(event)
+            )
         ):
             continue
         event_id = str(event["event_id"])
@@ -330,7 +423,10 @@ def _key_event_payloads(events: Iterable[Mapping[str, Any]]) -> List[Dict[str, A
     return [
         _event_payload_for_model(event)
         for event in events
-        if event.get("event_type") != "model_response" and not event.get("hidden_by_default")
+        if not (
+            event.get("event_type") == "model_response" and _is_tool_envelope(event)
+        )
+        and not event.get("hidden_by_default")
     ]
 
 
@@ -372,7 +468,7 @@ def _build_candidate_blocks(
                 for event in events
                 if isinstance(event, dict)
                 and event.get("turn_id") == turn_id
-                and event.get("event_type") in {"model_response", "assistant_message"}
+                and event.get("event_type") in MODEL_RESPONSE_EVENT_TYPES
                 and not event.get("hidden_by_default")
             ),
             key=lambda item: int(item.get("sequence") or 0),
@@ -381,7 +477,7 @@ def _build_candidate_blocks(
             (
                 str(response.get("event_id"))
                 for response in reversed(responses)
-                if response.get("event_type") == "assistant_message"
+                if _is_final_response(response)
             ),
             None,
         )
@@ -406,7 +502,7 @@ def _build_candidate_blocks(
             tool_names = {
                 str((event.get("payload") or {}).get("name") or event.get("title") or "")
                 for event in candidate_events
-                if event.get("event_type") == "tool_execution"
+                if event.get("event_type") in EXECUTION_EVENT_TYPES
             }
             lifecycle_tools = {
                 "Agent",
@@ -418,7 +514,7 @@ def _build_candidate_blocks(
             }
             if response_id == terminal_response_id:
                 candidate_kind = "terminal_response"
-            elif response.get("event_type") == "assistant_message":
+            elif not invoked.get(response_id):
                 candidate_kind = "progress_response"
             elif tool_names and tool_names <= lifecycle_tools:
                 candidate_kind = "lifecycle"
@@ -494,6 +590,68 @@ def _build_candidate_blocks(
             ]
         candidates.extend(_collapse_lifecycle_candidates(atomic))
 
+    # Schema 2.0 is Event-first: no visible workflow Event may silently disappear
+    # merely because it has no model-response envelope or turn reconstruction.
+    used_event_ids = {
+        str(event_id)
+        for candidate in candidates
+        for event_id in candidate.get("event_ids") or []
+    }
+    for event in key_events:
+        event_id = str(event.get("event_id") or "")
+        if not event_id or event_id in used_event_ids:
+            continue
+        event_type = str(event.get("event_type") or "")
+        if event_type == "subagent_result":
+            candidate_kind = "subagent_result"
+            task_id = str((event.get("subagent") or {}).get("task_id") or event_id)
+            anchors = ["subagent_result:{0}".format(task_id)]
+            boundary_basis = ["subagent_result_boundary"]
+        elif event_type == "control_event":
+            candidate_kind = "control"
+            anchors = ["control_event:{0}".format(event.get("event_subtype") or "unknown")]
+            boundary_basis = ["control_flow_boundary"]
+        elif event_type in EXECUTION_EVENT_TYPES:
+            candidate_kind = "execution"
+            anchors = ["unlinked_execution"]
+            boundary_basis = ["standalone_execution_boundary"]
+        elif event_type == "user_prompt":
+            candidate_kind = "prompt"
+            anchors = ["human_task"]
+            boundary_basis = ["human_prompt_boundary"]
+        elif event_type in MODEL_RESPONSE_EVENT_TYPES and (
+            (event.get("response") or {}).get("is_final")
+        ):
+            candidate_kind = "terminal_response"
+            anchors = ["terminal_response"]
+            boundary_basis = ["terminal_response_boundary"]
+        else:
+            candidate_kind = "response"
+            anchors = []
+            boundary_basis = ["standalone_event_boundary"]
+        candidates.append(
+            {
+                "candidate_episode_id": stable_id(
+                    "candidate", trace.get("session", {}).get("session_id"), event_id
+                ),
+                "turn_id": event.get("turn_id"),
+                "event_ids": [event_id],
+                "semantic_event_ids": [event_id],
+                "events": [dict(event)],
+                "candidate_kind": candidate_kind,
+                "semantic_anchors": anchors,
+                "boundary_basis": boundary_basis,
+            }
+        )
+
+    candidates.sort(
+        key=lambda candidate: min(
+            int(event_by_id[event_id].get("sequence") or 0)
+            for event_id in candidate.get("event_ids") or []
+            if event_id in event_by_id
+        )
+    )
+
     # A failed tool followed by the same tool/target succeeding is one recovery Episode.
     merged: List[Dict[str, Any]] = []
     index = 0
@@ -536,7 +694,30 @@ def _build_candidate_blocks(
             continue
         merged.append(current)
         index += 1
-    return merged
+    return [_with_candidate_profile(candidate, event_by_id) for candidate in merged]
+
+
+def _with_candidate_profile(
+    candidate: Dict[str, Any], event_by_id: Mapping[str, Mapping[str, Any]]
+) -> Dict[str, Any]:
+    events = [
+        event_by_id[str(event_id)]
+        for event_id in candidate.get("event_ids") or []
+        if str(event_id) in event_by_id
+    ]
+    profile = {
+        "event_count": len(events),
+        "event_type_counts": dict(Counter(str(event.get("event_type") or "unknown") for event in events)),
+        "event_subtypes": _ordered_unique(
+            event.get("event_subtype") for event in events if event.get("event_subtype")
+        ),
+        "actor_types": _ordered_unique(
+            (event.get("actor") or {}).get("type")
+            for event in events
+            if isinstance(event.get("actor"), dict) and (event.get("actor") or {}).get("type")
+        ),
+    }
+    return {**candidate, "event_profile": profile}
 
 
 def _collapse_lifecycle_candidates(
@@ -617,7 +798,8 @@ def _boundary_candidate_view(candidate: Mapping[str, Any]) -> Dict[str, Any]:
         deduplicated,
         key=lambda item: (
             0
-            if item[1].get("event_type") in {"user_prompt", "subagent_result", "assistant_message"}
+            if item[1].get("event_type")
+            in {"user_prompt", "subagent_result", "model_response", "assistant_message"}
             else 1
             if item[1].get("status") == "error"
             else 2,
@@ -630,9 +812,11 @@ def _boundary_candidate_view(candidate: Mapping[str, Any]) -> Dict[str, Any]:
         item: Dict[str, Any] = {
             "event_id": event.get("event_id"),
             "event_type": event.get("event_type"),
+            "event_subtype": event.get("event_subtype"),
             "title": _preview(event.get("title"), 120),
             "summary": _preview(event.get("summary"), 220),
             "status": event.get("status"),
+            "actor_type": (event.get("actor") or {}).get("type"),
         }
         tool = event.get("tool") if isinstance(event.get("tool"), dict) else {}
         if tool:
@@ -653,6 +837,15 @@ def _boundary_candidate_view(candidate: Mapping[str, Any]) -> Dict[str, Any]:
                     if tool_input.get(key) is not None
                 },
                 "is_error": tool.get("is_error"),
+            }
+        command = event.get("command") if isinstance(event.get("command"), dict) else {}
+        if command:
+            item["command"] = {
+                "shell": command.get("shell"),
+                "command": _preview(command.get("command"), 500),
+                "working_directory": command.get("working_directory"),
+                "exit_code": command.get("exit_code"),
+                "is_error": command.get("is_error"),
             }
         subagent = event.get("subagent") if isinstance(event.get("subagent"), dict) else {}
         if subagent:
@@ -681,6 +874,7 @@ def _boundary_candidate_view(candidate: Mapping[str, Any]) -> Dict[str, Any]:
         "event_count": len(raw_events),
         "omitted_event_count": max(0, len(raw_events) - len(selected_events)),
         "tool_counts": tool_counts,
+        "event_profile": candidate.get("event_profile") or {},
         "key_events": event_summaries,
     }
 
@@ -689,11 +883,16 @@ def _tool_events(candidate: Mapping[str, Any]) -> List[Dict[str, Any]]:
     return [
         event
         for event in candidate.get("events") or []
-        if isinstance(event, dict) and event.get("event_type") == "tool_execution"
+        if isinstance(event, dict) and event.get("event_type") in EXECUTION_EVENT_TYPES
     ]
 
 
 def _tool_signature(event: Mapping[str, Any]) -> Tuple[str, str]:
+    command = event.get("command") if isinstance(event.get("command"), dict) else {}
+    if event.get("event_type") == "command_execution" or command:
+        command_text = str(command.get("command") or "")
+        executable = command_text.strip().split(maxsplit=1)[0].lower() if command_text.strip() else ""
+        return str(command.get("shell") or executable or "command"), command_text.lower()
     tool = event.get("tool") if isinstance(event.get("tool"), dict) else {}
     tool_input = tool.get("input") if isinstance(tool.get("input"), dict) else {}
     target = next(
@@ -918,6 +1117,11 @@ def _materialize_episodes(
             for candidate in selected
             for event_id in candidate.get("semantic_event_ids") or []
         )
+        event_type_counts: Counter[str] = Counter()
+        for candidate in selected:
+            event_type_counts.update(
+                (candidate.get("event_profile") or {}).get("event_type_counts") or {}
+            )
         episodes.append(
             {
                 "episode_id": stable_id("episode", session_id, list(group)),
@@ -932,6 +1136,20 @@ def _materialize_episodes(
                 ),
                 "event_ids": event_ids,
                 "semantic_event_ids": semantic_event_ids,
+                "event_profile": {
+                    "event_count": len(event_ids),
+                    "event_type_counts": dict(event_type_counts),
+                    "event_subtypes": _ordered_unique(
+                        subtype
+                        for candidate in selected
+                        for subtype in (candidate.get("event_profile") or {}).get("event_subtypes") or []
+                    ),
+                    "actor_types": _ordered_unique(
+                        actor_type
+                        for candidate in selected
+                        for actor_type in (candidate.get("event_profile") or {}).get("actor_types") or []
+                    ),
+                },
                 "start_event_id": event_ids[0] if event_ids else None,
                 "end_event_id": event_ids[-1] if event_ids else None,
                 "boundary_basis": sorted(
@@ -1088,9 +1306,9 @@ def _episode_observed_topic(
             subagent = event.get("subagent") if isinstance(event.get("subagent"), dict) else {}
             if subagent.get("task_summary"):
                 return str(subagent["task_summary"])
-        if event.get("event_type") == "tool_execution" and event.get("summary"):
+        if event.get("event_type") in EXECUTION_EVENT_TYPES and event.get("summary"):
             return str(event["summary"])
-        if event.get("event_type") in {"user_prompt", "assistant_message"}:
+        if event.get("event_type") in {"user_prompt", *MODEL_RESPONSE_EVENT_TYPES}:
             return _preview(event.get("summary"), 240)
     return "未提取到明确主题"
 
@@ -1122,16 +1340,23 @@ def _episode_evidence_packet(
     evidence: Dict[str, List[Dict[str, Any]]] = {
         "user_prompts": [],
         "tool_executions": [],
+        "command_executions": [],
         "subagent_results": [],
-        "assistant_messages": [],
+        "model_responses": [],
+        "control_events": [],
     }
     allowed_event_ids = list(episode.get("semantic_event_ids") or episode.get("event_ids") or [])
     for event_id in allowed_event_ids:
         event = event_map.get(str(event_id)) or {}
         common = {
             "event_id": event_id,
+            "event_type": event.get("event_type"),
+            "event_subtype": event.get("event_subtype"),
             "status": event.get("status"),
-            "source_lines": event.get("source_lines") or [],
+            "actor": event.get("actor") or {},
+            "scope": event.get("scope") or {},
+            "time": event.get("time") or {},
+            "provenance": event.get("provenance") or {},
             "summary": event.get("summary"),
         }
         if event.get("event_type") == "user_prompt":
@@ -1148,6 +1373,22 @@ def _episode_evidence_packet(
                     "is_error": bool(tool.get("is_error")),
                 }
             )
+        elif event.get("event_type") == "command_execution":
+            command = event.get("command") if isinstance(event.get("command"), dict) else {}
+            evidence["command_executions"].append(
+                {
+                    **common,
+                    "shell": command.get("shell"),
+                    "command": command.get("command"),
+                    "working_directory": command.get("working_directory"),
+                    "stdout": command.get("stdout") or {},
+                    "stderr": command.get("stderr") or {},
+                    "exit_code": command.get("exit_code"),
+                    "timed_out": bool(command.get("timed_out")),
+                    "background": bool(command.get("background")),
+                    "is_error": bool(command.get("is_error")),
+                }
+            )
         elif event.get("event_type") == "subagent_result":
             subagent = event.get("subagent") if isinstance(event.get("subagent"), dict) else {}
             evidence["subagent_results"].append(
@@ -1158,8 +1399,18 @@ def _episode_evidence_packet(
                     "result": subagent.get("result") or {},
                 }
             )
-        elif event.get("event_type") == "assistant_message":
-            evidence["assistant_messages"].append({**common, "text": event.get("text") or {}})
+        elif event.get("event_type") in MODEL_RESPONSE_EVENT_TYPES:
+            evidence["model_responses"].append(
+                {
+                    **common,
+                    "response": event.get("response") or {},
+                    "text": event.get("text") or {},
+                }
+            )
+        elif event.get("event_type") == "control_event":
+            evidence["control_events"].append(
+                {**common, "control": event.get("control") or {}}
+            )
     packet = {
         "evidence": evidence,
         "episode_id": episode.get("episode_id"),
@@ -1167,6 +1418,7 @@ def _episode_evidence_packet(
         "candidate_episode_ids": episode.get("candidate_episode_ids") or [],
         "candidate_kinds": episode.get("candidate_kinds") or [],
         "semantic_anchors": episode.get("semantic_anchors") or [],
+        "event_profile": episode.get("event_profile") or {},
         "boundary_context": {
             "boundary_basis": episode.get("boundary_basis") or [],
             "segmentation": episode.get("segmentation") or {},
@@ -1204,9 +1456,16 @@ def _rule_nodes(
         event_ids = list(episode.get("event_ids") or [])
         semantic_event_ids = list(episode.get("semantic_event_ids") or event_ids)
         episode_events = [events[event_id] for event_id in semantic_event_ids if event_id in events]
-        tools = [event for event in episode_events if event.get("event_type") == "tool_execution"]
+        tools = [
+            event
+            for event in episode_events
+            if event.get("event_type") in EXECUTION_EVENT_TYPES
+        ]
         final_messages = [
-            event for event in episode_events if event.get("event_type") == "assistant_message"
+            event
+            for event in episode_events
+            if event.get("event_type") in MODEL_RESPONSE_EVENT_TYPES
+            and _is_final_response(event)
         ]
         activity, objective, summary, outcome, confidence = _rule_annotation(
             tools, final_messages, previous
@@ -1246,7 +1505,11 @@ def _rule_nodes(
             "inference_method": "rules",
             "review_status": "unreviewed",
         }
-        _decorate_node(node, episode_events)
+        _decorate_node(
+            node,
+            [events[event_id] for event_id in event_ids if event_id in events],
+            trace.get("artifacts") or [],
+        )
         nodes.append(node)
         previous = node
     return nodes
@@ -1268,6 +1531,8 @@ def _rule_annotation(
     names = [
         str((event.get("payload") or {}).get("name") or event.get("title") or "") for event in tools
     ]
+    subtypes = {str(event.get("event_subtype") or "") for event in tools}
+    commands = [event for event in tools if event.get("event_type") == "command_execution"]
     joined = " ".join(
         str(event.get("summary") or "")
         + " "
@@ -1278,7 +1543,9 @@ def _rule_annotation(
         json.dumps((event.get("payload") or {}).get("input") or {}, ensure_ascii=False)
         for event in tools
     ).lower()
-    if any(name in {"Glob", "Read", "Grep"} for name in names):
+    if subtypes & {"file_read", "path_search"} or any(
+        name in {"Glob", "Read", "Grep"} for name in names
+    ):
         task_material = any(
             word in target_text for word in ("question", "task", "readme", "description")
         )
@@ -1288,9 +1555,11 @@ def _rule_annotation(
             "相关材料已成功读取。" if any(event.get("status") == "success" for event in tools) else "材料读取未完成。"
         )
         return activity, intent, "通过文件检索和读取建立任务上下文。", outcome, "high"
-    if any(name in {"Write", "Edit", "NotebookEdit"} for name in names):
+    if subtypes & {"file_write", "file_modify"} or any(
+        name in {"Write", "Edit", "NotebookEdit"} for name in names
+    ):
         return "Data Preparation", "生成或修改分析材料", "通过结构化文件工具更新分析内容。", "工具报告文件操作已完成。", "medium"
-    if any(name in {"Bash", "Python", "SQL"} for name in names):
+    if commands or any(name in {"Bash", "PowerShell", "Python", "SQL"} for name in names):
         previous_activity = str((previous or {}).get("primary_activity") or "")
         similar = previous_activity in {"Analysis", "Validation"} and _analysis_similarity(
             joined, previous
@@ -1302,6 +1571,8 @@ def _rule_annotation(
             outcome = _count_outcome(counts, validation=True)
             return "Validation", "复核前一步分析结果与统计口径", "使用新的计算方式检查已有结果。", outcome, "medium"
         outcome = _count_outcome(counts, validation=False)
+        if any(word in joined for word in ("plot", "chart", "visual", "图表", "可视化")):
+            return "Visualization", "生成数据可视化", "执行命令生成或检查可视化结果。", outcome, "medium"
         return "Analysis", _analysis_intent(joined), "执行计算或命令以获得任务所需结果。", outcome, "medium"
     return "Uncertain", "无法从现有证据可靠确定分析意图", "该阶段包含可观察行为，但语义目标证据不足。", "", "low"
 
@@ -1354,26 +1625,70 @@ def _analysis_intent(joined: str) -> str:
     return "执行任务所需的数据分析与计算"
 
 
-def _decorate_node(node: Dict[str, Any], episode_events: List[Dict[str, Any]]) -> None:
+def _decorate_node(
+    node: Dict[str, Any],
+    episode_events: List[Dict[str, Any]],
+    trace_artifacts: Iterable[Mapping[str, Any]] = (),
+) -> None:
     actions: List[Dict[str, Any]] = []
     inputs: List[Dict[str, Any]] = []
     outputs: List[Dict[str, Any]] = []
     errors: List[Dict[str, Any]] = []
     orchestration_tools = {"TaskCreate", "TaskUpdate", "TaskGet", "TaskList", "Skill"}
+    event_type_counts = Counter(
+        str(event.get("event_type") or "unknown") for event in episode_events
+    )
+    node["event_profile"] = {
+        "event_count": len(episode_events),
+        "event_type_counts": dict(event_type_counts),
+        "event_subtypes": _ordered_unique(
+            event.get("event_subtype")
+            for event in episode_events
+            if event.get("event_subtype")
+        ),
+        "actor_types": _ordered_unique(
+            (event.get("actor") or {}).get("type")
+            for event in episode_events
+            if isinstance(event.get("actor"), dict)
+            and (event.get("actor") or {}).get("type")
+        ),
+    }
+    actionable_types = {*EXECUTION_EVENT_TYPES, "subagent_result", "control_event"}
     for event in episode_events:
-        if event.get("event_type") != "tool_execution":
+        if event.get("event_type") not in actionable_types:
             continue
         payload = event.get("payload") if isinstance(event.get("payload"), dict) else {}
         event_id = str(event.get("event_id"))
+        event_type = str(event.get("event_type") or "")
+        if event_type == "command_execution":
+            action_name = str(payload.get("shell") or payload.get("name") or "Command")
+        elif event_type == "subagent_result":
+            action_name = "Subagent"
+        elif event_type == "control_event":
+            action_name = str(event.get("event_subtype") or "Control")
+        else:
+            action_name = str(payload.get("name") or event.get("title") or "Tool")
         actions.append(
             {
                 "event_id": event_id,
-                "tool_name": payload.get("name") or event.get("title"),
+                "event_type": event_type,
+                "event_subtype": event.get("event_subtype"),
+                "action_type": (
+                    "command"
+                    if event_type == "command_execution"
+                    else "tool"
+                    if event_type == "tool_execution"
+                    else "subagent"
+                    if event_type == "subagent_result"
+                    else "control"
+                ),
+                "action_name": action_name,
+                "tool_name": action_name,
                 "summary": event.get("summary"),
                 "status": event.get("status"),
                 "semantic_relevance": (
                     "orchestration"
-                    if str(payload.get("name") or event.get("title") or "")
+                    if action_name
                     in orchestration_tools
                     else "key_action"
                 ),
@@ -1389,10 +1704,17 @@ def _decorate_node(node: Dict[str, Any], episode_events: List[Dict[str, Any]]) -
                         "evidence_event_ids": [event_id],
                     }
                 )
-        if payload.get("output") is not None:
+        reported_output = (
+            payload.get("stdout")
+            if event_type == "command_execution" and payload.get("stdout") is not None
+            else payload.get("result")
+            if event_type == "subagent_result"
+            else payload.get("output")
+        )
+        if reported_output is not None:
             outputs.append(
                 {
-                    "summary": _preview(payload.get("output"), 500),
+                    "summary": _preview(reported_output, 500),
                     "origin": "observed",
                     "evidence_event_ids": [event_id],
                 }
@@ -1401,7 +1723,10 @@ def _decorate_node(node: Dict[str, Any], episode_events: List[Dict[str, Any]]) -
             errors.append(
                 {
                     "event_id": event_id,
-                    "summary": _preview(payload.get("output"), 500),
+                    "summary": _preview(
+                        payload.get("stderr") or payload.get("output") or event.get("summary"),
+                        500,
+                    ),
                     "recovered": False,
                 }
             )
@@ -1411,7 +1736,33 @@ def _decorate_node(node: Dict[str, Any], episode_events: List[Dict[str, Any]]) -
     node["actions"] = actions
     node["observed_inputs"] = _dedupe_objects(inputs)
     node["reported_outputs"] = _dedupe_objects(outputs)
-    node["verified_artifacts"] = []
+    event_ids = {str(event.get("event_id") or "") for event in episode_events}
+    verified_artifacts: List[Dict[str, Any]] = []
+    for artifact in trace_artifacts:
+        evidence = [
+            str(event_id)
+            for event_id in artifact.get("evidence_event_ids") or []
+            if str(event_id) in event_ids
+        ]
+        if not evidence:
+            continue
+        operations = [
+            dict(operation)
+            for operation in artifact.get("operations") or []
+            if str(operation.get("event_id") or "") in event_ids
+        ]
+        verified_artifacts.append(
+            {
+                "artifact_id": artifact.get("artifact_id"),
+                "name": artifact.get("name"),
+                "path": artifact.get("path"),
+                "artifact_type": artifact.get("artifact_type") or "file",
+                "exists": bool(artifact.get("exists")),
+                "evidence_event_ids": evidence,
+                "operations": operations,
+            }
+        )
+    node["verified_artifacts"] = verified_artifacts
     node["errors"] = errors
 
 
@@ -1467,7 +1818,9 @@ def _model_nodes(
             "review_status": "unreviewed",
         }
         _decorate_node(
-            node, [event_map[event_id] for event_id in event_ids if event_id in event_map]
+            node,
+            [event_map[event_id] for event_id in event_ids if event_id in event_map],
+            trace.get("artifacts") or [],
         )
         result.append(node)
     return result
@@ -1635,7 +1988,7 @@ def _abstained_nodes(
             "inference_method": "model_abstained",
             "review_status": "unreviewed",
         }
-        _decorate_node(node, episode_events)
+        _decorate_node(node, episode_events, trace.get("artifacts") or [])
         nodes.append(node)
     return nodes
 
@@ -1936,11 +2289,12 @@ def validate_semantic_workflow(
             and (
                 event_map[event_id].get("event_type") in {"user_prompt", "subagent_result"}
                 or (
-                    event_map[event_id].get("event_type") == "assistant_message"
+                    event_map[event_id].get("event_type")
+                    in MODEL_RESPONSE_EVENT_TYPES
                     and terminal_episode
                 )
                 or (
-                    event_map[event_id].get("event_type") == "tool_execution"
+                    event_map[event_id].get("event_type") in EXECUTION_EVENT_TYPES
                     and str((event_map[event_id].get("payload") or {}).get("name"))
                     not in administrative_tools
                 )
@@ -1980,7 +2334,10 @@ def validate_semantic_workflow(
             granularity_issues.append(
                 {"code": "multiple_subagent_results_in_node", "node_id": node_id}
             )
-        if "assistant_message" in node_event_types and "tool_execution" in node_event_types:
+        if (
+            any(event_type in MODEL_RESPONSE_EVENT_TYPES for event_type in node_event_types)
+            and any(event_type in EXECUTION_EVENT_TYPES for event_type in node_event_types)
+        ):
             episode_id = next(iter(node.get("episode_ids") or []), None)
             episode = next((item for item in episodes if item.get("episode_id") == episode_id), {})
             if "terminal_response" in (episode.get("candidate_kinds") or []):
@@ -2057,6 +2414,46 @@ def _provider_complete(
     return provider.complete(prompt, stage, json_schema=schema)
 
 
+def _load_semantic_event_source(
+    session_id: str, root: Optional[str]
+) -> Tuple[Dict[str, Any], Path, Path, str, str]:
+    """Load Event Schema 2.0 as semantic truth and trace metadata as context."""
+    directory = session_directory(session_id, root)
+    trace_path = directory / "derived" / "observer_trace.json"
+    events_path = directory / "derived" / "events.jsonl"
+    if not trace_path.is_file():
+        raise SemanticWorkflowError("observer_trace.json does not exist; run observe derive first")
+    trace = load_observer_trace(session_id, root)
+    trace_sha = _sha256(trace_path)
+    if events_path.is_file():
+        events = list(iter_jsonl(events_path))
+        if not events:
+            raise SemanticWorkflowError("events.jsonl is empty; rerun observe derive")
+        event_ids = [str(event.get("event_id") or "") for event in events]
+        if any(not event_id for event_id in event_ids) or len(event_ids) != len(set(event_ids)):
+            raise SemanticWorkflowError("events.jsonl contains missing or duplicate event_id values")
+        invalid_types = sorted(
+            {
+                str(event.get("event_type") or "")
+                for event in events
+                if event.get("event_type") not in WORKFLOW_EVENT_TYPES
+            }
+        )
+        if invalid_types:
+            raise SemanticWorkflowError(
+                "events.jsonl contains unsupported Event Schema 2.0 types: {0}".format(
+                    ", ".join(invalid_types)
+                )
+            )
+        trace = {**trace, "events": events}
+        events_sha = _sha256(events_path)
+        return trace, trace_path, events_path, trace_sha, events_sha
+    if trace.get("schema_version") == "observer-trace/2.0":
+        raise SemanticWorkflowError("events.jsonl does not exist; rerun observe derive")
+    # Read-only compatibility for historical v1 sessions.
+    return trace, trace_path, trace_path, trace_sha, trace_sha
+
+
 def run_semantic_workflow(
     session_id: str,
     root: Optional[str] = None,
@@ -2067,18 +2464,16 @@ def run_semantic_workflow(
     provider: Optional[SemanticProvider] = None,
     progress_callback: Optional[ProgressCallback] = None,
 ) -> Dict[str, Any]:
-    _emit_progress(progress_callback, "prepare", 2, "读取 Observer Trace")
+    _emit_progress(progress_callback, "prepare", 2, "读取 Event Schema 2.0")
     if force and resume_inference:
         raise SemanticWorkflowError("--force and --resume cannot be used together")
     annotation_guidance = " ".join(str(annotation_guidance or "").split())
     if len(annotation_guidance) > 1000:
         raise SemanticWorkflowError("annotation guidance must not exceed 1000 characters")
     directory = session_directory(session_id, root)
-    trace_path = directory / "derived" / "observer_trace.json"
-    if not trace_path.is_file():
-        raise SemanticWorkflowError("observer_trace.json does not exist; run observe derive first")
-    trace = load_observer_trace(session_id, root)
-    trace_sha = _sha256(trace_path)
+    trace, trace_path, events_path, trace_sha, events_sha = _load_semantic_event_source(
+        session_id, root
+    )
     config = SemanticConfig.from_env()
     method = "rules" if rules_only else "model"
     current_path = directory / "derived" / "semantic_workflow.json"
@@ -2087,7 +2482,11 @@ def run_semantic_workflow(
             current = json.loads(current_path.read_text(encoding="utf-8"))
             inference = current.get("inference_run") or {}
             if (
-                (current.get("source_trace") or {}).get("sha256") == trace_sha
+                (
+                    (current.get("source_events") or {}).get("sha256")
+                    or (current.get("source_trace") or {}).get("sha256")
+                )
+                == events_sha
                 and inference.get("method") == method
                 and inference.get("processor_version") == SEMANTIC_PROCESSOR_VERSION
             ):
@@ -2126,12 +2525,13 @@ def run_semantic_workflow(
             )
         semantic_provider = SemanticProvider(config)
 
-    prompt_version = "semantic-prompts/0.5"
+    prompt_version = "semantic-prompts/0.6"
     stages_root = directory / "derived" / "semantic_stages"
     stages_root.mkdir(parents=True, exist_ok=True)
     compatibility = {
         "session_id": session_id,
         "source_trace_sha256": trace_sha,
+        "source_events_sha256": events_sha,
         "method": method,
         "processor_version": SEMANTIC_PROCESSOR_VERSION,
         "prompt_version": prompt_version,
@@ -2183,9 +2583,11 @@ def run_semantic_workflow(
         _write_json(
             stage_root / "key_information_events.json",
             {
-                "schema_version": "semantic-events/0.1",
+                "schema_version": "semantic-events/0.2",
                 "source_trace_sha256": trace_sha,
-                "compaction_version": "key-information-events/0.1",
+                "source_events_sha256": events_sha,
+                "source_events_path": str(events_path.relative_to(directory)).replace("\\", "/"),
+                "compaction_version": "key-information-events/0.2",
                 "source_event_count": len(trace.get("events") or []),
                 "event_count": len(key_events),
                 "events": key_events,
@@ -2703,6 +3105,20 @@ def run_semantic_workflow(
         )
     workflow: Dict[str, Any] = {
         "schema_version": SEMANTIC_SCHEMA_VERSION,
+        "source_events": {
+            "session_id": session_id,
+            "path": str(events_path.relative_to(directory)).replace("\\", "/"),
+            "sha256": events_sha,
+            "schema_version": trace.get("schema_version"),
+            "event_count": len(trace.get("events") or []),
+            "event_type_counts": dict(
+                Counter(
+                    str(event.get("event_type") or "unknown")
+                    for event in trace.get("events") or []
+                    if isinstance(event, dict)
+                )
+            ),
+        },
         "source_trace": {
             "session_id": session_id,
             "path": "derived/observer_trace.json",
@@ -2717,6 +3133,8 @@ def run_semantic_workflow(
             "prompt_version": prompt_version,
             "generated_at": _utc_now(),
             "candidate_count": len(candidates),
+            "source_event_count": len(trace.get("events") or []),
+            "key_event_count": len(key_events),
             "stage_path": "derived/semantic_stages/{0}/".format(inference_id),
             "warnings": warnings,
             "annotation_guidance": annotation_guidance,
@@ -2794,7 +3212,10 @@ def load_semantic_workflow(
                 value = reviewed_value
         except (OSError, ValueError, TypeError):
             pass
-    if isinstance(value, dict) and value.get("schema_version") == "semantic-workflow/0.2":
+    if isinstance(value, dict) and value.get("schema_version") in {
+        "semantic-workflow/0.2",
+        "semantic-workflow/0.3",
+    }:
         value = _upgrade_legacy_semantic_workflow(value)
     if not isinstance(value, dict) or value.get("schema_version") != SEMANTIC_SCHEMA_VERSION:
         raise SemanticWorkflowError("semantic workflow has an unsupported schema")
@@ -2802,9 +3223,26 @@ def load_semantic_workflow(
 
 
 def _upgrade_legacy_semantic_workflow(value: Dict[str, Any]) -> Dict[str, Any]:
-    """Adapt a v0.2 workflow in memory without rewriting historical evidence."""
+    """Adapt v0.2/v0.3 workflows in memory without rewriting historical evidence."""
     upgraded = json.loads(json.dumps(value, ensure_ascii=False))
+    previous_schema = str(upgraded.get("schema_version") or "semantic-workflow/unknown")
     upgraded["schema_version"] = SEMANTIC_SCHEMA_VERSION
+    source_trace = upgraded.get("source_trace") if isinstance(upgraded.get("source_trace"), dict) else {}
+    upgraded.setdefault(
+        "source_events",
+        {
+            "session_id": source_trace.get("session_id"),
+            "path": source_trace.get("path"),
+            "sha256": source_trace.get("sha256"),
+            "schema_version": source_trace.get("schema_version"),
+            "event_count": (upgraded.get("validation") or {}).get("source_event_count", 0),
+            "event_type_counts": {},
+            "legacy_fallback": True,
+        },
+    )
+    for episode in upgraded.get("episodes") or []:
+        if isinstance(episode, dict):
+            episode.setdefault("event_profile", {"event_count": len(episode.get("event_ids") or []), "event_type_counts": {}, "event_subtypes": [], "actor_types": []})
     for node in upgraded.get("semantic_nodes") or []:
         if not isinstance(node, dict):
             continue
@@ -2823,6 +3261,15 @@ def _upgrade_legacy_semantic_workflow(value: Dict[str, Any]) -> Dict[str, Any]:
         node["title"] = re.split(r"[。！？]", title_source, maxsplit=1)[0][:36]
         node.pop("specific_intent", None)
         node.pop("goal", None)
+        node.setdefault(
+            "event_profile",
+            {
+                "event_count": len(node.get("event_ids") or []),
+                "event_type_counts": {},
+                "event_subtypes": [],
+                "actor_types": [],
+            },
+        )
         for action in node.get("actions") or []:
             if not isinstance(action, dict):
                 continue
@@ -2832,8 +3279,14 @@ def _upgrade_legacy_semantic_workflow(value: Dict[str, Any]) -> Dict[str, Any]:
                 in {"TaskCreate", "TaskUpdate", "TaskGet", "TaskList", "Skill"}
                 else "key_action"
             )
+            action.setdefault("action_name", action.get("tool_name") or "Action")
+            action.setdefault("action_type", "tool")
+            action.setdefault("event_type", "tool_execution")
+            action.setdefault("event_subtype", None)
     inference = upgraded.setdefault("inference_run", {})
-    inference["loaded_with_schema_adapter"] = "semantic-workflow/0.2-to-0.3"
+    inference["loaded_with_schema_adapter"] = "{0}-to-{1}".format(
+        previous_schema, SEMANTIC_SCHEMA_VERSION
+    )
     return upgraded
 
 
@@ -2841,7 +3294,7 @@ def revalidate_semantic_workflow(session_id: str, root: Optional[str] = None) ->
     """Recompute deterministic validation without another model request."""
     directory = session_directory(session_id, root)
     workflow = load_semantic_workflow(session_id, root, reviewed=False)
-    trace = load_observer_trace(session_id, root)
+    trace, _, _, _, _ = _load_semantic_event_source(session_id, root)
     workflow["validation"] = validate_semantic_workflow(workflow, trace)
     inference = workflow.setdefault("inference_run", {})
     inference["processor_version"] = SEMANTIC_PROCESSOR_VERSION

@@ -239,7 +239,9 @@ def _combined_node(
         "reported_outputs": _unique_dicts(
             item for node in selected for item in node.get("reported_outputs") or []
         ),
-        "verified_artifacts": [],
+        "verified_artifacts": _unique_dicts(
+            item for node in selected for item in node.get("verified_artifacts") or []
+        ),
         "errors": [error for node in selected for error in node.get("errors") or []],
     }
 
@@ -282,6 +284,11 @@ def _split_node(workflow: Dict[str, Any], payload: Mapping[str, Any], review_id:
         ]
         node["errors"] = [
             item for item in original.get("errors") or [] if item.get("event_id") in set(event_ids)
+        ]
+        node["verified_artifacts"] = [
+            item
+            for item in original.get("verified_artifacts") or []
+            if set(item.get("evidence_event_ids") or []) & set(event_ids)
         ]
         replacements.append(node)
     nodes = workflow.get("semantic_nodes") or []

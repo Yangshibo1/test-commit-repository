@@ -48,8 +48,9 @@ Passive Observer 页面读取后端只读 Observation API，或离线加载
 约束的 `workflow.json`。
 
 生成 `derived/semantic_workflow.json` 后，被动观察页面默认显示证据约束的语义工作流，并提供
-“语义工作流 / 执行轨迹 / 原始证据”三级切换。人工接受、字段修正、连续 Node 合并和按 Episode
-拆分会写入追加式 review sidecar，不会覆盖模型或规则生成的原始语义文件。
+“语义工作流 / 执行轨迹”切换。两个图都会显示已经观察到的文件产物，点击文件节点可通过
+系统默认应用直接打开本地文件。人工接受、字段修正、连续 Node 合并和按 Episode 拆分会写入
+追加式 review sidecar，不会覆盖模型或规则生成的原始语义文件。
 
 模型模式使用相邻 Candidate 的 `MERGE/SPLIT` JSON 决策；前端分别显示 Evidence Validity、
 Granularity Validity、模型置信度、校验后置信度，以及模型边界被硬约束覆盖的原因。

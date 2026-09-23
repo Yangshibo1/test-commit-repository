@@ -65,7 +65,6 @@ function ClaudeTerminalPage() {
   const [projectRoot, setProjectRoot] = useState(FALLBACK_PROJECT);
   const [defaultProjectRoot, setDefaultProjectRoot] = useState(FALLBACK_PROJECT);
   const [claudeCommand, setClaudeCommand] = useState('claude');
-  const [fullPermissions, setFullPermissions] = useState(true);
   const [backendState, setBackendState] = useState<'checking' | 'online' | 'offline'>('checking');
   const [socketState, setSocketState] = useState<SocketState>('idle');
   const [process, setProcess] = useState<TerminalProcessStatus | null>(null);
@@ -217,7 +216,6 @@ function ClaudeTerminalPage() {
       const request: Record<string, unknown> = {
         project_root: normalizedProjectRoot,
         claude_command: claudeCommand.trim() || 'claude',
-        full_permissions: fullPermissions,
         rows: 36,
         cols: 120,
       };
@@ -690,10 +688,10 @@ function ClaudeTerminalPage() {
               <span className="block text-[10px] font-mono text-muted mb-1">CLAUDE COMMAND</span>
               <input value={claudeCommand} onChange={(event) => setClaudeCommand(event.target.value)} className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs font-mono outline-none focus:border-accent" />
             </label>
-            <label className="flex items-start gap-2.5 p-2.5 rounded-xl border border-line bg-white">
-              <input type="checkbox" checked={fullPermissions} onChange={(event) => setFullPermissions(event.target.checked)} className="mt-0.5 accent-[#d97745]" />
-              <span className="text-xs">完全权限启动 <span className="text-muted">（跳过工具授权提问）</span></span>
-            </label>
+            <div className="p-2.5 rounded-xl border border-line bg-white text-xs">
+              Claude 统一以完全权限模式启动
+              <span className="block text-muted mt-1">跳过工具授权提问</span>
+            </div>
             {process || recoveryClaudeSessionId ? (
               <div className="grid grid-cols-2 gap-2">
                 <button disabled={busy} onClick={() => void startTerminal('resume')} className="px-3 py-2.5 rounded-xl bg-accent text-white text-xs disabled:opacity-40">恢复原会话</button>

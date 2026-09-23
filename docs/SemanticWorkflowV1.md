@@ -3,14 +3,16 @@
 ## 定位
 
 Semantic Workflow 是对 Claude transcript 可观察行为的事后语义重建，不是 hidden
-chain-of-thought、内部 Plan 或真实因果推理。原始 `transcript.jsonl` 和
-`observer_trace.json` 始终是证据来源，语义文件不能覆盖它们。
+chain-of-thought、内部 Plan 或真实因果推理。原始 `transcript.jsonl` 是不可变证据，
+`events.jsonl` 是语义分析的标准输入，`observer_trace.json` 提供关系、Turn 和产物上下文；
+语义文件不能覆盖这些来源。
 
 处理路径：
 
 ```text
 transcript.jsonl
-  → observer_trace.json
+  → Event Schema 2.0 events.jsonl（六类 Event）
+  → Event Projection（按类型生成有界证据）
   → Candidate Blocks（确定性聚合）
   → Adjacent Boundary Classification（可选模型）
   → Hard-constraint Boundary Validator
@@ -48,6 +50,18 @@ $env:AGENTVAST_SEMANTIC_MODEL = "model-name"
 
 python -m agentvast.cli observe semantic <session-id> --force
 ```
+
+如果 Claude Code 使用的自定义网关同时提供 OpenAI-compatible
+`/v1/chat/completions`，可以只为语义模块指定该路由支持的模型名，并显式复用
+`~/.claude/settings.json` 中已有的 `ANTHROPIC_BASE_URL` 与 `ANTHROPIC_API_KEY`：
+
+```dotenv
+AGENTVAST_SEMANTIC_USE_CLAUDE_SETTINGS=true
+AGENTVAST_SEMANTIC_MODEL=gpt-5.6-terra
+```
+
+Claude Code 的模型别名可能包含 `[1M]` 等上下文标记，而 OpenAI-compatible 路由未必接受；
+因此语义模型名称应以该网关 `/v1/models` 返回的实际 ID 为准。
 
 模型生成可以接收一段可审计的 Node 颗粒度要求：
 
@@ -94,6 +108,7 @@ python -m agentvast.cli observe semantic-validate <session-id>
 ```text
 derived/
 ├─ observer_trace.json
+├─ events.jsonl
 ├─ semantic_workflow.json
 ├─ semantic_workflow_reviewed.json
 ├─ semantic_reviews.jsonl
@@ -123,9 +138,10 @@ derived/
 
 ## 边界重建
 
-确定性预处理先将同一模型响应及其工具、错误重试、连续 Task 生命周期操作聚合为 Candidate
-Block；`task-notification` 记录为 `subagent_result`，不计作人工 Prompt。边界模型不直接生成
-任意分组，而是为每一对相邻 Candidate 返回 `MERGE` 或 `SPLIT`。
+确定性预处理以 Event Schema 2.0 为输入：同一 `model_response` 发起的 Tool/Command 批次先聚合，
+失败后成功的同类 Tool 或 Command 可组成恢复块；连续 Task 生命周期操作可折叠。
+`subagent_result` 和 `control_event` 是独立语义锚点，未挂接到 Model Response 的可见 Event 也不会
+被静默丢弃。边界模型不直接生成任意分组，而是为每一对相邻 Candidate 返回 `MERGE` 或 `SPLIT`。
 
 硬约束优先于模型：不同人工 Turn、不同 Subagent Result 和 terminal response 必须分开；一个
 Episode 最多包含三个 Candidate 和一个 Subagent Result。模型结果缺失或一次修复后仍非法时，
@@ -136,9 +152,14 @@ Objective、Summary 和 Outcome，不能再次合并、拆分或重排 Episode�
 Goal 已合并为 Objective：Objective 表达该阶段试图完成什么，Summary 表达实际进行了什么。
 
 Annotation 不再一次读取全部 Episode。每个 Episode 独立构造 Evidence Packet 并调用模型，
-内容按重要性排列为：原始用户任务、当前 Episode 的真实关键 Event、前后 Episode 简短上下文、
-输出约束。`model_response` 包装事件不进入语义 Evidence；长工具输出和 Subagent Result 使用
-确定性摘要，保留标题、关键数字行、开头、结尾、原始长度和 SHA-256。
+内容按重要性排列为：原始用户任务、当前 Episode 的真实关键 Event、Event 构成统计、前后
+Episode 简短上下文、输出约束。纯 Tool Request 的 `model_response` 只用于调用关联，不作为独立
+语义事实；带文本或最终回答的 Model Response 保留。Tool、Agent Command、Subagent Result 和
+Control Event 分栏传给模型，Command 明确保留 shell、command、cwd、stdout、stderr、exit code；
+长输出使用确定性摘要，保留标题、关键数字行、开头、结尾、原始长度和 SHA-256。
+
+每个投影 Event 还保留 `event_class`、`event_subtype`、`actor`、`scope`、`time` 和 `provenance`，
+用于消歧和审计，但提示词禁止模型据此虚构隐藏意图。
 
 Provider 优先请求 `response_format=json_schema` 且 `strict=true`；不兼容时依次降级到
 `json_object` 和普通 JSON 文本。一次任务中会缓存已经证实可用的响应模式，后续 Episode 不再
@@ -214,6 +235,7 @@ AGENTVAST_SEMANTIC_REQUEST_INTERVAL_SECONDS=2
 | 字段 | 用途 |
 |---|---|
 | `node_id`、`episode_ids`、`event_ids` | 稳定身份和证据回链 |
+| `event_profile` | Node 内六类 Event 的数量、子类型和 Actor 构成 |
 | `boundary_decisions`、`boundary_basis` | Episode 切分审计 |
 | `source_lines`、Provider metadata | 原始记录和调用诊断 |
 | TaskCreate、TaskUpdate、TaskGet、TaskList、Skill | Agent 编排过程 |
@@ -279,10 +301,17 @@ POST /api/observations/<session-id>/semantic/reviews
 Passive Observer 页面提供：
 
 1. **语义工作流**：默认的人类可读 Node、结果和语义关系；
-2. **执行轨迹**：Prompt、Response、工具批次、错误与最终回答；
-3. **原始证据**：包含内部事件和 transcript 行号。
+2. **执行轨迹**：Prompt、Response、工具批次、错误、最终回答及其生成的文件产物。
 
 从 Semantic Node 点击 evidence 会切换到执行轨迹并定位对应 Event。
+
+语义工作流图还会把已经存在且能够回链到 `Write`、`Edit`、`NotebookEdit`，或 Bash 明确报告
+路径的文件显示为独立产物 Node。产物通过“生成”或“修改”边挂在对应 Semantic Node 下，
+不进入 `NEXT` 语义主链。执行轨迹图也会把产物挂在对应工具 Event 下。点击产物名称会通过
+受限 Observation API 调用操作系统默认应用直接打开本地文件；API 只接受
+Observer 已登记的 `artifact_id`，并限制在该 Session 的项目目录内。旧版
+`observer_trace.json` 在读取时也会根据现有 Event 和仍然存在的文件派生产物，无需重新运行
+语义模型。
 
 ## 安全边界
 

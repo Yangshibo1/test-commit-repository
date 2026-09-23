@@ -207,7 +207,7 @@ def segmentation_prompt(candidates: List[Dict[str, Any]]) -> str:
         for left, right in zip(candidates, candidates[1:])
     ]
     source = {
-        "task": "判断每一对相邻候选行为块之间应 MERGE 还是 SPLIT",
+        "task": "基于Event Schema 2.0证据，判断每一对相邻候选行为块之间应 MERGE 还是 SPLIT",
         "closed_world_candidate_ids": [item["candidate_episode_id"] for item in candidates],
         "required_adjacent_pairs": adjacent_pairs,
         "hard_constraints": {
@@ -221,6 +221,9 @@ def segmentation_prompt(candidates: List[Dict[str, Any]]) -> str:
         "decision_rules": [
             "只判断相邻候选，不得创建、删除、复制或重排候选",
             "候选块已经完成工具批次、错误重试和连续生命周期事件的确定性聚合",
+            "六类Event的语义角色不同：user_prompt给出任务，model_response表达可见响应，tool_execution和command_execution记录执行，subagent_result记录委派结果，control_event记录流程变化",
+            "不能因为command_execution与tool_execution相邻就默认属于同一意图，必须比较目标、输入输出与上下文",
+            "control_event必须被解释为可观察的流程变化，不能推断隐藏原因",
             "不同task_id的subagent_result必须保持不同语义阶段",
             "生命周期块可与紧邻的分析结果合并，但必须有可观察的同一意图证据",
             "不确定时选择SPLIT，禁止把整个会话压缩成一个阶段",
@@ -262,6 +265,9 @@ def annotation_prompt(
                 "outcome_claims忠实概括Agent、Subagent或工具已经输出的结果；允许粒度随原始输出变化，不要为了统一粒度改写或虚构",
                 "Observer只描述记录中出现的行为和声称，不对Agent或Subagent结论另行事实背书",
                 "每个语义字段和outcome claim必须引用当前Episode内的真实event_id",
+                "严格区分tool_execution与command_execution；命令内容、stdout、stderr和exit_code只能作为可观察执行证据",
+                "event_subtype、actor、scope、time和provenance用于消歧，不得据此虚构隐藏意图",
+                "control_event只说明记录到的流程变化；subagent_result只说明子Agent报告的结果",
                 "禁止推断内部reasoning或未显式出现的Plan",
                 "证据不足时使用Uncertain、abstained=true、model_confidence=low并说明原因",
                 "模型只能输出model_confidence，本地Validator决定validated confidence",

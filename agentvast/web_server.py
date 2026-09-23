@@ -8,8 +8,10 @@ from terminal text.
 import asyncio
 import functools
 import json
+import mimetypes
 import os
 import shutil
+import subprocess
 import sys
 import uuid
 from collections import deque
@@ -39,11 +41,11 @@ class WebDependencyError(RuntimeError):
     """Raised when optional Web terminal dependencies are unavailable."""
 
 
-def _load_web_dependencies() -> Tuple[Any, Any, Any, Any, Any, Any, Any]:
+def _load_web_dependencies() -> Tuple[Any, Any, Any, Any, Any, Any, Any, Any]:
     try:
         from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
         from fastapi.middleware.cors import CORSMiddleware
-        from fastapi.responses import StreamingResponse
+        from fastapi.responses import FileResponse, StreamingResponse
         from pydantic import BaseModel
     except ImportError as error:
         raise WebDependencyError(
@@ -56,8 +58,53 @@ def _load_web_dependencies() -> Tuple[Any, Any, Any, Any, Any, Any, Any]:
         WebSocket,
         WebSocketDisconnect,
         CORSMiddleware,
+        FileResponse,
         StreamingResponse,
         BaseModel,
+    )
+
+
+def _resolve_observer_artifact_file(trace: Dict[str, Any], artifact_id: str) -> Path:
+    artifact = next(
+        (
+            item
+            for item in trace.get("artifacts") or []
+            if isinstance(item, dict) and item.get("artifact_id") == artifact_id
+        ),
+        None,
+    )
+    if artifact is None:
+        raise FileNotFoundError("Observed artifact does not exist: {0}".format(artifact_id))
+    cwd_value = str((trace.get("session") or {}).get("cwd") or "").strip()
+    if not cwd_value:
+        raise FileNotFoundError("Observation has no project directory")
+    project_root = Path(cwd_value).resolve()
+    candidate = Path(str(artifact.get("path") or ""))
+    if not candidate.is_absolute():
+        candidate = project_root / candidate
+    candidate = candidate.resolve()
+    try:
+        candidate.relative_to(project_root)
+    except ValueError as error:
+        raise PermissionError("Observed artifact is outside the project directory") from error
+    if not candidate.is_file():
+        raise FileNotFoundError("Observed artifact file is no longer available")
+    return candidate
+
+
+def _open_local_file(path: Path) -> None:
+    if sys.platform == "win32":
+        startfile = getattr(os, "startfile", None)
+        if startfile is None:
+            raise OSError("Windows local-file opener is unavailable")
+        startfile(str(path))
+        return
+    command = ["open", str(path)] if sys.platform == "darwin" else ["xdg-open", str(path)]
+    subprocess.Popen(
+        command,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
     )
 
 
@@ -82,15 +129,12 @@ def _resolve_claude(command: str) -> str:
 
 def _pty_arguments(
     command: str,
-    full_permissions: bool,
     claude_session_id: str,
     plugin_dir: Path,
     resume: bool,
 ) -> list:
     resolved = _resolve_claude(command)
-    arguments = [resolved]
-    if full_permissions:
-        arguments.append("--dangerously-skip-permissions")
+    arguments = [resolved, "--dangerously-skip-permissions"]
     arguments.extend(
         [
             "--resume" if resume else "--session-id",
@@ -422,7 +466,6 @@ class TerminalManager:
                 resume = False
             arguments = _pty_arguments(
                 resolved_command,
-                full_permissions,
                 claude_session_id,
                 self.plugin_dir,
                 resume,
@@ -463,7 +506,7 @@ class TerminalManager:
                 process=process,
                 project_root=project,
                 claude_command=resolved_command,
-                full_permissions=full_permissions,
+                full_permissions=True,
                 claude_session_id=claude_session_id,
                 database_path=database_path,
             )
@@ -506,6 +549,7 @@ def create_app(
         WebSocket,
         WebSocketDisconnect,
         CORSMiddleware,
+        FileResponse,
         StreamingResponse,
         BaseModel,
     ) = _load_web_dependencies()
@@ -688,6 +732,7 @@ def create_app(
                 "finish_trace",
                 "reviewer_assets",
                 "observer_trace_readonly",
+                "observer_artifact_open",
                 "semantic_workflow_review",
             ],
             "default_project": str(manager.default_project),
@@ -712,6 +757,39 @@ def create_app(
             return load_observer_trace(session_id)
         except (FileNotFoundError, ValueError) as error:
             raise HTTPException(status_code=404, detail=str(error))
+
+    @app.get("/api/observations/{session_id}/artifacts/{artifact_id}")
+    async def observation_artifact(session_id: str, artifact_id: str) -> Any:
+        try:
+            trace = load_observer_trace(session_id)
+            path = _resolve_observer_artifact_file(trace, artifact_id)
+        except FileNotFoundError as error:
+            raise HTTPException(status_code=404, detail=str(error))
+        except (PermissionError, ValueError) as error:
+            raise HTTPException(status_code=403, detail=str(error))
+        media_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        headers = {"Cache-Control": "no-store"}
+        if path.suffix.lower() in {".html", ".htm", ".svg"}:
+            headers["Content-Security-Policy"] = (
+                "sandbox allow-scripts; default-src 'self' data: blob:; "
+                "img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:"
+            )
+        return FileResponse(str(path), media_type=media_type, headers=headers)
+
+    @app.post("/api/observations/{session_id}/artifacts/{artifact_id}/open")
+    async def open_observation_artifact(session_id: str, artifact_id: str) -> Dict[str, Any]:
+        try:
+            trace = load_observer_trace(session_id)
+            path = _resolve_observer_artifact_file(trace, artifact_id)
+            _open_local_file(path)
+        except FileNotFoundError as error:
+            raise HTTPException(status_code=404, detail=str(error))
+        except (PermissionError, ValueError) as error:
+            raise HTTPException(status_code=403, detail=str(error))
+        except OSError as error:
+            raise HTTPException(status_code=500, detail="无法使用本地应用打开文件：{0}".format(error))
+        return {"opened": True, "artifact_id": artifact_id}
 
     @app.get("/api/observations/{session_id}/semantic")
     async def observation_semantic_workflow(session_id: str) -> Dict[str, Any]:

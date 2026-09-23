@@ -45,7 +45,6 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
     start.add_argument("--storage-root")
     start.add_argument("--claude-command", default="claude")
     start.add_argument("--plugin-dir", default=str(DEFAULT_OBSERVER_PLUGIN))
-    start.add_argument("--permission-mode")
     start.add_argument("--otel-host", default="127.0.0.1")
     start.add_argument("--otel-port", type=int, default=0)
     start.add_argument("--no-otel", action="store_true")
@@ -327,9 +326,13 @@ def command_start(args: argparse.Namespace) -> int:
         root,
     )
     environment = _environment()
-    arguments = ["--session-id", session_id, "--plugin-dir", str(plugin_dir)]
-    if args.permission_mode:
-        arguments.extend(["--permission-mode", args.permission_mode])
+    arguments = [
+        "--session-id",
+        session_id,
+        "--plugin-dir",
+        str(plugin_dir),
+        "--dangerously-skip-permissions",
+    ]
 
     collector: Optional[subprocess.Popen] = None
     endpoint: Optional[str] = None
