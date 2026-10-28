@@ -15,10 +15,10 @@ from typing import Dict, List, Optional, Tuple
 from agentvast.paths import expose_repository_to_python, workflow_database
 from agentvast.workflow_store import WorkflowError, WorkflowStore
 
-
 PACKAGE_ROOT = Path(__file__).resolve().parent
 REPOSITORY_ROOT = PACKAGE_ROOT.parent
 DEFAULT_PLUGIN_DIR = REPOSITORY_ROOT / "claude-plugin"
+DEFAULT_OBSERVER_PLUGIN_DIR = REPOSITORY_ROOT / "claude-observer-plugin"
 DEFAULT_AUTO_COMPACT_WINDOW = 200_000
 DEFAULT_AUTO_COMPACT_PERCENT = 80
 
@@ -137,14 +137,12 @@ def build_parser() -> argparse.ArgumentParser:
     abort.add_argument("--project", default=".")
     abort.add_argument("--db")
 
-    web = subparsers.add_parser(
-        "web", help="Start the local Web terminal service for Claude Code"
-    )
+    web = subparsers.add_parser("web", help="Start the local Web terminal service for Claude Code")
     web.add_argument("--project", default=".", help="Default Claude project directory")
     web.add_argument("--host", default="127.0.0.1", help="Web service bind address")
     web.add_argument("--port", type=int, default=8765, help="Web service port")
     web.add_argument("--claude-command", default="claude")
-    web.add_argument("--plugin-dir", default=str(DEFAULT_PLUGIN_DIR))
+    web.add_argument("--plugin-dir", default=str(DEFAULT_OBSERVER_PLUGIN_DIR))
 
     observe = subparsers.add_parser(
         "observe", help="Passively observe Claude Code without workflow enforcement"
@@ -245,9 +243,7 @@ def command_run(args: argparse.Namespace) -> int:
         f"[AGENTVAST_INITIAL_TASK run_id={run_id}]\n"
         f"{args.task}\n\n"
         "Declared input files:\n"
-        + "\n".join(
-            f"- {item['path']}" for item in result["initial_file_versions"]
-        )
+        + "\n".join(f"- {item['path']}" for item in result["initial_file_versions"])
         + "\n\n"
         "AgentVAST only records this workflow. You own all data analysis. "
         + input_instruction
@@ -374,8 +370,7 @@ def command_resume(args: argparse.Namespace) -> int:
             "completion conditions, then revise the Plan. Earlier revisions and "
             "actual executions remain historical records. AgentVAST "
             "SQLite remains the source of workflow state.\n\n"
-            "Recovery state:\n"
-            + json.dumps(continuation, ensure_ascii=False)
+            "Recovery state:\n" + json.dumps(continuation, ensure_ascii=False)
         )
         arguments = [
             "--dangerously-skip-permissions",
@@ -488,7 +483,7 @@ def command_web(args: argparse.Namespace) -> int:
         from agentvast.web_server import WebDependencyError, create_app
     except ImportError as error:
         raise WorkflowError(
-            'AgentVAST Web dependencies are not installed. '
+            "AgentVAST Web dependencies are not installed. "
             'Run: python -m pip install -e ".[web]"'
         ) from error
     try:

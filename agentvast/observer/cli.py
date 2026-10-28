@@ -107,6 +107,12 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
         help="Disable the stderr semantic processing progress bar",
     )
 
+    event_workflow = subparsers.add_parser("event-workflow", help="Explain every Event and generate logical relations and importance")
+    event_workflow.add_argument("session_id")
+    event_workflow.add_argument("--storage-root")
+    event_workflow.add_argument("--force", action="store_true")
+    event_workflow.add_argument("--no-resume", action="store_true")
+
     semantic_validate = subparsers.add_parser(
         "semantic-validate",
         help="Recompute semantic evidence and granularity validation without a model call",
@@ -456,6 +462,14 @@ def execute(args: argparse.Namespace) -> int:
         return 0
     if args.observe_command == "validate":
         print(json.dumps(validate_session(session_id, str(root)), ensure_ascii=False, indent=2))
+        return 0
+    if args.observe_command == "event-workflow":
+        from agentvast.semantic.event_workflow import run_event_workflow
+
+        workflow = run_event_workflow(session_id, str(root), force=args.force, resume=not args.no_resume)
+        print(json.dumps({"session_id": session_id, "event_count": len(workflow["event_summaries"]),
+                          "logical_relation_count": len(workflow["logical_relations"]),
+                          "inference_run": workflow["inference_run"]}, ensure_ascii=False, indent=2))
         return 0
     if args.observe_command == "semantic":
         from agentvast.semantic.pipeline import run_semantic_workflow

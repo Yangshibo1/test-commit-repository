@@ -6,6 +6,8 @@ import hashlib
 import json
 import re
 import uuid
+import threading
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,6 +26,7 @@ from typing import (
 
 from agentvast.observer.store import iter_jsonl, session_directory, update_manifest
 from agentvast.observer.trace_builder import load_observer_trace, stable_id
+from agentvast.observer.event_schema import expand_event
 from agentvast.semantic import SEMANTIC_PROCESSOR_VERSION, SEMANTIC_SCHEMA_VERSION
 from agentvast.semantic.prompts import (
     ACTIVITY_TYPES,
@@ -36,7 +39,7 @@ from agentvast.semantic.prompts import (
     segmentation_prompt,
 )
 from agentvast.semantic.provider import SemanticConfig, SemanticProvider, SemanticProviderError
-
+from agentvast.semantic.performance import SemanticPerformance
 
 ALLOWED_RELATIONS = {"VALIDATES", "REFINES", "USES_RESULT_FROM", "RETRY_OF"}
 EXECUTION_EVENT_TYPES = {"tool_execution", "command_execution"}
@@ -69,6 +72,7 @@ class SemanticWorkflowPartialError(SemanticWorkflowError):
     """Raised when an inference checkpoint was saved and can be resumed."""
 
     def __init__(self, message: str, state: Mapping[str, Any]):
+        self.message = message
         self.state = dict(state)
         self.inference_id = str(state.get("inference_id") or "")
         self.retryable = bool(state.get("retryable"))
@@ -276,9 +280,7 @@ def _event_payload_for_model(
     actor = event.get("actor") if isinstance(event.get("actor"), dict) else {}
     scope = event.get("scope") if isinstance(event.get("scope"), dict) else {}
     timing = event.get("time") if isinstance(event.get("time"), dict) else {}
-    provenance = (
-        event.get("provenance") if isinstance(event.get("provenance"), dict) else {}
-    )
+    provenance = event.get("provenance") if isinstance(event.get("provenance"), dict) else {}
     result: Dict[str, Any] = {
         "event_id": event.get("event_id"),
         "sequence": event.get("sequence"),
@@ -320,9 +322,19 @@ def _event_payload_for_model(
             "name": payload.get("name"),
             "input": compact_input,
             "input_meta": input_meta,
-            "output": _evidence_digest(payload.get("output"), 2400),
-            "is_error": bool(payload.get("is_error")),
+            "output": _evidence_digest(
+                payload.get("output"), 2000 if payload.get("is_error") else 1200
+            ),
+            "is_error": payload.get("is_error"),
         }
+        if payload.get("structured_result") is not None:
+            result["tool"]["structured_result"], result["tool"]["structured_result_meta"] = _bounded_value_with_meta(payload["structured_result"], 1200)
+        for key in ("request_conflict", "result_conflict"):
+            if payload.get(key):
+                result["tool"][key] = True
+        for key in ("alternate_requests", "alternate_results"):
+            if payload.get(key):
+                result["tool"][key], result["tool"][key + "_meta"] = _bounded_value_with_meta(payload[key], 1200)
     elif event.get("event_type") == "command_execution":
         command_input = payload.get("input") if isinstance(payload.get("input"), dict) else {}
         compact_input, input_meta = _bounded_value_with_meta(command_input, 1200)
@@ -330,25 +342,34 @@ def _event_payload_for_model(
             "shell": payload.get("shell") or payload.get("name"),
             "command": _preview(
                 payload.get("command") or command_input.get("command"),
-                2400,
+                1600,
             ),
             "working_directory": payload.get("working_directory"),
             "input": compact_input,
             "input_meta": input_meta,
+            "output": _evidence_digest(payload.get("output"), 1200),
             "stdout": _evidence_digest(
-                payload.get("stdout") if payload.get("stdout") is not None else payload.get("output"),
-                2400,
+                payload.get("stdout"),
+                1200,
             ),
             "stderr": _evidence_digest(payload.get("stderr"), 1200),
             "exit_code": payload.get("exit_code"),
-            "timed_out": bool(payload.get("timed_out")),
+            "timed_out": payload.get("timed_out"),
             "background": bool(payload.get("background")),
-            "is_error": bool(payload.get("is_error")) or event.get("status") == "error",
+            "is_error": True if event.get("status") == "error" else payload.get("is_error"),
         }
+        if payload.get("structured_result") is not None:
+            result["command"]["structured_result"], result["command"]["structured_result_meta"] = _bounded_value_with_meta(payload["structured_result"], 1200)
+        for key in ("request_conflict", "result_conflict"):
+            if payload.get(key):
+                result["command"][key] = True
+        for key in ("alternate_requests", "alternate_results"):
+            if payload.get(key):
+                result["command"][key], result["command"][key + "_meta"] = _bounded_value_with_meta(payload[key], 1200)
     elif event.get("event_type") == "user_prompt":
-        result["text"] = _evidence_digest(payload.get("content"), 4000)
+        result["text"] = _evidence_digest(payload.get("content"), 2500)
     elif event.get("event_type") in MODEL_RESPONSE_EVENT_TYPES:
-        result["text"] = _evidence_digest(payload.get("text"), 4000)
+        result["text"] = _evidence_digest(payload.get("text"), 2000)
         result["response"] = {
             "kind": payload.get("response_kind"),
             "is_final": bool(payload.get("is_final")),
@@ -360,7 +381,7 @@ def _event_payload_for_model(
             "task_id": payload.get("task_id"),
             "task_summary": _preview(payload.get("task_summary"), 500),
             "status": payload.get("status"),
-            "result": _evidence_digest(payload.get("result"), 6000),
+            "result": _evidence_digest(payload.get("result"), 3000),
         }
     elif event.get("event_type") == "control_event":
         compact_payload, payload_meta = _bounded_value_with_meta(payload, 1600)
@@ -374,7 +395,7 @@ def _event_payload_for_model(
 
 def build_key_information_events(trace: Mapping[str, Any]) -> List[Dict[str, Any]]:
     """Build the ordered, deterministic Event set exposed to semantic inference."""
-    events = trace.get("events") if isinstance(trace.get("events"), list) else []
+    events = [expand_event(event) for event in trace.get("events") or [] if isinstance(event, dict)]
     event_by_id = {
         str(event.get("event_id")): event
         for event in events
@@ -438,7 +459,7 @@ def build_candidate_episodes(trace: Mapping[str, Any]) -> List[Dict[str, Any]]:
 def _build_candidate_blocks(
     trace: Mapping[str, Any], key_events: Sequence[Mapping[str, Any]]
 ) -> List[Dict[str, Any]]:
-    events = trace.get("events") if isinstance(trace.get("events"), list) else []
+    events = [expand_event(event) for event in trace.get("events") or [] if isinstance(event, dict)]
     relations = trace.get("relations") if isinstance(trace.get("relations"), list) else []
     event_by_id = {
         str(event.get("event_id")): event
@@ -797,12 +818,12 @@ def _boundary_candidate_view(candidate: Mapping[str, Any]) -> Dict[str, Any]:
     prioritized = sorted(
         deduplicated,
         key=lambda item: (
-            0
-            if item[1].get("event_type")
-            in {"user_prompt", "subagent_result", "model_response", "assistant_message"}
-            else 1
-            if item[1].get("status") == "error"
-            else 2,
+            (
+                0
+                if item[1].get("event_type")
+                in {"user_prompt", "subagent_result", "model_response", "assistant_message"}
+                else 1 if item[1].get("status") == "error" else 2
+            ),
             item[0],
         ),
     )[:8]
@@ -857,8 +878,18 @@ def _boundary_candidate_view(candidate: Mapping[str, Any]) -> Dict[str, Any]:
                 "task_summary": subagent.get("task_summary"),
                 "status": subagent.get("status"),
                 "result_signals": {
-                    "headings": list(result_digest.get("headings") or [])[:8],
-                    "key_lines": list(result_digest.get("key_lines") or [])[:8],
+                    "summary_excerpt": _preview(
+                        result_digest.get("text") or result_digest.get("opening_excerpt"), 240
+                    ),
+                    "final_excerpt": _preview(result_digest.get("conclusion_excerpt"), 240),
+                    "headings": [
+                        _preview(line, 100)
+                        for line in list(result_digest.get("headings") or [])[:3]
+                    ],
+                    "key_lines": [
+                        _preview(line, 160)
+                        for line in list(result_digest.get("key_lines") or [])[:3]
+                    ],
                     "original_length": result_digest.get("original_length"),
                     "truncated": result_digest.get("truncated"),
                 },
@@ -1202,14 +1233,18 @@ def _bounded_value_with_meta(
     source_text = _stable_text(value)
     omitted_items = 0
     truncated = False
+    remaining = string_limit
 
     def compact(child: Any) -> Any:
-        nonlocal omitted_items, truncated
+        nonlocal omitted_items, truncated, remaining
         if isinstance(child, str):
-            if len(child) <= string_limit:
+            if len(child) <= remaining:
+                remaining -= len(child)
                 return child
             truncated = True
-            return child[: string_limit - 1] + "…"
+            retained = child[: max(0, remaining - 1)] + ("…" if remaining else "")
+            remaining = 0
+            return retained
         if isinstance(child, dict):
             items = list(child.items())
             if len(items) > item_limit:
@@ -1249,15 +1284,26 @@ def _evidence_digest(value: Any, limit: int = 6000) -> Dict[str, Any]:
             "omitted_item_count": 0,
             "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
         }
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    opening = text[: limit // 4]
+    conclusion = text[-(limit // 4) :]
+    remaining = limit - len(opening) - len(conclusion)
+    middle = text[len(opening) : len(text) - len(conclusion)]
+    lines = [line.strip() for line in middle.splitlines() if line.strip()]
     headings = _ordered_unique(
         line[:300]
         for line in lines
         if line.startswith("#") or re.match(r"^[一二三四五六七八九十0-9]+[、.)）]", line)
-    )[:30]
+    )[:8]
+    # Prioritize explicit errors and conclusions before numeric table rows.
+    priority_lines = sorted(
+        lines,
+        key=lambda line: not bool(
+            re.search(r"error|warning|结论|结果|风险|限制|失败", line, re.IGNORECASE)
+        ),
+    )
     key_lines = _ordered_unique(
         line[:500]
-        for line in lines
+        for line in priority_lines
         if re.search(r"\d", line)
         or any(
             keyword in line.lower()
@@ -1272,19 +1318,26 @@ def _evidence_digest(value: Any, limit: int = 6000) -> Dict[str, Any]:
                 "count",
             )
         )
-    )[:40]
-    retained_length = sum(
-        len(str(value)) for value in [text[:1800], *headings, *key_lines, text[-1800:]]
-    )
+    )[:20]
+    selected_headings: List[str] = []
+    selected_lines: List[str] = []
+    for group, selected in ((key_lines, selected_lines), (headings, selected_headings)):
+        for line in group:
+            if line in selected_lines or line in selected_headings or remaining <= 0:
+                continue
+            excerpt = line[:remaining]
+            selected.append(excerpt)
+            remaining -= len(excerpt)
+    retained_length = limit - remaining
     return {
-        "opening_excerpt": text[:1800],
-        "headings": headings,
-        "key_lines": key_lines,
-        "conclusion_excerpt": text[-1800:],
+        "opening_excerpt": opening,
+        "headings": selected_headings,
+        "key_lines": selected_lines,
+        "conclusion_excerpt": conclusion,
         "original_length": len(text),
         "retained_length": retained_length,
         "truncated": True,
-        "omitted_item_count": max(0, len(lines) - len(headings) - len(key_lines)),
+        "omitted_item_count": max(0, len(lines) - len(selected_headings) - len(selected_lines)),
         "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
     }
 
@@ -1330,7 +1383,7 @@ def _episode_evidence_packet(
         {},
     )
     task_context = {
-        "original_user_prompt": _evidence_digest(turn.get("prompt"), 4000),
+        "original_user_prompt": _evidence_digest(turn.get("prompt"), 2000),
         "session_id": (trace.get("session") or {}).get("session_id"),
         "project_root": (trace.get("session") or {}).get("cwd"),
         "main_agent": "Claude Code",
@@ -1370,9 +1423,14 @@ def _episode_evidence_packet(
                     "tool_input": tool.get("input"),
                     "tool_input_meta": tool.get("input_meta") or {},
                     "tool_output": tool.get("output") or {},
-                    "is_error": bool(tool.get("is_error")),
+                    "structured_result": tool.get("structured_result"),
+                    "structured_result_meta": tool.get("structured_result_meta") or {},
+                    "is_error": tool.get("is_error"),
                 }
             )
+            for key in ("request_conflict", "result_conflict", "alternate_requests", "alternate_results", "alternate_requests_meta", "alternate_results_meta"):
+                if key in tool:
+                    evidence["tool_executions"][-1][key] = tool[key]
         elif event.get("event_type") == "command_execution":
             command = event.get("command") if isinstance(event.get("command"), dict) else {}
             evidence["command_executions"].append(
@@ -1381,14 +1439,20 @@ def _episode_evidence_packet(
                     "shell": command.get("shell"),
                     "command": command.get("command"),
                     "working_directory": command.get("working_directory"),
+                    "output": command.get("output") or {},
+                    "structured_result": command.get("structured_result"),
+                    "structured_result_meta": command.get("structured_result_meta") or {},
                     "stdout": command.get("stdout") or {},
                     "stderr": command.get("stderr") or {},
                     "exit_code": command.get("exit_code"),
-                    "timed_out": bool(command.get("timed_out")),
+                    "timed_out": command.get("timed_out"),
                     "background": bool(command.get("background")),
-                    "is_error": bool(command.get("is_error")),
+                    "is_error": command.get("is_error"),
                 }
             )
+            for key in ("request_conflict", "result_conflict", "alternate_requests", "alternate_results", "alternate_requests_meta", "alternate_results_meta"):
+                if key in command:
+                    evidence["command_executions"][-1][key] = command[key]
         elif event.get("event_type") == "subagent_result":
             subagent = event.get("subagent") if isinstance(event.get("subagent"), dict) else {}
             evidence["subagent_results"].append(
@@ -1408,9 +1472,7 @@ def _episode_evidence_packet(
                 }
             )
         elif event.get("event_type") == "control_event":
-            evidence["control_events"].append(
-                {**common, "control": event.get("control") or {}}
-            )
+            evidence["control_events"].append({**common, "control": event.get("control") or {}})
     packet = {
         "evidence": evidence,
         "episode_id": episode.get("episode_id"),
@@ -2445,7 +2507,7 @@ def _load_semantic_event_source(
                     ", ".join(invalid_types)
                 )
             )
-        trace = {**trace, "events": events}
+        trace = {**trace, "events": [expand_event(event) for event in events]}
         events_sha = _sha256(events_path)
         return trace, trace_path, events_path, trace_sha, events_sha
     if trace.get("schema_version") == "observer-trace/2.0":
@@ -2464,6 +2526,33 @@ def run_semantic_workflow(
     provider: Optional[SemanticProvider] = None,
     progress_callback: Optional[ProgressCallback] = None,
 ) -> Dict[str, Any]:
+    state_lock = threading.RLock()
+    performance: Optional[SemanticPerformance] = None
+    original_callback = progress_callback
+
+    def persist_state(stage_root: Path, state: Dict[str, Any], **updates: Any) -> None:
+        with state_lock:
+            if performance is not None:
+                updates.update(performance.snapshot())
+            _write_inference_state(stage_root, state, **updates)
+
+    def report(event: Dict[str, Any]) -> None:
+        with state_lock:
+            if performance is not None:
+                performance.transition(event["stage"])
+                event["percent"] = max(event["percent"], int(inference_state.get("percent") or 0))
+                inference_state["percent"] = event["percent"]
+                persist_state(stage_root, inference_state)
+                event = {
+                    **event,
+                    **performance.snapshot(),
+                    "completed_episode_count": inference_state.get("completed_episode_count", 0),
+                    "inference_id": inference_id,
+                }
+            if original_callback is not None:
+                original_callback(event)
+
+    progress_callback = report
     _emit_progress(progress_callback, "prepare", 2, "读取 Event Schema 2.0")
     if force and resume_inference:
         raise SemanticWorkflowError("--force and --resume cannot be used together")
@@ -2476,6 +2565,10 @@ def run_semantic_workflow(
     )
     config = SemanticConfig.from_env()
     method = "rules" if rules_only else "model"
+    configured_model = str(
+        getattr(getattr(provider, "config", None), "model", config.model) or config.model
+    )
+    configured_effort = getattr(getattr(provider, "config", None), "reasoning_effort", config.reasoning_effort)
     current_path = directory / "derived" / "semantic_workflow.json"
     if current_path.is_file() and not force and not resume_inference:
         try:
@@ -2489,6 +2582,9 @@ def run_semantic_workflow(
                 == events_sha
                 and inference.get("method") == method
                 and inference.get("processor_version") == SEMANTIC_PROCESSOR_VERSION
+                and inference.get("model") == (configured_model if not rules_only else None)
+                and inference.get("reasoning_effort") == (configured_effort if not rules_only else None)
+                and inference.get("annotation_guidance", "") == annotation_guidance
             ):
                 _emit_progress(
                     progress_callback,
@@ -2505,7 +2601,9 @@ def run_semantic_workflow(
         progress_callback,
         "key_information",
         6,
-        "已从 {0} 个观察事件提取 {1} 个关键 Event".format(len(trace.get("events") or []), len(key_events)),
+        "已从 {0} 个观察事件提取 {1} 个关键 Event".format(
+            len(trace.get("events") or []), len(key_events)
+        ),
     )
     candidates = _build_candidate_blocks(trace, key_events)
     if not candidates:
@@ -2525,7 +2623,7 @@ def run_semantic_workflow(
             )
         semantic_provider = SemanticProvider(config)
 
-    prompt_version = "semantic-prompts/0.6"
+    prompt_version = "semantic-prompts/0.8"
     stages_root = directory / "derived" / "semantic_stages"
     stages_root.mkdir(parents=True, exist_ok=True)
     compatibility = {
@@ -2533,6 +2631,8 @@ def run_semantic_workflow(
         "source_trace_sha256": trace_sha,
         "source_events_sha256": events_sha,
         "method": method,
+        "model": configured_model if not rules_only else None,
+        "reasoning_effort": configured_effort if not rules_only else None,
         "processor_version": SEMANTIC_PROCESSOR_VERSION,
         "prompt_version": prompt_version,
         "candidate_sha256": _value_sha256(candidates),
@@ -2545,7 +2645,7 @@ def run_semantic_workflow(
             stages_root, resume_inference, compatibility
         )
         inference_id = stage_root.name
-        _write_inference_state(
+        persist_state(
             stage_root,
             inference_state,
             status="running",
@@ -2579,7 +2679,7 @@ def run_semantic_workflow(
             "created_at": _utc_now(),
             "annotation_guidance": annotation_guidance,
         }
-        _write_inference_state(stage_root, inference_state)
+        persist_state(stage_root, inference_state)
         _write_json(
             stage_root / "key_information_events.json",
             {
@@ -2595,19 +2695,78 @@ def run_semantic_workflow(
         )
         _write_json(stage_root / "candidate_blocks.json", candidates)
 
+    performance = SemanticPerformance(
+        configured_model if semantic_provider is not None else None,
+        config.annotation_concurrency if semantic_provider is not None else 0,
+        inference_state,
+    )
+
+    def complete(provider, prompt, stage, schema, retry_callback=None):
+        performance.start_call(stage, len(prompt))
+        persist_state(stage_root, inference_state)
+        _emit_progress(
+            progress_callback,
+            performance.call_stage(stage),
+            int(inference_state.get("percent") or 16),
+            (
+                "正在分析阶段边界"
+                if "boundaries" in stage
+                else "正在提取工作流关系" if "relations" in stage else "正在并发标注语义阶段"
+            ),
+            current=inference_state.get("completed_episode_count"),
+            total=inference_state.get("episode_count"),
+        )
+        try:
+            value = _provider_complete(provider, prompt, stage, schema, retry_callback)
+        except Exception as error:
+            performance.finish_call(
+                stage, max(1, getattr(error, "http_requests", getattr(error, "attempts", 1)))
+            )
+            persist_state(stage_root, inference_state)
+            raise
+        meta = value.get("_semantic_provider_meta") or {}
+        performance.finish_call(stage, int(meta.get("http_requests") or meta.get("attempts") or 1))
+        persist_state(stage_root, inference_state)
+        return value
+
+    def record_completed(episode_id: str) -> None:
+        with state_lock:
+            completed = list(inference_state.get("completed_episodes") or [])
+            if episode_id not in completed:
+                completed.append(episode_id)
+            completed.sort(
+                key=lambda item: next(
+                    i for i, ep in enumerate(episodes) if ep["episode_id"] == item
+                )
+            )
+            persist_state(
+                stage_root,
+                inference_state,
+                completed_episode_count=len(completed),
+                completed_episodes=completed,
+                percent=34 + int(46 * len(completed) / max(1, len(episodes))),
+            )
+            _emit_progress(
+                progress_callback,
+                "semantic_annotation",
+                int(inference_state["percent"]),
+                "已完成 {0}/{1} 个阶段".format(len(completed), len(episodes)),
+                current=len(completed),
+                total=len(episodes),
+            )
+
     def retry_progress(event: Dict[str, Any]) -> None:
         delay = event.get("delay_seconds")
         attempt = event.get("attempt")
         max_attempts = event.get("max_attempts")
         message = "网络异常，{0} 秒后重试 {1}/{2}".format(delay, attempt, max_attempts)
-        _write_inference_state(
+        persist_state(
             stage_root,
             inference_state,
             status="retrying",
             retryable=True,
             last_retry=event,
-            response_mode=event.get("response_mode")
-            or inference_state.get("response_mode"),
+            response_mode=event.get("response_mode") or inference_state.get("response_mode"),
         )
         _emit_progress(
             progress_callback,
@@ -2627,7 +2786,7 @@ def run_semantic_workflow(
             return
         mode = meta.get("response_mode")
         if mode in {"json_schema", "json_object", "text"}:
-            _write_inference_state(
+            persist_state(
                 stage_root,
                 inference_state,
                 response_mode=mode,
@@ -2663,7 +2822,7 @@ def run_semantic_workflow(
     else:
         try:
             if semantic_provider is not None:
-                boundary_output = _provider_complete(
+                boundary_output = complete(
                     semantic_provider,
                     boundary_prompt,
                     "episode_boundaries",
@@ -2674,7 +2833,7 @@ def run_semantic_workflow(
                 _write_json(stage_root / "boundary_raw_response.json", boundary_output)
                 boundary_errors = _boundary_validation_errors(candidates, boundary_output)
                 if boundary_errors:
-                    repaired = _provider_complete(
+                    repaired = complete(
                         semantic_provider,
                         repair_prompt(
                             "BOUNDARY_CLASSIFICATION",
@@ -2702,7 +2861,7 @@ def run_semantic_workflow(
             else:
                 boundary_fallback = "rules_only_candidate_boundaries"
         except SemanticProviderError as error:
-            _write_inference_state(
+            persist_state(
                 stage_root,
                 inference_state,
                 status="partial" if error.retryable else "failed",
@@ -2737,7 +2896,7 @@ def run_semantic_workflow(
         )
     _write_json(stage_root / "validated_boundaries.json", decisions)
     _write_json(stage_root / "episodes.json", episodes)
-    _write_inference_state(
+    persist_state(
         stage_root,
         inference_state,
         status="running",
@@ -2751,11 +2910,18 @@ def run_semantic_workflow(
     if semantic_provider is not None:
         annotation_root = stage_root / "annotations"
         annotation_root.mkdir(exist_ok=True)
-        nodes = []
-        annotation_results: List[Dict[str, Any]] = []
-        all_annotation_errors: List[Dict[str, Any]] = []
-        for index, episode in enumerate(episodes):
-            annotation_percent = 34 + int(46 * index / max(1, len(episodes)))
+        node_results: Dict[int, Dict[str, Any]] = {}
+        validation_results: Dict[int, Dict[str, Any]] = {}
+        error_results: Dict[int, List[Dict[str, Any]]] = {}
+        performance.transition("semantic_annotation")
+
+        def annotate(index: int) -> None:
+            episode = episodes[index]
+            annotation_percent = 34 + int(
+                46
+                * int(inference_state.get("completed_episode_count") or 0)
+                / max(1, len(episodes))
+            )
             prefix = "annotation-{0:03d}".format(index + 1)
             validation_path = annotation_root / (prefix + "-validation.json")
             node_path = annotation_root / (prefix + "-node.json")
@@ -2774,29 +2940,24 @@ def run_semantic_workflow(
                             )[0]
                     if isinstance(checkpoint_node, dict):
                         checkpoint_node["sequence"] = index + 1
-                        nodes.append(checkpoint_node)
-                        annotation_results.append(checkpoint_validation)
+                        node_results[index] = checkpoint_node
+                        validation_results[index] = checkpoint_validation
                         if not checkpoint_validation.get("valid"):
-                            all_annotation_errors.extend(
+                            error_results[index] = [
                                 {
                                     **error,
                                     "episode_id": episode["episode_id"],
                                 }
                                 for error in checkpoint_validation.get("errors") or []
                                 if isinstance(error, dict)
-                            )
-                        completed = list(inference_state.get("completed_episodes") or [])
-                        if episode["episode_id"] not in completed:
-                            completed.append(episode["episode_id"])
-                        _write_inference_state(
+                            ]
+                        record_completed(episode["episode_id"])
+                        persist_state(
                             stage_root,
                             inference_state,
                             status="running",
                             stage="semantic_annotation",
-                            percent=annotation_percent,
                             current_episode=index + 1,
-                            completed_episode_count=len(completed),
-                            completed_episodes=completed,
                             failed_episode=None,
                             retryable=False,
                             error=None,
@@ -2805,13 +2966,11 @@ def run_semantic_workflow(
                             progress_callback,
                             "semantic_annotation",
                             annotation_percent,
-                            "复用 Episode {0}/{1} 的检查点".format(
-                                index + 1, len(episodes)
-                            ),
+                            "复用 Episode {0}/{1} 的检查点".format(index + 1, len(episodes)),
                             current=index + 1,
                             total=len(episodes),
                         )
-                        continue
+                        return
                 except (OSError, ValueError, TypeError, KeyError):
                     pass
             _emit_progress(
@@ -2822,12 +2981,11 @@ def run_semantic_workflow(
                 current=index + 1,
                 total=len(episodes),
             )
-            _write_inference_state(
+            persist_state(
                 stage_root,
                 inference_state,
                 status="running",
                 stage="semantic_annotation",
-                percent=annotation_percent,
                 current_episode=index + 1,
                 failed_episode=None,
                 retryable=False,
@@ -2855,7 +3013,7 @@ def run_semantic_workflow(
                 },
             )
             try:
-                annotation_output = _provider_complete(
+                annotation_output = complete(
                     semantic_provider,
                     semantic_prompt,
                     "semantic_annotation_{0:03d}".format(index + 1),
@@ -2865,12 +3023,11 @@ def run_semantic_workflow(
                 remember_response_mode(annotation_output)
             except SemanticProviderError as error:
                 partial_status = "partial" if error.retryable else "failed"
-                _write_inference_state(
+                persist_state(
                     stage_root,
                     inference_state,
                     status=partial_status,
                     stage="semantic_annotation",
-                    percent=annotation_percent,
                     current_episode=index + 1,
                     failed_episode=index + 1,
                     retryable=error.retryable,
@@ -2886,7 +3043,7 @@ def run_semantic_workflow(
             repaired = False
             if annotation_errors:
                 try:
-                    repaired_annotation = _provider_complete(
+                    repaired_annotation = complete(
                         semantic_provider,
                         repair_prompt(
                             "SEMANTIC_ANNOTATION",
@@ -2901,12 +3058,11 @@ def run_semantic_workflow(
                     )
                     remember_response_mode(repaired_annotation)
                 except SemanticProviderError as error:
-                    _write_inference_state(
+                    persist_state(
                         stage_root,
                         inference_state,
                         status="partial" if error.retryable else "failed",
                         stage="semantic_annotation_repair",
-                        percent=annotation_percent,
                         current_episode=index + 1,
                         failed_episode=index + 1,
                         retryable=error.retryable,
@@ -2932,13 +3088,13 @@ def run_semantic_workflow(
                     )
                 )
                 episode_nodes = _abstained_nodes(session_id, trace, [episode])
-                all_annotation_errors.extend(
+                error_results[index] = [
                     {**error, "episode_id": episode["episode_id"]} for error in annotation_errors
-                )
+                ]
             else:
                 episode_nodes = _model_nodes(session_id, trace, [episode], annotation_output)
             episode_nodes[0]["sequence"] = index + 1
-            nodes.extend(episode_nodes)
+            node_results[index] = episode_nodes[0]
             _write_json(node_path, episode_nodes[0])
             validation_record = {
                 "episode_id": episode["episode_id"],
@@ -2946,26 +3102,64 @@ def run_semantic_workflow(
                 "repaired": repaired,
                 "errors": annotation_errors,
             }
-            annotation_results.append(validation_record)
+            validation_results[index] = validation_record
             _write_json(
                 annotation_root / (prefix + "-validation.json"),
                 validation_record,
             )
-            completed = list(inference_state.get("completed_episodes") or [])
-            if episode["episode_id"] not in completed:
-                completed.append(episode["episode_id"])
-            _write_inference_state(
+            record_completed(episode["episode_id"])
+            persist_state(
                 stage_root,
                 inference_state,
                 status="running",
                 stage="semantic_annotation",
-                percent=annotation_percent,
-                completed_episode_count=len(completed),
-                completed_episodes=completed,
                 failed_episode=None,
                 retryable=False,
                 error=None,
             )
+
+        failures: Dict[int, Exception] = {}
+        next_index = 0
+        workers = min(config.annotation_concurrency, len(episodes))
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="semantic") as executor:
+            pending = {}
+            while next_index < len(episodes) and len(pending) < workers:
+                pending[executor.submit(annotate, next_index)] = next_index
+                next_index += 1
+            while pending:
+                finished, _ = wait(pending, return_when=FIRST_COMPLETED)
+                for future in finished:
+                    index = pending.pop(future)
+                    try:
+                        future.result()
+                    except Exception as error:
+                        failures[index] = error
+                # Stop scheduling after failure, but finish active workers so
+                # their independently validated checkpoints remain reusable.
+                while not failures and next_index < len(episodes) and len(pending) < workers:
+                    pending[executor.submit(annotate, next_index)] = next_index
+                    next_index += 1
+        if failures:
+            index = min(failures)
+            error = failures[index]
+            retryable = isinstance(error, SemanticWorkflowPartialError) and error.retryable
+            persist_state(
+                stage_root,
+                inference_state,
+                status="partial" if retryable else "failed",
+                stage="semantic_annotation",
+                failed_episode=index + 1,
+                retryable=retryable,
+                error=str(error),
+            )
+            if isinstance(error, SemanticWorkflowPartialError):
+                raise SemanticWorkflowPartialError(error.message, inference_state) from error
+            raise error
+        nodes = [node_results[index] for index in range(len(episodes))]
+        annotation_results = [validation_results[index] for index in range(len(episodes))]
+        all_annotation_errors = [
+            error for index in sorted(error_results) for error in error_results[index]
+        ]
         _emit_progress(
             progress_callback,
             "semantic_annotation",
@@ -2998,7 +3192,7 @@ def run_semantic_workflow(
             total=len(episodes),
         )
     _write_json(stage_root / "semantic_nodes.json", nodes)
-    _write_inference_state(
+    persist_state(
         stage_root,
         inference_state,
         status="running",
@@ -3028,7 +3222,7 @@ def run_semantic_workflow(
             relation_output = _read_json(relation_response_path)
         else:
             try:
-                relation_output = _provider_complete(
+                relation_output = complete(
                     semantic_provider,
                     semantic_relation_prompt,
                     "semantic_relations",
@@ -3037,7 +3231,7 @@ def run_semantic_workflow(
                 )
                 remember_response_mode(relation_output)
             except SemanticProviderError as error:
-                _write_inference_state(
+                persist_state(
                     stage_root,
                     inference_state,
                     status="partial" if error.retryable else "failed",
@@ -3052,7 +3246,7 @@ def run_semantic_workflow(
         relation_errors = _relation_validation_errors(nodes, relation_output)
         if relation_errors:
             try:
-                repaired_relations = _provider_complete(
+                repaired_relations = complete(
                     semantic_provider,
                     repair_prompt(
                         "SEMANTIC_RELATIONS",
@@ -3067,7 +3261,7 @@ def run_semantic_workflow(
                 )
                 remember_response_mode(repaired_relations)
             except SemanticProviderError as error:
-                _write_inference_state(
+                persist_state(
                     stage_root,
                     inference_state,
                     status="partial" if error.retryable else "failed",
@@ -3129,6 +3323,7 @@ def run_semantic_workflow(
             "inference_id": inference_id,
             "method": method,
             "model": configured_model if semantic_provider is not None else None,
+            "reasoning_effort": configured_effort if semantic_provider is not None else None,
             "processor_version": SEMANTIC_PROCESSOR_VERSION,
             "prompt_version": prompt_version,
             "generated_at": _utc_now(),
@@ -3151,6 +3346,9 @@ def run_semantic_workflow(
     _write_json(stage_root / "validation_report.json", workflow["validation"])
     if not workflow["validation"]["valid"]:
         warnings.append("Semantic workflow contains validation issues; inspect validation.issues")
+
+    performance.transition("complete")
+    workflow["inference_run"].update(performance.snapshot())
 
     versions = directory / "derived" / "semantic_workflows"
     versions.mkdir(parents=True, exist_ok=True)
@@ -3176,7 +3374,7 @@ def run_semantic_workflow(
         },
         root,
     )
-    _write_inference_state(
+    persist_state(
         stage_root,
         inference_state,
         status="completed",

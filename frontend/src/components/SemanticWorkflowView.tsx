@@ -1,9 +1,12 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import ReactFlow, {
   Background,
-  Controls,
+  BaseEdge,
   Edge,
+  EdgeProps,
+  EdgeLabelRenderer,
   Handle,
+  MarkerType,
   MiniMap,
   Node,
   NodeProps,
@@ -11,9 +14,14 @@ import ReactFlow, {
   ReactFlowInstance,
   useViewport,
 } from 'reactflow';
-import dagre from 'dagre';
+import 'reactflow/dist/style.css';
+import './SemanticWorkflowView.css';
 import { ObserverTrace } from '../types/observer';
-import { SemanticNode, SemanticProgress, SemanticWorkflow } from '../types/semantic';
+import { SemanticMetrics, SemanticProgress, SemanticWorkflow, SemanticSwimlanes, SemanticSwimlaneProgress } from '../types/semantic';
+import { projectSemanticSwimlanes, semanticLanes, swimlaneEdgeLabel, validateSemanticSwimlanes } from '../utils/semanticSwimlanes';
+import { attachRoutePorts } from '../utils/eventRouting';
+import SemanticWorkflowInspector from './SemanticWorkflowInspector';
+import type { SemanticInspectorTab } from './SemanticWorkflowInspector';
 
 interface SemanticWorkflowViewProps {
   trace: ObserverTrace;
@@ -25,7 +33,7 @@ interface SemanticWorkflowViewProps {
   onOpenArtifact: (artifactId: string) => Promise<void>;
 }
 
-const SEMANTIC_NODE_WIDTH = 276;
+const SEMANTIC_NODE_WIDTH = 300;
 const SEMANTIC_NODE_HEIGHT = 116;
 const READING_ZOOM = 0.9;
 
@@ -44,6 +52,16 @@ interface SemanticGraphNodeData {
   reviewStatus: string;
   origin: string;
   accent: string;
+  groupId: string;
+  nodeIds: string[];
+  stageCount: number;
+  rangeLabel: string;
+  summary: string;
+  isGroup: boolean;
+  expanded: boolean;
+  onToggle?: () => void;
+  artifacts: Array<{id:string;name:string;exists:boolean}>;
+  onArtifact?: (id:string) => void;
 }
 
 const SemanticGraphNode = memo(({ data, selected }: NodeProps<SemanticGraphNodeData>) => {
@@ -74,11 +92,11 @@ const SemanticGraphNode = memo(({ data, selected }: NodeProps<SemanticGraphNodeD
       {overview ? (
         <div className="flex h-full items-center gap-4 px-5">
           <span className="text-3xl font-semibold tabular-nums" style={{ color: data.accent }}>
-            {String(data.sequence).padStart(2, '0')}
+            {data.rangeLabel}
           </span>
           <div className="min-w-0">
-            <div className="text-base font-semibold text-[#302a25]">{data.activityLabel}</div>
-            <div className="mt-1 h-1.5 w-16 rounded-full" style={{ backgroundColor: data.accent }} />
+            <div className="text-base font-semibold text-[#302a25] line-clamp-2">{data.title}</div>
+            <div className="mt-1 text-sm text-muted">{data.activityLabel}</div>
           </div>
         </div>
       ) : (
@@ -88,7 +106,7 @@ const SemanticGraphNode = memo(({ data, selected }: NodeProps<SemanticGraphNodeD
               className="inline-flex h-6 min-w-8 items-center justify-center rounded-md px-1.5 text-xs font-bold tabular-nums text-white"
               style={{ backgroundColor: data.accent }}
             >
-              {String(data.sequence).padStart(2, '0')}
+              {data.rangeLabel}
             </span>
             <span className="min-w-0 truncate rounded-full bg-stone-100 px-2 py-1 text-[11px] font-semibold text-[#625a52]">
               {data.activityLabel}
@@ -101,17 +119,21 @@ const SemanticGraphNode = memo(({ data, selected }: NodeProps<SemanticGraphNodeD
           <div className="mt-2 overflow-hidden text-[15px] font-semibold leading-5 text-[#29241f] line-clamp-2">
             {data.title}
           </div>
+          {!compact && data.isGroup && <p className="mt-1 line-clamp-2 text-[11px] text-muted leading-4">{data.summary}</p>}
           {!compact && (
             <div className="mt-auto flex min-h-4 shrink-0 items-center gap-3 overflow-hidden text-[11px] font-medium text-[#7a7067]">
-              <span className="whitespace-nowrap">{data.eventCount} Events</span>
-              {data.toolCount > 0 && <span className="whitespace-nowrap">{data.toolCount} Tools</span>}
-              {data.commandCount > 0 && <span className="whitespace-nowrap">{data.commandCount} Commands</span>}
+              <span className="whitespace-nowrap">{data.stageCount} 个阶段 · {data.eventCount} 条记录</span>
+              {data.toolCount > 0 && <span className="whitespace-nowrap">{data.toolCount} 次工具调用</span>}
+              {data.commandCount > 0 && <span className="whitespace-nowrap">{data.commandCount} 条命令</span>}
               {data.artifactCount > 0 && <span className="whitespace-nowrap">{data.artifactCount} 个文件</span>}
               {data.errorCount > 0 && <span className="whitespace-nowrap text-red-700">{data.errorCount} 个异常</span>}
             </div>
           )}
         </div>
       )}
+
+      {data.isGroup && data.stageCount > 1 && <button type="button" className="semantic-aggregate-toggle nodrag nopan" onClick={event=>{event.stopPropagation();data.onToggle?.();}}>{data.expanded?'收起阶段':'展开阶段'}</button>}
+      {data.artifacts.length > 0 && zoom >= .6 && <div className="semantic-artifact-chips">{data.artifacts.slice(0,2).map(a=><button key={a.id} type="button" disabled={!a.exists} className="nodrag nopan" title={a.name} onClick={event=>{event.stopPropagation();data.onArtifact?.(a.id);}}>↗ {a.name}</button>)}</div>}
 
       <Handle
         type="target"
@@ -120,6 +142,8 @@ const SemanticGraphNode = memo(({ data, selected }: NodeProps<SemanticGraphNodeD
         className="!h-1.5 !w-1.5 !border-0 !opacity-0"
         style={{ backgroundColor: data.accent }}
       />
+      {([Position.Top,Position.Bottom,Position.Left,Position.Right] as const).map(side=><Handle key={`in-${side}`} type="target" position={side} id={`in-${side}`} className="!opacity-0" />)}
+      {([Position.Top,Position.Bottom,Position.Left,Position.Right] as const).map(side=><Handle key={`out-${side}`} type="source" position={side} id={`out-${side}`} className="!opacity-0" />)}
       <Handle
         type="source"
         position={Position.Bottom}
@@ -140,7 +164,17 @@ const SemanticGraphNode = memo(({ data, selected }: NodeProps<SemanticGraphNodeD
 
 SemanticGraphNode.displayName = 'SemanticGraphNode';
 
-const semanticNodeTypes = { semantic: SemanticGraphNode };
+const SwimlaneHeading = memo(({data}:NodeProps)=><div className="semantic-lane-heading" style={{color:data.color}}><strong>{data.title}</strong><span>{data.count} 个语义块</span><p>{data.description}</p></div>);
+const SwimlaneBackdrop = memo(({data}:NodeProps)=><div className="semantic-lane-backdrop" style={{background:data.tint,borderColor:data.color+'20'}} />);
+const SemanticSwimlaneEdge = memo((props:EdgeProps)=>{
+  const points=attachRoutePorts(props.data.points,{x:props.sourceX,y:props.sourceY},{x:props.targetX,y:props.targetY});
+  const path=points.map((p,i)=>`${i?'L':'M'} ${p.x} ${p.y}`).join(' ');
+  const segments=points.slice(1).map((p,i)=>({a:points[i],b:p,length:Math.abs(p.x-points[i].x)+Math.abs(p.y-points[i].y)})).sort((a,b)=>b.length-a.length);
+  const longest=segments[0],labelPoint=longest?{x:(longest.a.x+longest.b.x)/2,y:(longest.a.y+longest.b.y)/2}:{x:props.sourceX,y:props.sourceY};
+  return <><BaseEdge path={path} markerEnd={props.markerEnd} style={props.style}/>{props.data.type!=='NEXT'&&<EdgeLabelRenderer><div className="semantic-swimlane-edge-label" style={{transform:`translate(-50%, -50%) translate(${labelPoint.x}px,${labelPoint.y}px)`}} title={props.data.description}>{swimlaneEdgeLabel(props.data.type)}</div></EdgeLabelRenderer>}</>;
+});
+const semanticNodeTypes = { semantic: SemanticGraphNode, laneHeading:SwimlaneHeading, laneBackdrop:SwimlaneBackdrop };
+const semanticEdgeTypes = {swimlane:SemanticSwimlaneEdge};
 
 export default function SemanticWorkflowView({
   trace,
@@ -153,6 +187,17 @@ export default function SemanticWorkflowView({
 }: SemanticWorkflowViewProps) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const [outlineOpen, setOutlineOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [inspectorTab, setInspectorTab] = useState<SemanticInspectorTab>('overview');
+  const [aggregation, setAggregation] = useState<SemanticSwimlanes|null>(null);
+  const [aggregateProgress, setAggregateProgress] = useState<SemanticSwimlaneProgress|null>(null);
+  const [aggregateError, setAggregateError] = useState<string|null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const aggregateEndpoint=`/api/observations/${encodeURIComponent(trace.session.session_id)}/semantic/swimlanes`;
+  const aggregateBusy=['scheduled','running'].includes(aggregateProgress?.status||'');
+  const [zoom, setZoom] = useState(READING_ZOOM);
   const [annotationGuidance, setAnnotationGuidance] = useState('保持阶段级摘要：标题简短，目标一到两句，行为摘要两到三句，结果保留关键数字与限制。');
 
   useEffect(() => {
@@ -175,10 +220,48 @@ export default function SemanticWorkflowView({
   ]);
 
   const selectedNode = workflow?.semantic_nodes.find((node) => node.node_id === selectedNodeId) || null;
+  const currentAggregation=useMemo(()=>{
+    if(!workflow||!aggregation)return null;
+    try{return validateSemanticSwimlanes(aggregation,workflow);}catch{return null;}
+  },[workflow,aggregation]);
   const graph = useMemo(
-    () => buildSemanticGraph(workflow, trace, selectedNodeId, onOpenArtifact),
-    [workflow, trace, selectedNodeId, onOpenArtifact],
+    () => buildSemanticGraph(workflow, trace, currentAggregation, expandedGroups),
+    [workflow, trace, currentAggregation, expandedGroups],
   );
+  const selectedGroup=graph.groups.find(group=>group.node_ids.includes(selectedNodeId||''));
+  const displayNodes=useMemo(()=>graph.nodes.map(node=>node.type!=='semantic'?node:{...node,selected:graph.nodeForStageId.get(selectedNodeId||'')===node.id,data:{...node.data,
+    onToggle:()=>setExpandedGroups(current=>{const next=new Set(current);if(next.has(node.data.groupId))next.delete(node.data.groupId);else next.add(node.data.groupId);return next;}),
+    onArtifact:(id:string)=>void onOpenArtifact(id),
+  }}),[graph,selectedNodeId,onOpenArtifact]);
+
+  useEffect(()=>{
+    let active=true;setAggregation(null);setAggregateError(null);setExpandedGroups(new Set());setAggregateProgress(null);
+    if(workflow)void Promise.all([fetch(aggregateEndpoint),fetch(aggregateEndpoint+'/progress')]).then(async([result,state])=>{
+      const value=result.ok?await result.json():null;const update=state.ok?await state.json():null;
+      if(!active)return;
+      if(value)setAggregation(validateSemanticSwimlanes(value,workflow));
+      if(update)setAggregateProgress(update);
+    }).catch(error=>{if(active)setAggregateError(String(error));});
+    return()=>{active=false;};
+  },[aggregateEndpoint,workflow]);
+  useEffect(()=>{
+    if(!aggregateBusy||!workflow)return;
+    let active=true;
+    const timer=window.setInterval(()=>{void fetch(aggregateEndpoint+'/progress').then(r=>r.json()).then(async(state:SemanticSwimlaneProgress)=>{
+      if(!active)return;setAggregateProgress(state);
+      if(state.status==='ready'){
+        const result=await fetch(aggregateEndpoint);if(!result.ok)throw new Error('原阶段已更新，请重新聚合');
+        const value=await result.json();if(active)setAggregation(validateSemanticSwimlanes(value,workflow));
+      }
+      if(state.error&&active)setAggregateError(state.error);
+    }).catch(error=>{if(active){setAggregateError(String(error));setAggregateProgress({status:'partial',message:'聚合读取失败，可重试'});}});},2000);
+    return()=>{active=false;window.clearInterval(timer);};
+  },[aggregateBusy,aggregateEndpoint,workflow]);
+  const generateAggregation=async()=>{
+    setAggregateError(null);setAggregateProgress({status:'scheduled',message:'等待语义聚合'});
+    try{const result=await fetch(aggregateEndpoint+'/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({force:!!aggregation,resume:true})});const value=await result.json();if(!result.ok)throw new Error(value.detail||'聚合失败');setAggregateProgress(value);}
+    catch(error){setAggregateError(String(error));setAggregateProgress({status:'partial',message:'聚合未完成，可重试'});}
+  };
   const sourceEventTypeCounts = useMemo(() => trace.events.reduce<Record<string, number>>(
     (counts, event) => ({ ...counts, [event.event_type]: (counts[event.event_type] || 0) + 1 }),
     {},
@@ -186,49 +269,35 @@ export default function SemanticWorkflowView({
 
   const focusNode = (nodeId: string, zoom = READING_ZOOM) => {
     setSelectedNodeId(nodeId);
-    const target = graph.nodes.find((node) => node.id === nodeId && node.data?.nodeKind === 'semantic');
+    const target = graph.nodes.find((node) => node.id === graph.nodeForStageId.get(nodeId) && node.data?.nodeKind === 'semantic');
     if (!flowInstance || !target) return;
     void flowInstance.setCenter(
       target.position.x + SEMANTIC_NODE_WIDTH / 2,
-      target.position.y + SEMANTIC_NODE_HEIGHT / 2,
+      target.position.y + Number(target.style?.height||SEMANTIC_NODE_HEIGHT) / 2,
       { zoom, duration: 320 },
     );
   };
-
-  useEffect(() => {
-    const openingNodes = graph.nodes
-      .filter((node) => node.data?.nodeKind === 'semantic')
-      .slice(0, 3);
-    if (!flowInstance || openingNodes.length === 0) return;
-    void flowInstance.fitView({
-      nodes: openingNodes,
-      padding: 0.08,
-      minZoom: 0.82,
-      maxZoom: READING_ZOOM,
-      duration: 0,
-    });
-  }, [flowInstance, workflow?.inference_run.inference_id]);
 
   if (!workflow) {
     return (
       <div className="h-full flex items-center justify-center p-8">
         <div className="max-w-xl rounded-3xl border border-line bg-white/80 p-8 text-center shadow-lg">
-          <div className="text-accent font-mono text-xs uppercase">Semantic Workflow</div>
-          <h2 className="font-serif text-3xl mt-3">尚未生成语义工作流</h2>
+          <div className="text-accent text-xs font-medium">从记录到工作流</div>
+          <h2 className="font-semibold text-2xl mt-3">整理这次分析的过程</h2>
           <p className="text-muted text-sm leading-6 mt-3">
-            模型会读取六类 Event，执行阶段边界判断、逐阶段语义总结、关系提取和证据验证。命令、工具、子 Agent 与控制事件会作为不同证据处理。
+            将会话记录整理成清晰的分析阶段，连接每个阶段的目标、结果与原始证据。
           </p>
           <label className="block text-left text-xs text-muted mt-6">
-            Node 总结颗粒度要求
+            阶段摘要要求
             <textarea
               value={annotationGuidance}
               onChange={(event) => setAnnotationGuidance(event.target.value)}
               maxLength={1000}
               rows={4}
-              placeholder="例如：每个 Node 只保留一个核心目标、两句行为摘要和最多三条关键结果；保留数字和限制。"
+              placeholder="例如：每个阶段保留一个目标、两句摘要和三条关键结果。"
               className="w-full mt-2 px-3 py-2 rounded-xl border border-line bg-white text-ink text-sm resize-none"
             />
-            <span className="block mt-1">仅控制语义表述详略，不改变 Episode 边界和证据约束。</span>
+            <span className="block mt-1 text-[11px]">控制摘要的详略，保留原始记录与证据引用。</span>
           </label>
           <div className="flex items-center justify-center mt-4">
             <button
@@ -237,7 +306,7 @@ export default function SemanticWorkflowView({
               onClick={() => void onGenerate(annotationGuidance)}
               className="px-5 py-2.5 rounded-full bg-accent text-white text-sm disabled:opacity-50"
             >
-              使用语义模型生成
+              {loading ? '正在整理…' : '生成分析工作流'}
             </button>
           </div>
           {(loading || progress) && <SemanticProgressBar progress={progress} />}
@@ -248,7 +317,7 @@ export default function SemanticWorkflowView({
               onClick={() => void onGenerate(annotationGuidance, progress.inference_id)}
               className="mt-4 px-5 py-2.5 rounded-full bg-accent text-white text-sm disabled:opacity-50"
             >
-              从 Episode {progress.failed_episode || '失败位置'} 继续处理
+              继续未完成分析
             </button>
           )}
         </div>
@@ -256,302 +325,154 @@ export default function SemanticWorkflowView({
     );
   }
 
-  return (
-    <div className="h-full min-h-0 grid grid-cols-[240px_minmax(620px,1fr)_320px] gap-2.5 p-2.5">
-      <aside className="min-h-0 border border-line rounded-3xl bg-panel overflow-hidden shadow-lg flex flex-col">
-        <div className="px-4 py-3 border-b border-line bg-white/70">
-          <div className="flex items-center justify-between">
-            <span className="ot-section-title">语义节点 · {workflow.semantic_nodes.length}</span>
-          </div>
-          <div className="ot-meta text-muted mt-1">
-            {workflow.inference_run.method} · {workflow.source_events?.event_count || workflow.inference_run.source_event_count || trace.events.length} events → {workflow.inference_run.candidate_count ?? '—'} candidates
-          </div>
-          <label className="block text-[10px] text-muted mt-3">
-            Node 总结颗粒度要求
-            <textarea
-              value={annotationGuidance}
-              onChange={(event) => setAnnotationGuidance(event.target.value)}
-              maxLength={1000}
-              rows={3}
-              className="w-full mt-1 px-2.5 py-2 rounded-lg border border-line bg-white text-ink text-xs resize-none"
-            />
-          </label>
-          <div className="mt-2">
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => void onGenerate(annotationGuidance)}
-              className="w-full px-2 py-1.5 rounded-lg bg-accent text-white text-[10px] disabled:opacity-40"
-            >
-              模型重新生成
-            </button>
-          </div>
-          {(loading || ['running', 'scheduled', 'retrying', 'partial'].includes(progress?.status || '')) && (
-            <SemanticProgressBar progress={progress} compact />
-          )}
-          {progress?.status === 'partial' && progress.retryable && progress.inference_id && (
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => void onGenerate(annotationGuidance, progress.inference_id)}
-              className="w-full mt-2 px-2 py-1.5 rounded-lg bg-orange-100 text-orange-800 text-[10px] font-semibold disabled:opacity-40"
-            >
-              继续未完成分析
-            </button>
-          )}
-        </div>
-        <div className="flex-1 overflow-auto">
-          {workflow.semantic_nodes.map((node) => (
-            <div
-              key={node.node_id}
-              className={`border-b border-line p-3 ${selectedNodeId === node.node_id ? 'bg-orange-50' : 'hover:bg-white'}`}
-            >
-              <div className="flex items-start gap-2">
-                <button type="button" className="min-w-0 flex-1 text-left" onClick={() => focusNode(node.node_id)}>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-[10px] text-accent">NODE {node.sequence}</span>
-                    <span className="ot-meta text-muted">{node.primary_activity}</span>
-                  </div>
-                  <div className="font-semibold text-sm mt-1">{node.title}</div>
-                  <div className="ot-meta text-muted mt-2 line-clamp-2">{node.objective.value}</div>
-                  <div className="flex gap-1 mt-2">
-                    {node.errors.length > 0 && <Badge text={`${node.errors.length} error`} tone="red" />}
-                    {node.review_status !== 'unreviewed' && <Badge text={node.review_status} tone="green" />}
-                    <Badge text={`${node.outcome_claims.length} outcomes`} tone="gray" />
-                  </div>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </aside>
-
-      <section className="min-h-0 grid grid-rows-[66px_1fr] gap-2.5">
-        <div className="grid grid-cols-5 gap-2 p-2 border border-line rounded-3xl bg-white/70">
-          <SemanticMetric label="源 Events" value={workflow.source_events?.event_count || workflow.validation.source_event_count || trace.events.length} />
-          <SemanticMetric label="语义节点" value={workflow.semantic_nodes.length} />
-          <SemanticMetric label="Tool" value={workflow.source_events?.event_type_counts?.tool_execution ?? sourceEventTypeCounts.tool_execution ?? 0} />
-          <SemanticMetric label="Command" value={workflow.source_events?.event_type_counts?.command_execution ?? sourceEventTypeCounts.command_execution ?? 0} />
-          <SemanticMetric label="Subagent" value={workflow.source_events?.event_type_counts?.subagent_result ?? sourceEventTypeCounts.subagent_result ?? 0} />
-        </div>
-        <div className="min-h-0 border border-line rounded-3xl bg-panel overflow-hidden shadow-lg">
-          <div className="h-12 px-4 border-b border-line bg-white/60 flex items-center justify-between gap-3">
-            <span className="ot-section-title">证据驱动语义工作流</span>
-            <div className="flex items-center gap-2">
-              <span className="hidden xl:inline ot-meta text-muted">仅显示 NEXT 阶段主干</span>
-              <button
-                type="button"
-                disabled={!selectedNodeId}
-                onClick={() => selectedNodeId && focusNode(selectedNodeId)}
-                className="rounded-full border border-line bg-white px-3 py-1 text-[11px] font-semibold text-[#675e56] shadow-sm hover:border-accent disabled:opacity-40"
-              >
-                定位当前
-              </button>
-              <button
-                type="button"
-                onClick={() => void flowInstance?.fitView({ padding: 0.1, minZoom: 0.14, maxZoom: 0.55, duration: 320 })}
-                className="rounded-full border border-line bg-white px-3 py-1 text-[11px] font-semibold text-[#675e56] shadow-sm hover:border-accent"
-              >
-                全览
-              </button>
-            </div>
-          </div>
-          <ReactFlow
-            nodes={graph.nodes}
-            edges={graph.edges}
-            nodeTypes={semanticNodeTypes}
-            defaultViewport={{ x: 80, y: 12, zoom: READING_ZOOM }}
-            minZoom={0.14}
-            maxZoom={1.25}
-            nodesDraggable={false}
-            onInit={setFlowInstance}
-            onNodeClick={(_, node) => {
-              if (node.data?.nodeKind === 'semantic') focusNode(node.id);
-            }}
-          >
-            <Background color="rgba(217,119,69,0.08)" gap={26} />
-            <Controls />
-            <MiniMap nodeColor="#d97745" />
-          </ReactFlow>
-        </div>
-      </section>
-
-      <aside className="min-h-0 border border-line rounded-3xl bg-panel overflow-hidden shadow-lg">
-        {selectedNode ? (
-          <SemanticNodeInspector
-            node={selectedNode}
-            trace={trace}
-            workflow={workflow}
-            onEvidence={onEvidence}
-          />
-        ) : (
-          <div className="h-full flex items-center justify-center text-muted text-sm">请选择语义节点</div>
-        )}
-      </aside>
-    </div>
-  );
-}
-
-function SemanticNodeInspector({
-  node,
-  trace,
-  workflow,
-  onEvidence,
-}: {
-  node: SemanticNode;
-  trace: ObserverTrace;
-  workflow: SemanticWorkflow;
-  onEvidence: (eventId: string) => void;
-}) {
-  const evidence = node.event_ids
-    .map((eventId) => trace.events.find((event) => event.event_id === eventId))
-    .filter((event): event is NonNullable<typeof event> => Boolean(event));
-  const episodeCandidates = new Set(
-    workflow.episodes
-      .filter((episode) => node.episode_ids.includes(episode.episode_id))
-      .flatMap((episode) => episode.candidate_episode_ids),
-  );
-  const boundaryDecisions = (workflow.boundary_decisions || []).filter((decision) => (
-    episodeCandidates.has(decision.left_candidate_id)
-    || episodeCandidates.has(decision.right_candidate_id)
-  ));
-  const orchestrationTools = new Set(['TaskCreate', 'TaskUpdate', 'TaskGet', 'TaskList', 'Skill']);
-  const isOrchestration = (action: SemanticNode['actions'][number]) => (
-    action.semantic_relevance === 'orchestration' || orchestrationTools.has(action.tool_name)
-  );
-  const keyActions = node.actions.filter((action) => !isOrchestration(action));
-  const orchestrationActions = node.actions.filter(isOrchestration);
-  const resources = node.observed_inputs
-    .map((item) => String(item.value || ''))
-    .filter(Boolean);
-  const eventTypeCounts = Object.keys(node.event_profile?.event_type_counts || {}).length
-    ? node.event_profile?.event_type_counts || {}
-    : evidence.reduce<Record<string, number>>(
-        (counts, event) => ({ ...counts, [event.event_type]: (counts[event.event_type] || 0) + 1 }),
-        {},
-      );
+  const running = loading || ['running', 'scheduled', 'retrying', 'partial'].includes(progress?.status || '');
+  const eventCount = workflow.source_events?.event_count || workflow.validation.source_event_count || trace.events.length;
+  const runtime = running && progress ? progress : workflow.inference_run;
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="px-5 py-4 border-b border-line bg-white/60">
-        <div className="flex items-center justify-between">
-          <span className="ot-meta font-mono text-accent">SEMANTIC NODE {node.sequence}</span>
-          <span className="ot-meta text-muted">{node.origin} · {node.inference_method}</span>
+    <div className="semantic-workspace semantic-swimlane-workspace">
+      <div className="semantic-toolbar">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="semantic-workflow-mark" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <rect x="8" y="2" width="8" height="5" rx="1.5" /><rect x="2" y="17" width="8" height="5" rx="1.5" /><rect x="14" y="17" width="8" height="5" rx="1.5" /><path d="M12 7v5M6 17v-5h12v5" />
+            </svg>
+          </span>
+          <div>
+            <div className="text-sm font-semibold text-ink">四泳道语义工作流</div>
+            <div className="text-xs text-muted mt-0.5">{graph.groups.length} 个语义块 · {workflow.semantic_nodes.length} 个原阶段 · {eventCount} 条记录</div>
+          </div>
         </div>
-        <h2 className="font-serif text-2xl mt-2">{node.title}</h2>
-        <div className="ot-meta text-muted mt-2">
-          {node.primary_activity} · {node.review_status}
+        <div className="semantic-toolbar-metrics">
+          <SemanticMetric label="工具调用" value={workflow.source_events?.event_type_counts?.tool_execution ?? sourceEventTypeCounts.tool_execution ?? 0} />
+          <SemanticMetric label="命令执行" value={workflow.source_events?.event_type_counts?.command_execution ?? sourceEventTypeCounts.command_execution ?? 0} />
+          <SemanticMetric label="子任务" value={workflow.source_events?.event_type_counts?.subagent_result ?? sourceEventTypeCounts.subagent_result ?? 0} />
         </div>
-        <div className="mt-3 flex flex-wrap gap-1.5 text-[10px] font-mono text-[#675e56]">
-          <span className="rounded-full bg-stone-100 px-2 py-1">{node.event_profile?.event_count || node.event_ids.length} Events</span>
-          {(eventTypeCounts.tool_execution || 0) > 0 && <span className="rounded-full bg-violet-50 px-2 py-1">{eventTypeCounts.tool_execution} Tools</span>}
-          {(eventTypeCounts.command_execution || 0) > 0 && <span className="rounded-full bg-orange-50 px-2 py-1">{eventTypeCounts.command_execution} Commands</span>}
-          {(eventTypeCounts.subagent_result || 0) > 0 && <span className="rounded-full bg-cyan-50 px-2 py-1">{eventTypeCounts.subagent_result} Subagents</span>}
-          {(eventTypeCounts.control_event || 0) > 0 && <span className="rounded-full bg-amber-50 px-2 py-1">{eventTypeCounts.control_event} Controls</span>}
+        <div className="semantic-toolbar-actions">
+          <button type="button" className="semantic-button semantic-button-accent" disabled={aggregateBusy||loading||['scheduled','running','retrying'].includes(progress?.status||'')} onClick={()=>void generateAggregation()}>{aggregateBusy?'正在聚合…':aggregation?'重新聚合语义':'聚合语义'}</button>
+          <button type="button" className="semantic-button" aria-pressed={outlineOpen} onClick={() => setOutlineOpen(!outlineOpen)}>阶段目录</button>
+          <button type="button" className="semantic-button" aria-pressed={inspectorOpen} onClick={() => setInspectorOpen(!inspectorOpen)}>阶段详情</button>
+          <button type="button" className="semantic-button semantic-button-accent" aria-expanded={settingsOpen} aria-controls="semantic-analysis-settings" onClick={() => setSettingsOpen(!settingsOpen)}>分析设置{running && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-current" />}</button>
         </div>
       </div>
-      <div className="flex-1 overflow-auto p-5 space-y-5">
-        <section>
-          <h3 className="ot-section-title mb-2">阶段目标</h3>
-          <p className="rounded-xl border border-line bg-white p-3 text-sm leading-6">
-            {node.objective.value}
-          </p>
-        </section>
+      <div className="semantic-aggregation-status" aria-label="语义聚合状态">
+        <span>{aggregation?'AI 按共同目标聚合 · 可展开原阶段':'按现有阶段归类 · 聚合语义后精简'}</span>
+        <span>泳道内从上到下 · 跨列推进与回访保留原顺序</span>
+        {aggregateBusy&&<span>{aggregateProgress?.message}</span>}
+        {aggregation&&<span>{aggregation.inference_run.model} · {aggregation.inference_run.call_count} 次调用 · {Math.round(aggregation.inference_run.elapsed_seconds)} 秒</span>}
+      </div>
+      {aggregateError&&<div className="semantic-aggregation-error">{aggregateError}</div>}
 
-        <section>
-          <h3 className="ot-section-title mb-2">行为摘要</h3>
-          <p className="rounded-xl border border-line bg-white p-3 text-sm leading-6">
-            {node.summary.value}
-          </p>
-        </section>
-
-        <section>
-          <h3 className="ot-section-title mb-2">Agent 报告的结果</h3>
-          <p className="text-xs text-muted mb-2">忠实呈现 Agent、Subagent 或工具在记录中给出的结果，不代表 Observer 另行事实认证。</p>
-          {node.outcome_claims.length ? node.outcome_claims.map((claim, index) => (
-            <div key={index} className="rounded-xl border border-line bg-white p-3 text-sm leading-6 mb-2">
-              {claim.text}
-              <div className="ot-meta text-muted mt-2">记录内置信度 {claim.confidence_level}</div>
+      <div className="semantic-layout">
+        {outlineOpen && (
+          <aside className="semantic-outline" aria-label="阶段目录">
+            <div className="semantic-panel-heading">
+              <span>语义块目录 <span className="ml-1 text-muted font-normal">{graph.groups.length}</span></span>
+              <button type="button" className="semantic-dismiss" aria-label="收起阶段目录" onClick={() => setOutlineOpen(false)}>×</button>
             </div>
-          )) : <div className="text-sm text-muted">该阶段没有明确输出结果。</div>}
-        </section>
-
-        {(keyActions.length > 0 || resources.length > 0 || node.errors.length > 0) && (
-          <section>
-            <h3 className="ot-section-title mb-2">关键动作与资源</h3>
-            {keyActions.map((action) => (
-              <button key={action.event_id} type="button" onClick={() => onEvidence(action.event_id)} className="w-full text-left rounded-xl border border-line bg-white p-3 mb-2">
-                <div className="flex justify-between gap-2 text-sm"><span className="font-semibold">{action.action_name || action.tool_name}</span><span>{action.status}</span></div>
-                <div className="ot-meta text-accent mt-1">{actionTypeLabel(action.action_type, action.event_type)}{action.event_subtype ? ` · ${action.event_subtype}` : ''}</div>
-                <div className="ot-meta text-muted mt-1">{action.summary}</div>
-              </button>
-            ))}
-            {resources.map((resource) => (
-              <div key={resource} className="rounded-xl border border-line bg-stone-50 px-3 py-2 mb-2 text-xs font-mono break-all">{resource}</div>
-            ))}
-            {node.errors.map((error) => (
-              <div key={error.event_id} className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 mb-2">
-                {error.summary || '工具错误'} · {error.recovered ? '后续已恢复' : '未观察到恢复'}
-              </div>
-            ))}
-          </section>
-        )}
-
-        <details className="rounded-2xl border border-line bg-white/60 p-3">
-          <summary className="ot-section-title cursor-pointer">技术审计与原始证据</summary>
-          <div className="mt-4 space-y-5">
-          <section>
-          <h3 className="ot-section-title mb-2">Confidence & Validation</h3>
-          <div className="rounded-xl border border-line bg-white p-3 text-xs space-y-1">
-            <div>Model confidence：{node.confidence.model_level || node.confidence.level}</div>
-            <div>Validated confidence：{node.confidence.validated_level || node.confidence.level}</div>
-            <div>关键事件引用覆盖率：{(node.confidence.evidence_coverage * 100).toFixed(1)}%</div>
-          </div>
-          {workflow.validation.issues.length > 0 && (
-            <div className="mt-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800">
-              {workflow.validation.issues.slice(0, 6).map((issue, index) => (
-                <div key={index}>{String(issue.code || 'validation_issue')}</div>
+            <div className="min-h-0 flex-1 overflow-auto p-2 space-y-1">
+              {graph.groups.map((group,index) => (
+                <button key={group.group_id} type="button" aria-current={selectedGroup?.group_id===group.group_id ? 'step' : undefined} className={`semantic-outline-item ${selectedGroup?.group_id===group.group_id ? 'is-selected' : ''}`} onClick={() => { focusNode(group.node_ids[0]); setInspectorTab('overview'); setInspectorOpen(true); }}>
+                  <span className="semantic-outline-number" style={{ color: semanticLanes.find(l=>l.id===group.lane)?.color }}>{String(index+1).padStart(2,'0')}</span>
+                  <span className="min-w-0">
+                    <span className="block font-semibold text-[13px] leading-5 line-clamp-2">{group.title}</span>
+                    <span className="mt-1 block text-[11px] text-muted">{semanticLanes.find(l=>l.id===group.lane)?.title} · {group.node_ids.length} 个原阶段</span>
+                  </span>
+                </button>
               ))}
             </div>
-          )}
-        </section>
+          </aside>
+        )}
 
-        <section>
-          <h3 className="ot-section-title mb-2">Boundary Audit</h3>
-          {boundaryDecisions.length ? boundaryDecisions.map((decision) => (
-            <div key={`${decision.left_candidate_id}-${decision.right_candidate_id}`} className="rounded-xl border border-line bg-white p-3 mb-2 text-xs">
-              <div className="flex justify-between gap-2 font-mono">
-                <span>{decision.model_decision || '—'} → {decision.effective_decision}</span>
-                <span>{decision.decision_origin}</span>
-              </div>
-              <div className="text-muted mt-1">{decision.override_reason || decision.reason || '无边界说明'}</div>
+        <section className="semantic-canvas-panel" aria-label="工作流图">
+          <div className="semantic-canvas-heading">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-accent" />
+              <span className="text-xs font-medium text-[#64594f]">输入 → 规划 → 执行 → 修改 · 修改后可返回执行</span>
             </div>
-          )) : <div className="text-sm text-muted">该节点没有相邻边界决策。</div>}
-        </section>
-
-        <section>
-          <h3 className="ot-section-title mb-2">编排动作</h3>
-          {orchestrationActions.map((action) => (
-            <button key={action.event_id} type="button" onClick={() => onEvidence(action.event_id)} className="w-full text-left rounded-xl border border-line bg-white p-3 mb-2">
-              <div className="flex justify-between gap-2 text-sm"><span className="font-semibold">{action.action_name || action.tool_name}</span><span>{action.status}</span></div>
-              <div className="ot-meta text-muted mt-1">{action.summary}</div>
-            </button>
-          ))}
-          {!orchestrationActions.length && <div className="text-sm text-muted">没有编排动作。</div>}
-        </section>
-
-        <section>
-          <h3 className="ot-section-title mb-2">Evidence</h3>
-          {evidence.map((event) => (
-            <button key={event.event_id} type="button" onClick={() => onEvidence(event.event_id)} className="w-full text-left px-3 py-2 border-b border-line hover:bg-white">
-              <div className="text-xs font-semibold">#{event.sequence} {event.title}</div>
-              <div className="ot-meta text-accent mt-1">{event.event_type}{event.event_subtype ? ` · ${event.event_subtype}` : ''}</div>
-              <div className="ot-meta text-muted mt-1">line {event.source_lines.join(', ')} · {event.summary}</div>
-            </button>
-          ))}
-        </section>
+            <div className="flex items-center gap-1.5">
+              <button type="button" disabled={!selectedNodeId} onClick={() => selectedNodeId && focusNode(selectedNodeId)} className="semantic-button semantic-button-small">定位当前</button>
+              <button type="button" onClick={()=>void flowInstance?.fitView({nodes:graph.initialNodes,padding:.04,minZoom:.1,maxZoom:READING_ZOOM,duration:250})} className="semantic-button semantic-button-small">泳道总览</button>
+              <button type="button" onClick={() => void flowInstance?.fitView({ padding: 0.12, minZoom: 0.02, maxZoom: 1, duration: 250 })} className="semantic-button semantic-button-small">查看全图</button>
+            </div>
           </div>
-        </details>
+          <div className="semantic-canvas" aria-label="工作流画布">
+            <ReactFlow
+              key={`${workflow.inference_run.inference_id}-${aggregation?.source_hash||'existing'}-swimlanes`}
+              nodes={displayNodes}
+              edges={graph.edges}
+              nodeTypes={semanticNodeTypes}
+              edgeTypes={semanticEdgeTypes}
+              defaultViewport={{ x: 80, y: 12, zoom: READING_ZOOM }}
+              fitView
+              fitViewOptions={{ nodes: graph.initialNodes, padding: 0.04, minZoom: 0.1, maxZoom: READING_ZOOM }}
+              minZoom={0.02}
+              maxZoom={2}
+              nodesDraggable={false}
+              nodesConnectable={false}
+              panOnDrag
+              zoomOnScroll
+              zoomOnPinch
+              zoomOnDoubleClick
+              preventScrolling
+              onInit={setFlowInstance}
+              onMove={(_, viewport) => setZoom(viewport.zoom)}
+              onNodeClick={(_, node) => {
+                if (node.data?.nodeKind === 'semantic') {
+                  setSelectedNodeId(node.data.nodeIds[0]);
+                  setInspectorTab(node.data.isGroup ? 'overview' : 'stages');
+                  setInspectorOpen(true);
+                }
+              }}
+            >
+              <Background color="#ddd4ca" gap={24} size={1} />
+              <MiniMap nodeColor={(node) => node.data?.accent || '#b9c7c2'} pannable zoomable ariaLabel="工作流导航" className="semantic-minimap" />
+            </ReactFlow>
+            <div className="semantic-zoom-controls" aria-label="画布缩放控制">
+              <button type="button" aria-label="缩小画布" title="缩小" disabled={zoom <= 0.02} onClick={() => void flowInstance?.zoomOut({ duration: 150 })}>−</button>
+              <button type="button" className="semantic-zoom-value" aria-label="恢复100%缩放" title="恢复 100%" onClick={() => void flowInstance?.zoomTo(1, { duration: 150 })}>{Math.round(zoom * 100)}%</button>
+              <button type="button" aria-label="放大画布" title="放大" disabled={zoom >= 2} onClick={() => void flowInstance?.zoomIn({ duration: 150 })}>+</button>
+            </div>
+            <div className="semantic-canvas-hint">拖动与缩放 · 虚线为顺序 · 彩色线为已有语义引用</div>
+          </div>
+          {running && <div className="semantic-running"><SemanticProgressBar progress={progress} compact /></div>}
+        </section>
+
+        {inspectorOpen && (
+          <aside className="semantic-inspector" aria-label="阶段详情">
+            {selectedGroup && selectedNode ? (
+              <SemanticWorkflowInspector key={selectedGroup.group_id} group={selectedGroup} node={selectedNode}
+                trace={trace} workflow={workflow} aggregated={!!currentAggregation} tab={inspectorTab}
+                onTabChange={setInspectorTab} onSelect={setSelectedNodeId} onEvidence={onEvidence}
+                onClose={() => setInspectorOpen(false)} />
+            ) : <><div className="semantic-panel-heading">阶段详情<button type="button" className="semantic-dismiss" aria-label="收起阶段详情" onClick={() => setInspectorOpen(false)}>×</button></div><div className="semantic-detail-body">点击语义块，查看结果与证据。</div></>}
+
+          </aside>
+        )}
+
+        {settingsOpen && (
+          <aside id="semantic-analysis-settings" className="semantic-settings" aria-label="分析设置">
+            <div className="semantic-panel-heading">
+              <span>分析设置</span>
+              <button type="button" className="semantic-dismiss" aria-label="关闭分析设置" onClick={() => setSettingsOpen(false)}>×</button>
+            </div>
+            <div className="min-h-0 overflow-auto p-4">
+              <p className="text-xs leading-5 text-muted">调整阶段摘要的详略，重新整理本次会话。</p>
+              <label className="mt-4 block text-xs font-medium text-ink">
+                阶段摘要要求
+                <textarea value={annotationGuidance} onChange={(event) => setAnnotationGuidance(event.target.value)} maxLength={1000} rows={4} className="semantic-guidance" />
+              </label>
+              <button type="button" disabled={loading} onClick={() => void onGenerate(annotationGuidance)} className="semantic-generate-button mt-3">{loading ? '正在分析…' : '重新生成工作流'}</button>
+              {progress?.status === 'partial' && progress.retryable && progress.inference_id && (
+                <button type="button" disabled={loading} onClick={() => void onGenerate(annotationGuidance, progress.inference_id)} className="semantic-button mt-2 w-full justify-center">继续未完成分析</button>
+              )}
+              <div className="mt-5 border-t border-line pt-4">
+                <h3 className="text-xs font-semibold text-ink">{running ? '本次分析' : '最近一次分析'}</h3>
+                <SemanticRuntime metrics={runtime} progress={running ? progress || undefined : undefined} />
+              </div>
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );
@@ -560,226 +481,47 @@ function SemanticNodeInspector({
 function buildSemanticGraph(
   workflow: SemanticWorkflow | null,
   trace: ObserverTrace,
-  selectedNodeId: string | null,
-  onOpenArtifact: (artifactId: string) => Promise<void>,
-): { nodes: Node[]; edges: Edge[] } {
-  if (!workflow) return { nodes: [], edges: [] };
-  const layout = new dagre.graphlib.Graph();
-  layout.setGraph({ rankdir: 'TB', ranksep: 54, nodesep: 56, marginx: 36, marginy: 36 });
-  layout.setDefaultEdgeLabel(() => ({}));
-  workflow.semantic_nodes.forEach((node) => layout.setNode(node.node_id, {
-    width: SEMANTIC_NODE_WIDTH,
-    height: SEMANTIC_NODE_HEIGHT,
+  aggregation: SemanticSwimlanes | null,
+  expanded: Set<string>,
+) {
+  if (!workflow) return {nodes:[] as Node[],edges:[] as Edge[],groups:[],nodeForStageId:new Map<string,string>(),initialNodes:[] as Node[]};
+  const projection=projectSemanticSwimlanes(workflow,aggregation,expanded);
+  const originals=new Map(workflow.semantic_nodes.map(node=>[node.node_id,node]));
+  const events=new Map(trace.events.map(event=>[event.event_id,event]));
+  const nodes:Node[]=projection.units.map(unit=>{
+    const members=unit.node_ids.map(id=>originals.get(id)!);
+    const eventIds=new Set(members.flatMap(node=>node.event_ids));
+    const artifacts=(trace.artifacts||[]).filter(artifact=>artifact.operations.some(op=>eventIds.has(op.event_id)));
+    const lane=semanticLanes.find(lane=>lane.id===unit.group.lane)!;
+    const types:Record<string,number>={};eventIds.forEach(id=>{const type=events.get(id)?.event_type;if(type)types[type]=(types[type]||0)+1;});
+    return {id:unit.id,type:'semantic',position:{x:unit.x,y:unit.y},zIndex:2,
+      data:{nodeKind:'semantic',sequence:members[0].sequence,activity:lane.id,activityLabel:lane.title,
+        title:unit.member?.title||unit.group.title,summary:unit.member?.summary.value||unit.group.summary,
+        groupId:unit.group.group_id,nodeIds:unit.node_ids,stageCount:members.length,isGroup:!unit.member,expanded:expanded.has(unit.group.group_id),
+        rangeLabel:members.length>1?`${members[0].sequence}–${members[members.length-1].sequence}`:String(members[0].sequence).padStart(2,'0'),
+        eventCount:eventIds.size,toolCount:types.tool_execution||0,commandCount:types.command_execution||0,outcomeCount:members.reduce((n,m)=>n+m.outcome_claims.length,0),
+        artifactCount:artifacts.length,errorCount:members.reduce((n,m)=>n+m.errors.length,0),
+        reviewStatus:aggregation&&!unit.member?'unreviewed':members.every(m=>m.review_status==='accepted')?'accepted':members.length>1?'unreviewed':members[0].review_status,
+        origin:aggregation&&!unit.member?'inferred':members[0].origin,accent:lane.color,
+        artifacts:artifacts.map(a=>({id:a.artifact_id,name:a.name,exists:a.exists})),
+      },style:{width:unit.width,height:unit.height},
+    };
+  });
+  const headings:Node[]=projection.lanes.map(lane=>({id:`lane-heading-${lane.id}`,type:'laneHeading',position:{x:lane.x+16,y:24},data:{...lane},style:{width:lane.width-32,height:62},zIndex:3,selectable:false,draggable:false,focusable:false}));
+  const backdrops:Node[]=projection.lanes.map(lane=>({id:`lane-backdrop-${lane.id}`,type:'laneBackdrop',position:{x:lane.x,y:16},data:{...lane},style:{width:lane.width,height:projection.height-16},zIndex:-10,selectable:false,draggable:false,focusable:false}));
+  const edges:Edge[]=projection.edges.map(link=>({id:link.id,source:link.from,target:link.to,type:'swimlane',sourceHandle:link.sourceHandle,targetHandle:link.targetHandle,
+    data:{...link,description:`${swimlaneEdgeLabel(link.type)} · 保留 ${link.relation_ids.length} 条原关系 · ${link.origin} · 置信度 ${link.confidence}`},
+    markerEnd:{type:MarkerType.ArrowClosed,color:link.type==='NEXT'?'#a8a29e':'#7c3aed',width:14,height:14},zIndex:1,
+    style:{stroke:link.type==='NEXT'?'#a8a29e':'#7c3aed',strokeWidth:link.type==='NEXT'?1.4:1.9,strokeDasharray:link.type==='NEXT'?'5 5':undefined,strokeLinejoin:'round'},
   }));
-  workflow.relations
-    .filter((relation) => relation.type === 'NEXT')
-    .forEach((relation) => layout.setEdge(relation.from_node_id, relation.to_node_id));
-  const artifactLinks = (trace.artifacts || []).flatMap((artifact) => (
-    workflow.semantic_nodes.flatMap((semanticNode) => {
-      const eventIds = new Set(semanticNode.event_ids);
-      const operations = artifact.operations.filter((item) => eventIds.has(item.event_id));
-      if (!operations.length) return [];
-      return [{ artifact, semanticNode, operations }];
-    })
-  ));
-  const linkedArtifacts = [...new Map(
-    artifactLinks.map((item) => [item.artifact.artifact_id, item.artifact]),
-  ).values()];
-  dagre.layout(layout);
-
-  const nodes = workflow.semantic_nodes.map<Node>((semanticNode) => {
-    const position = layout.node(semanticNode.node_id) || { x: 0, y: 0 };
-    const artifactCount = new Set(
-      artifactLinks
-        .filter((item) => item.semanticNode.node_id === semanticNode.node_id)
-        .map((item) => item.artifact.artifact_id),
-    ).size;
-    const fallbackEventTypeCounts = semanticNode.event_ids.reduce<Record<string, number>>((counts, eventId) => {
-      const eventType = trace.events.find((event) => event.event_id === eventId)?.event_type;
-      return eventType ? { ...counts, [eventType]: (counts[eventType] || 0) + 1 } : counts;
-    }, {});
-    const eventTypeCounts = Object.keys(semanticNode.event_profile?.event_type_counts || {}).length
-      ? semanticNode.event_profile?.event_type_counts || {}
-      : fallbackEventTypeCounts;
-    return {
-      id: semanticNode.node_id,
-      type: 'semantic',
-      selected: selectedNodeId === semanticNode.node_id,
-      position: {
-        x: Math.round(position.x - SEMANTIC_NODE_WIDTH / 2),
-        y: Math.round(position.y - SEMANTIC_NODE_HEIGHT / 2),
-      },
-      data: {
-        nodeKind: 'semantic',
-        sequence: semanticNode.sequence,
-        activity: semanticNode.primary_activity,
-        activityLabel: activityLabel(semanticNode.primary_activity),
-        title: semanticNode.title,
-        eventCount: semanticNode.event_profile?.event_count || semanticNode.event_ids.length,
-        toolCount: eventTypeCounts.tool_execution ?? 0,
-        commandCount: eventTypeCounts.command_execution ?? 0,
-        outcomeCount: semanticNode.outcome_claims.length,
-        artifactCount,
-        errorCount: semanticNode.errors.length,
-        reviewStatus: semanticNode.review_status,
-        origin: semanticNode.origin,
-        accent: activityColor(semanticNode.primary_activity),
-      },
-      style: { width: SEMANTIC_NODE_WIDTH, height: SEMANTIC_NODE_HEIGHT },
-    };
-  });
-  const artifactNodes = linkedArtifacts.map<Node>((artifact) => {
-    const primaryLink = artifactLinks.find(
-      (item) => item.artifact.artifact_id === artifact.artifact_id,
-    );
-    const producerPosition = primaryLink
-      ? layout.node(primaryLink.semanticNode.node_id)
-      : { x: 0, y: 0 };
-    const siblings = primaryLink
-      ? artifactLinks.filter(
-          (item) => item.semanticNode.node_id === primaryLink.semanticNode.node_id,
-        )
-      : [];
-    const index = Math.max(
-      0,
-      siblings.findIndex((item) => item.artifact.artifact_id === artifact.artifact_id),
-    );
-    const rowCount = Math.ceil(Math.max(1, siblings.length) / 2);
-    const column = index % 2;
-    const row = Math.floor(index / 2);
-    return {
-      id: artifact.artifact_id,
-      position: {
-        x: Math.round(producerPosition.x + 192 + column * 214),
-        y: Math.round(producerPosition.y - 33 + (row - (rowCount - 1) / 2) * 82),
-      },
-      targetPosition: Position.Left,
-      data: {
-        nodeKind: 'artifact',
-        label: (
-          <button
-            type="button"
-            title={artifact.path}
-            onClick={(event) => {
-              event.stopPropagation();
-              void onOpenArtifact(artifact.artifact_id);
-            }}
-              className="nodrag block w-full overflow-hidden text-left text-inherit"
-            >
-            <span className="block text-[10px] font-mono uppercase opacity-70">
-              {artifactTypeLabel(artifact.artifact_type)}
-            </span>
-            <span className="mt-1 block truncate font-semibold" title={artifact.name}>{artifact.name}</span>
-            <span className="mt-1 block text-[10px] opacity-60">本地打开 ↗</span>
-          </button>
-        ),
-      },
-      style: {
-        width: 196,
-        height: 66,
-        overflow: 'hidden',
-        borderRadius: 14,
-        border: `2px solid ${artifactColor(artifact.artifact_type)}`,
-        background: '#ffffff',
-        textAlign: 'left',
-        fontSize: 12,
-        lineHeight: 1.25,
-        boxShadow: '0 6px 16px rgba(76,55,32,0.08)',
-      },
-    };
-  });
-  const semanticEdges = workflow.relations
-    .filter((relation) => relation.type === 'NEXT')
-    .map<Edge>((relation) => ({
-      id: relation.relation_id,
-      source: relation.from_node_id,
-      target: relation.to_node_id,
-      type: 'smoothstep',
-      sourceHandle: 'main-out',
-      targetHandle: 'main-in',
-      animated: false,
-      style: {
-        stroke: '#d97745',
-        strokeWidth: 2.2,
-        opacity: 0.82,
-      },
-    }));
-  const artifactEdges = artifactLinks.map<Edge>(({ artifact, semanticNode, operations }) => {
-    const modified = operations.some((item) => item.operation === 'modified');
-    return {
-      id: `artifact-edge-${semanticNode.node_id}-${artifact.artifact_id}`,
-      source: semanticNode.node_id,
-      target: artifact.artifact_id,
-      sourceHandle: 'artifact-out',
-      label: modified ? '修改' : '生成',
-      type: 'smoothstep',
-      style: { stroke: artifactColor(artifact.artifact_type), strokeWidth: 1.8 },
-      labelStyle: { fontSize: 9, fill: '#57534e' },
-    };
-  });
-  return { nodes: [...nodes, ...artifactNodes], edges: [...semanticEdges, ...artifactEdges] };
-}
-
-function artifactTypeLabel(type: string): string {
-  if (type === 'dataset') return '数据文件';
-  if (type === 'report') return '报告';
-  if (type === 'visualization') return '可视化';
-  if (type === 'code') return '代码';
-  return '文件';
-}
-
-function artifactColor(type: string): string {
-  if (type === 'dataset') return '#2563eb';
-  if (type === 'report') return '#d97745';
-  if (type === 'visualization') return '#7c3aed';
-  if (type === 'code') return '#0f766e';
-  return '#78716c';
-}
-
-function activityColor(activity: string): string {
-  if (activity === 'Validation' || activity === 'Refinement') return '#7c3aed';
-  if (activity === 'Communication' || activity === 'Synthesis') return '#d97745';
-  if (activity === 'Task Understanding' || activity === 'Data Understanding') return '#0f766e';
-  if (activity === 'Analysis' || activity === 'Exploration') return '#2563eb';
-  return '#78716c';
-}
-
-function activityLabel(activity: string): string {
-  const labels: Record<string, string> = {
-    Exploration: '探索',
-    'Data Understanding': '数据理解',
-    'Data Preparation': '数据准备',
-    'Task Understanding': '任务理解',
-    Analysis: '分析',
-    Communication: '交付',
-    Synthesis: '综合',
-    Validation: '验证',
-    Refinement: '修订',
-  };
-  return labels[activity] || activity;
-}
-
-function actionTypeLabel(actionType?: string, eventType?: string): string {
-  if (actionType === 'command' || eventType === 'command_execution') return 'Agent Command';
-  if (actionType === 'subagent' || eventType === 'subagent_result') return 'Subagent Result';
-  if (actionType === 'control' || eventType === 'control_event') return 'Control Event';
-  return 'Tool Execution';
-}
-
-function Badge({ text, tone }: { text: string; tone: 'red' | 'green' | 'gray' }) {
-  const style = tone === 'red'
-    ? 'text-red-700 bg-red-50'
-    : tone === 'green'
-    ? 'text-green-700 bg-green-50'
-    : 'text-muted bg-stone-100';
-  return <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono ${style}`}>{text}</span>;
+  return {...projection,nodes:[...backdrops,...headings,...nodes],edges,initialNodes:[...headings,...nodes.filter(n=>n.position.y<340)]};
 }
 
 function SemanticMetric({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="flex min-w-0 items-center justify-between gap-2 rounded-2xl border border-line bg-white/80 px-3 py-2">
-      <div className="truncate ot-meta text-muted">{label}</div>
-      <div className="shrink-0 ot-stat text-[21px]">{value}</div>
+    <div className="flex items-center gap-2 text-xs">
+      <span className="text-muted">{label}</span>
+      <span className="font-semibold tabular-nums text-ink">{value}</span>
     </div>
   );
 }
@@ -792,10 +534,11 @@ function SemanticProgressBar({
   compact?: boolean;
 }) {
   const percent = Math.max(0, Math.min(progress?.percent ?? 0, 100));
+  if (progress?.status === 'idle') return <SemanticRuntime metrics={progress} />;
   return (
     <div className={compact ? 'mt-2' : 'mt-6 text-left'}>
       <div className="flex items-center justify-between gap-3 text-[10px] font-mono text-muted mb-1">
-        <span>{progress?.message || '正在启动语义处理'}</span>
+        <span>{progress?.message?.replace(/Episode/g, '阶段').replace('Semantic Workflow', '分析工作流') || '准备整理工作流…'}</span>
         <span>{percent}%</span>
       </div>
       <div className="h-2 rounded-full bg-stone-200 overflow-hidden">
@@ -806,14 +549,71 @@ function SemanticProgressBar({
       </div>
       {!compact && progress?.current && progress?.total && (
         <div className="text-[10px] text-muted font-mono mt-1">
-          Episode {progress.current}/{progress.total} · {progress.stage}
+          阶段 {progress.current}/{progress.total}
         </div>
       )}
       {!compact && progress?.status === 'partial' && (
         <div className="text-[10px] text-orange-700 mt-2">
-          已完成 {progress.completed_episode_count ?? 0}/{progress.total ?? '—'} 个 Episode；
+          已完成 {progress.completed_episode_count ?? 0}/{progress.total ?? '—'} 个阶段；
           当前结果已保存，可从检查点继续。
         </div>
+      )}
+      {progress && !compact && <SemanticRuntime metrics={progress} progress={progress} />}
+      {progress && compact && <div className="mt-1 flex flex-wrap gap-x-3 text-[11px] text-muted">
+        <span>{progress.model || '准备分析'}</span>
+        <span>{progress.completed_episode_count ?? 0}/{progress.total ?? '—'} 个阶段</span>
+        <span>{progress.call_count ?? 0} 次调用</span>
+      </div>}
+    </div>
+  );
+}
+
+const STAGE_LABELS: Record<string, string> = {
+  boundaries: '阶段边界', semantic_annotation: '语义标注',
+  relations: '关系提取', validation: '结果校验',
+};
+
+function duration(seconds: number) {
+  const value = Math.max(0, Math.floor(seconds));
+  return value >= 60 ? `${Math.floor(value / 60)}分${value % 60}秒` : `${value}秒`;
+}
+
+function SemanticRuntime({ metrics, progress }: {
+  metrics: SemanticMetrics;
+  progress?: SemanticProgress;
+}) {
+  const [now, setNow] = useState(Date.now());
+  const active = !!progress && ['running', 'retrying'].includes(progress.status);
+  useEffect(() => {
+    if (!active) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [active]);
+  const updated = progress?.updated_at ? Date.parse(progress.updated_at) : NaN;
+  const extra = active && Number.isFinite(updated) ? Math.max(0, (now - updated) / 1000) : 0;
+  const timings = metrics.stage_timings || [];
+  const currentStage = progress?.stage === 'retrying'
+    ? timings[timings.length - 1]?.stage : progress?.stage;
+  return (
+    <div className="mt-2 rounded-xl bg-[#faf8f5] px-3 py-3 text-xs leading-6 text-muted" aria-label="语义处理运行指标">
+      <div className="break-all text-ink">模型：{metrics.model || '规则模式'}</div>
+      {!!metrics.annotation_concurrency && <div>标注并发：{metrics.annotation_concurrency} 路</div>}
+      {metrics.elapsed_seconds !== undefined && (
+        <div className="mt-1">总耗时 {duration(metrics.elapsed_seconds + extra)} · 调用 {metrics.call_count ?? 0} 次</div>
+      )}
+      {metrics.request_count !== undefined && metrics.request_count !== metrics.call_count && (
+        <div>实际请求 {metrics.request_count} 次（含格式调整与重试）</div>
+      )}
+      {timings.length > 0 && (
+        <table className="w-full mt-1.5 text-left">
+          <thead><tr><th className="font-normal text-[11px]">阶段</th><th className="font-normal text-right text-[11px]">耗时 / 调用</th></tr></thead>
+          <tbody>{timings.map((item) => (
+            <tr key={item.stage}>
+              <td>{STAGE_LABELS[item.stage] || item.stage}</td>
+              <td className="text-right">{duration(item.elapsed_seconds + (item.stage === currentStage ? extra : 0))} / {item.call_count}</td>
+            </tr>
+          ))}</tbody>
+        </table>
       )}
     </div>
   );

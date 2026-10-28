@@ -86,6 +86,24 @@ export interface SemanticRelation {
   confidence_level: string;
 }
 
+export interface SemanticStageTiming {
+  stage: string;
+  elapsed_seconds: number;
+  call_count: number;
+  request_count: number;
+  input_chars: number;
+}
+
+export interface SemanticMetrics {
+  model?: string | null;
+  annotation_concurrency?: number;
+  elapsed_seconds?: number;
+  call_count?: number;
+  request_count?: number;
+  input_chars?: number;
+  stage_timings?: SemanticStageTiming[];
+}
+
 export interface SemanticWorkflow {
   schema_version: string;
   source_events?: {
@@ -103,7 +121,7 @@ export interface SemanticWorkflow {
     sha256: string;
     schema_version: string;
   };
-  inference_run: {
+  inference_run: SemanticMetrics & {
     inference_id: string;
     method: string;
     model?: string | null;
@@ -167,7 +185,24 @@ export interface SemanticWorkflow {
   };
 }
 
-export interface SemanticProgress {
+export type SemanticLane = 'input' | 'planning' | 'execution' | 'revision';
+export interface SemanticSwimlaneGroup {
+  group_id: string; lane: SemanticLane; node_ids: string[];
+  title: string; summary: string; reason: string; confidence: string;
+}
+export interface SemanticSwimlanes {
+  schema_version: 'semantic-swimlanes/0.1'; session_id: string;
+  source_hash: string; source_inference_id: string;
+  groups: SemanticSwimlaneGroup[];
+  inference_run: { model: string; reasoning_effort: string; call_count: number; elapsed_seconds: number };
+  validation: { valid: boolean; stage_count: number; group_count: number };
+}
+export interface SemanticSwimlaneProgress {
+  status: 'idle' | 'scheduled' | 'running' | 'partial' | 'ready';
+  message: string; error?: string; model?: string; elapsed_seconds?: number;
+}
+
+export interface SemanticProgress extends SemanticMetrics {
   session_id: string;
   status: 'idle' | 'scheduled' | 'running' | 'retrying' | 'partial' | 'ready' | 'failed';
   stage: string;
@@ -181,6 +216,7 @@ export interface SemanticProgress {
   retryable?: boolean;
   completed_episode_count?: number;
   failed_episode?: number | null;
+  updated_at?: string;
   last_retry?: {
     attempt?: number;
     max_attempts?: number;

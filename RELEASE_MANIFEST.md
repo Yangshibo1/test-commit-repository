@@ -2,7 +2,48 @@
 
 Snapshot branch: `agentvast-9-15-latest`
 
-Snapshot date: 2026-09-15 (Asia/Shanghai)
+Snapshot date: 2026-10-28 (Asia/Shanghai)
+
+## Current development progress
+
+- Four Web entries: Claude execution, raw Transcript, semantic workflow visualization,
+  and the detailed Event execution workflow.
+- Six normalized Event types, batched AI behavior summaries, a fixed catalog of 13
+  logical relations with evidence review, and four behavior roles: key decision,
+  normal execution, key turning point, and key result.
+- Semantic workflow aggregation into input, planning, execution, and revision swimlanes.
+- Detailed Turns arranged left to right, with each DAG expanding downward; primary
+  events on the left, auxiliary events to the right, artifact badges and file access.
+- Orthogonal routing with shared horizontal channels, conditional right-side ports,
+  and solid/dashed horizontal alignment where obstacles permit. Bottom-to-top ports
+  remain the default; side ports require fewer bends without unrelated line conflicts.
+- Incremental Transcript capture, complete-line checkpoints, Hook-based Turn lifecycle,
+  independent Turn snapshots, and manual selection of Turns for semantic analysis.
+  Capturing facts does not automatically submit AI analysis jobs.
+- Event-specific user feedback: review a prompt containing Event context, submit it to
+  the same Claude session as a new user message, and retain delivery state to prevent
+  duplicate submissions. Historical facts remain unchanged.
+- Terminal geometry ownership, replay/input handling, and serialized prompt delivery.
+- Model configuration example: `gpt-6.1-sol`, medium reasoning effort; actual API
+  credentials and provider configuration remain local.
+
+Related implementation notes: [Turn views](docs/EventWorkflowTurnView.md),
+[dynamic trace](docs/DynamicTurnTraceV1.md), [Event feedback](docs/EventFeedback.md),
+[logical relations](docs/EventLogicalRelationCatalog.md), and
+[semantic swimlanes](docs/SemanticSwimlanes.md).
+
+The current dynamic AI analysis is scoped per Turn. Cross-Turn AI semantic inference
+remains future work; explicit fact/rule relationships are retained. Shared routing is
+obstacle-aware and does not guarantee a completely crossing-free graph.
+
+## Validation for this snapshot
+
+- 145 relevant Python tests passed across observer, Event schema/inference, live trace,
+  feedback, semantic performance/swimlanes, and Web terminal integration.
+- 77 frontend utility/regression tests passed.
+- TypeScript checking and Vite production build passed. Vite reports the existing
+  bundle-size warning.
+- Feedback transport tests use a fake PTY; no test feedback was sent to the real agent.
 
 ## Included system code
 

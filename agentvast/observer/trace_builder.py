@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import re
+import shlex
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -19,6 +20,7 @@ from agentvast.observer.store import (
     session_directory,
     update_manifest,
 )
+from agentvast.observer.event_schema import compact_event, expand_event
 
 
 TRACE_SCHEMA_VERSION = "observer-trace/2.0"
@@ -69,6 +71,10 @@ ARTIFACT_SUFFIXES = {
     ".svg",
     ".py",
     ".ipynb",
+    ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".r", ".sql", ".sh",
+    ".bash", ".ps1", ".jl", ".scala", ".java", ".c", ".cpp", ".h", ".rs", ".go",
+    ".feather", ".arrow", ".db", ".sqlite", ".sqlite3", ".rst", ".rtf",
+    ".webp", ".bmp", ".tiff",
 }
 
 
@@ -254,13 +260,15 @@ def _write_json_atomic(path: Path, value: Any) -> None:
 
 def _artifact_type(path: Path) -> str:
     suffix = path.suffix.lower()
-    if suffix in {".csv", ".tsv", ".json", ".jsonl", ".parquet", ".xlsx", ".xls"}:
+    if path.name.lower() in {"requirements.txt", "package.json", "package-lock.json", "tsconfig.json", "pyproject.toml", "pipfile", "dockerfile", "makefile"} or suffix in {".toml", ".yaml", ".yml", ".css", ".scss", ".vue", ".svelte"}:
+        return "code"
+    if suffix in {".csv", ".tsv", ".json", ".jsonl", ".parquet", ".xlsx", ".xls", ".feather", ".arrow", ".db", ".sqlite", ".sqlite3"}:
         return "dataset"
-    if suffix in {".md", ".txt", ".docx", ".pdf"}:
+    if suffix in {".md", ".txt", ".docx", ".pdf", ".rst", ".rtf"}:
         return "report"
-    if suffix in {".html", ".htm", ".png", ".jpg", ".jpeg", ".gif", ".svg"}:
+    if suffix in {".html", ".htm", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".tiff"}:
         return "visualization"
-    if suffix in {".py", ".ipynb"}:
+    if suffix in {".py", ".ipynb", ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".r", ".sql", ".sh", ".bash", ".ps1", ".jl", ".scala", ".java", ".c", ".cpp", ".h", ".rs", ".go"}:
         return "code"
     return "file"
 
@@ -316,6 +324,8 @@ def _reported_path_candidates(value: Any) -> List[str]:
 
 
 def _shell_redirect_candidates(command: str) -> List[str]:
+    if re.search(r"[;&|`\n]|\$\(", command):
+        return []
     result: List[str] = []
     pattern = re.compile(r"(?:^|\s)(?:>|>>)\s*(?:\"([^\"]+)\"|'([^']+)'|([^\s;&|]+))")
     for match in pattern.finditer(command):
@@ -325,14 +335,49 @@ def _shell_redirect_candidates(command: str) -> List[str]:
     return result
 
 
+def _shell_file_interactions(command: str) -> List[Tuple[str, str, str]]:
+    """Recognize explicit file operands only; never execute or infer arbitrary shell I/O.
+
+    Compound commands, changed working directories and interpreter flags are left
+    unclassified rather than assigning their filenames to the wrong operation.
+    """
+    try:
+        tokens = shlex.split(command)
+    except ValueError:
+        return []
+    if not tokens or re.search(r"[;&|<>`\n]|\$\(", command):
+        return []
+    name = Path(tokens[0]).name.lower()
+    args = tokens[1:]
+    if name in {"cat", "head", "tail"}:
+        operands = []
+        skip = False
+        for arg in args:
+            if skip:
+                skip = False
+            elif arg in {"-n", "-c", "--lines", "--bytes"}:
+                skip = True
+            elif arg == "--":
+                continue
+            elif arg.startswith("-") and not re.fullmatch(r"-(?:[ncbqvEzAseT]+|\d+|[nc]\d+)|--(?:lines|bytes)=\d+", arg):
+                return []
+            elif not arg.startswith("-"):
+                operands.append((arg, "read", "shell_operand"))
+        return operands
+    if (re.fullmatch(r"python(?:\d+(?:\.\d+)*)?", name) or name in {"node", "rscript", "bash", "sh", "zsh"}) and args and not args[0].startswith("-"):
+        return [(args[0], "executed", "shell_operand")]
+    return []
+
+
 def derive_trace_artifacts(
     session_id: str,
     cwd: Optional[str],
     events: Iterable[Mapping[str, Any]],
 ) -> List[Dict[str, Any]]:
-    """Derive file artifacts already evidenced by transcript tool events."""
+    """Derive successful, explicitly evidenced file interactions inside the project."""
     artifacts: Dict[str, Dict[str, Any]] = {}
-    for event in events:
+    category_counts: Counter = Counter()
+    for event in sorted(events, key=lambda item: item.get("sequence", 0)):
         if (
             event.get("event_type") not in {"tool_execution", "command_execution"}
             or event.get("status") != "success"
@@ -343,7 +388,9 @@ def derive_trace_artifacts(
         lowered = tool_name.lower()
         tool_input = payload.get("input") if isinstance(payload.get("input"), dict) else {}
         candidates: List[Tuple[str, str, str]] = []
-        if lowered == "write":
+        if lowered in {"read", "notebookread"}:
+            candidates.append((str(tool_input.get("file_path") or tool_input.get("notebook_path") or tool_input.get("path") or ""), "read", "tool_input"))
+        elif lowered == "write":
             candidates.append(
                 (
                     str(tool_input.get("file_path") or tool_input.get("path") or ""),
@@ -364,8 +411,9 @@ def derive_trace_artifacts(
                     "tool_input",
                 )
             )
-        elif lowered in {"bash", "shell", "powershell"}:
-            command = str(tool_input.get("command") or "")
+        elif lowered in COMMAND_TOOL_NAMES:
+            command = str(tool_input.get("command") or payload.get("command") or "")
+            candidates.extend(_shell_file_interactions(command))
             candidates.extend(
                 (path, "created", "shell_redirect")
                 for path in _shell_redirect_candidates(command)
@@ -377,7 +425,7 @@ def derive_trace_artifacts(
 
         for raw_path, operation, source in candidates:
             resolved = _resolved_artifact_path(raw_path, cwd)
-            if resolved is None or not resolved.is_file():
+            if resolved is None or resolved.is_dir() or (source == "tool_output" and not resolved.is_file()):
                 continue
             normalized = os.path.normcase(str(resolved))
             artifact = artifacts.setdefault(
@@ -387,22 +435,45 @@ def derive_trace_artifacts(
                     "name": resolved.name,
                     "path": _display_artifact_path(resolved, cwd),
                     "artifact_type": _artifact_type(resolved),
-                    "exists": True,
+                    "exists": resolved.is_file(),
                     "evidence_event_ids": [],
                     "operations": [],
                 },
             )
             event_id = str(event.get("event_id") or "")
-            if event_id and event_id not in artifact["evidence_event_ids"]:
-                artifact["evidence_event_ids"].append(event_id)
-                artifact["operations"].append(
-                    {
-                        "event_id": event_id,
-                        "operation": operation,
-                        "source": source,
-                    }
-                )
+            if "category_index" not in artifact:
+                category_counts[artifact["artifact_type"]] += 1
+                artifact["category_index"] = category_counts[artifact["artifact_type"]]
+            if event_id:
+                if event_id not in artifact["evidence_event_ids"]:
+                    artifact["evidence_event_ids"].append(event_id)
+                interaction = {"event_id": event_id, "operation": operation, "source": source}
+                if interaction not in artifact["operations"]:
+                    artifact["operations"].append(interaction)
     return list(artifacts.values())
+
+
+def _coalesce_tool_records(records: List[Dict[str, Any]], request: bool) -> Dict[str, Any]:
+    """Deduplicate identical evidence, retaining distinct records as alternatives."""
+    variants: List[Dict[str, Any]] = []
+    seen: Set[str] = set()
+    for record in records:
+        content = {"block": record["block"]}
+        if request:
+            content["response_key"] = record["response_key"]
+        else:
+            content["structured_result"] = record.get("structured_result")
+        signature = json.dumps(content, sort_keys=True, ensure_ascii=False, default=str)
+        if signature not in seen:
+            seen.add(signature)
+            variants.append(record)
+    selected = variants[0] if request else variants[-1]
+    return {
+        **selected,
+        "all_records": records,
+        "alternatives": [item for item in variants if item is not selected],
+        "conflict": len(variants) > 1,
+    }
 
 
 def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[str, Any]:
@@ -562,7 +633,7 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
         line_to_turn[line_number] = current_turn
 
     # Collect tool results before grouping assistant responses.
-    tool_results: Dict[str, Dict[str, Any]] = {}
+    result_records: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
     orphan_result_ids: Set[str] = set()
     for line_number, record in parsed:
         if record.get("type") != "user":
@@ -576,16 +647,21 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             tool_use_id = str(block.get("tool_use_id") or "")
             if not tool_use_id:
                 continue
-            tool_results[tool_use_id] = {
+            result_records[tool_use_id].append({
                 "block": block,
                 "record": record,
                 "line_number": line_number,
                 "block_index": block_index,
                 "structured_result": record.get("toolUseResult"),
-            }
+            })
+
+    tool_results = {
+        tool_id: _coalesce_tool_records(items, request=False)
+        for tool_id, items in result_records.items()
+    }
 
     response_groups: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
-    tool_uses: Dict[str, Dict[str, Any]] = {}
+    use_records: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
     duplicate_tool_ids: Set[str] = set()
     for line_number, record in parsed:
         if record.get("type") != "assistant":
@@ -608,9 +684,9 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             tool_use_id = str(block.get("id") or "")
             if not tool_use_id:
                 continue
-            if tool_use_id in tool_uses:
+            if tool_use_id in use_records:
                 duplicate_tool_ids.add(tool_use_id)
-            tool_uses[tool_use_id] = {
+            use_records[tool_use_id].append({
                 "block": block,
                 "record": record,
                 "message": message,
@@ -619,12 +695,18 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
                 "turn_id": turn_id,
                 "response_key": group_key,
                 "response_id": response_id,
-            }
+            })
+
+    tool_uses = {
+        tool_id: _coalesce_tool_records(items, request=True)
+        for tool_id, items in use_records.items()
+    }
 
     response_event_by_key: Dict[str, str] = {}
     response_tool_ids: DefaultDict[str, List[str]] = defaultdict(list)
     for tool_use_id, use in tool_uses.items():
-        response_tool_ids[use["response_key"]].append(tool_use_id)
+        for response_key in dict.fromkeys(item["response_key"] for item in use["all_records"]):
+            response_tool_ids[response_key].append(tool_use_id)
 
     for group_key, group in response_groups.items():
         ordered = sorted(group, key=lambda item: item["line_number"])
@@ -735,20 +817,22 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
         result_block = result["block"] if result else {}
         result_record = result["record"] if result else {}
         structured_result = result.get("structured_result") if result else None
-        duration_ms = (
+        conflict = use["conflict"] or bool(result and result["conflict"])
+        duration_ms = None if conflict else (
             structured_result.get("durationMs") if isinstance(structured_result, dict) else None
         )
         event_id = stable_id("event", session_id, "tool", tool_use_id)
         status = (
-            "error"
+            "conflicting" if conflict else "error"
             if result and bool(result_block.get("is_error"))
             else "success"
             if result
             else "incomplete"
         )
-        source_lines = [int(use["line_number"])]
-        if result:
-            source_lines.append(int(result["line_number"]))
+        request_sources = use["all_records"]
+        result_sources = result["all_records"] if result else []
+        all_sources = request_sources + result_sources
+        source_lines = sorted({int(item["line_number"]) for item in all_sources})
         tool_name = str(block.get("name") or "Tool")
         is_command = _is_command_tool(tool_name)
         tool_input = block.get("input") if isinstance(block.get("input"), dict) else {}
@@ -767,6 +851,23 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             ),
             "batch_response_id": use.get("response_id"),
         }
+        if use["conflict"]:
+            payload["request_conflict"] = True
+            payload["alternate_requests"] = [
+                {"name": item["block"].get("name"), "input": item["block"].get("input"),
+                 "response_id": item.get("response_id"), "turn_id": item.get("turn_id"),
+                 "source_lines": [item["line_number"]]}
+                for item in use["alternatives"]
+            ]
+        if result and result["conflict"]:
+            payload["result_conflict"] = True
+            payload["alternate_results"] = [
+                {"output": item["block"].get("content"),
+                 "is_error": item["block"].get("is_error"),
+                 "structured_result": item.get("structured_result"),
+                 "source_lines": [item["line_number"]]}
+                for item in result["alternatives"]
+            ]
         if is_command:
             payload.update(
                 {
@@ -782,13 +883,9 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
                         if isinstance(structured_result, dict)
                         else None
                     ),
-                    "stdout": result_block.get("content") if result else None,
-                    "stderr": (
-                        result_block.get("content")
-                        if result and bool(result_block.get("is_error"))
-                        else None
-                    ),
-                    "timed_out": status == "incomplete",
+                    "stdout": structured_result.get("stdout") if isinstance(structured_result, dict) else None,
+                    "stderr": structured_result.get("stderr") if isinstance(structured_result, dict) else None,
+                    "timed_out": structured_result.get("timedOut") if isinstance(structured_result, dict) else None,
                     "background": bool(tool_input.get("run_in_background")),
                 }
             )
@@ -826,23 +923,41 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             "source_lines": sorted(source_lines),
             "provenance": _event_provenance(
                 source_lines,
-                [use["record"].get("uuid"), result_record.get("uuid")],
+                [item["record"].get("uuid") for item in all_sources],
             ),
             "hidden_by_default": False,
         }
+        event["provenance"]["source_blocks"] = [
+            {"line_number": item["line_number"], "block_index": item["block_index"], "role": role}
+            for role, sources in (("request", request_sources), ("result", result_sources))
+            for item in sources
+        ]
         events.append(event)
         tool_event_by_id[tool_use_id] = event_id
-        uuid_to_event[str(use["record"].get("uuid") or "")] = response_event_by_key.get(
-            use["response_key"], event_id
-        )
-        if result and result_record.get("uuid"):
-            uuid_to_event[str(result_record["uuid"])] = event_id
+        for item in request_sources:
+            uuid_to_event[str(item["record"].get("uuid") or "")] = response_event_by_key.get(item["response_key"], event_id)
+            add_relation(response_event_by_key.get(item["response_key"], ""), event_id, "invokes")
+        for item in result_sources:
+            if item["record"].get("uuid"):
+                uuid_to_event[str(item["record"]["uuid"])] = event_id
         add_relation(response_event_by_key.get(use["response_key"], ""), event_id, "invokes")
 
     # Build a compact turn graph including asynchronous Subagent results. Keep
     # ``next`` for temporal audit compatibility, while also emitting the
     # deterministic causal edges used by the execution DAG.
     event_by_id = {str(event.get("event_id") or ""): event for event in events}
+    # Async task notifications may arrive after a newer human prompt. The
+    # originating tool-use id is authoritative for their Turn membership.
+    for event in events:
+        if event.get("event_type") != "subagent_result":
+            continue
+        origin_id = tool_event_by_id.get(str(event.get("tool_use_id") or ""))
+        owner = event_by_id.get(origin_id, {}).get("turn_id")
+        if owner:
+            event["turn_id"] = owner
+            event["scope"]["turn_id"] = owner
+            for line in event.get("source_lines") or []:
+                line_to_turn[line] = owner
     for turn in turns:
         turn_id = turn["turn_id"]
         stage_items = sorted(
@@ -1121,6 +1236,9 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
             "incomplete_tool_calls": incomplete_tools,
             "orphan_tool_results": sorted(orphan_result_ids),
             "duplicate_tool_use_ids": sorted(duplicate_tool_ids),
+            "duplicate_tool_result_ids": sorted(tool_id for tool_id, items in result_records.items() if len(items) > 1),
+            "conflicting_tool_use_ids": sorted(tool_id for tool_id, item in tool_uses.items() if item["conflict"]),
+            "conflicting_tool_result_ids": sorted(tool_id for tool_id, item in tool_results.items() if item["conflict"]),
             "broken_parent_uuids": sorted(broken_parent_uuids),
             "record_type_counts": dict(sorted(record_types.items())),
             "notes": [
@@ -1131,12 +1249,13 @@ def build_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[st
         },
     }
     output = directory / "derived" / "observer_trace.json"
-    _write_json_atomic(output, trace)
+    compact_events = [compact_event(event) for event in events]
+    _write_json_atomic(output, {**trace, "event_storage_version": "compact/1", "events": compact_events})
     events_output = directory / "derived" / "events.jsonl"
     events_output.write_text(
         "".join(
             json.dumps(event, ensure_ascii=False, default=str) + "\n"
-            for event in events
+            for event in compact_events
         ),
         encoding="utf-8",
     )
@@ -1167,6 +1286,7 @@ def load_observer_trace(session_id: str, root: Optional[str] = None) -> Dict[str
         or value.get("schema_version") not in SUPPORTED_TRACE_SCHEMA_VERSIONS
     ):
         raise ValueError("observer_trace.json has an unsupported schema")
+    value["events"] = [expand_event(event) for event in value.get("events") or []]
     value["artifacts"] = derive_trace_artifacts(
         session_id,
         (value.get("session") or {}).get("cwd"),

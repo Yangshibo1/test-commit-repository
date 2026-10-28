@@ -139,10 +139,48 @@ def test_trace_artifacts_are_derived_from_existing_file_events(tmp_path: Path):
 
     assert [(item["path"], item["artifact_type"]) for item in artifacts] == [
         ("result/summary.csv", "dataset"),
+        ("analyze.py", "code"),
         ("result/report.md", "report"),
     ]
     assert artifacts[0]["evidence_event_ids"] == ["event-write"]
-    assert artifacts[1]["operations"][0]["source"] == "tool_output"
+    assert artifacts[1]["operations"][0]["operation"] == "executed"
+    assert artifacts[1]["exists"] is False
+    assert artifacts[2]["operations"][0]["source"] == "tool_output"
+
+
+def test_artifact_reads_edits_and_category_numbering_preserve_file_identity(tmp_path: Path):
+    (tmp_path / "data.csv").write_text("value\n1\n")
+    (tmp_path / "analysis.ts").write_text("const value = 1;")
+    (tmp_path / "plot.svg").write_text("<svg />")
+    def event(seq, name, path, status="success"):
+        return {"event_id": f"e{seq}", "sequence": seq, "event_type": "tool_execution", "status": status,
+                "payload": {"name": name, "input": {"file_path": path}}}
+    events = [event(1, "Read", "data.csv"), event(2, "Read", "analysis.ts"),
+              event(3, "Edit", "analysis.ts"), event(4, "Write", "plot.svg"),
+              event(5, "Read", "gone.csv"), event(6, "Read", "failed.csv", "error"),
+              event(7, "Read", "../outside.csv"), event(8, "Read", str(tmp_path / "data.csv"))]
+    artifacts = derive_trace_artifacts("s", str(tmp_path), reversed(events))
+    by_path = {a["path"]: a for a in artifacts}
+    assert list(by_path) == ["data.csv", "analysis.ts", "plot.svg", "gone.csv"]
+    assert [a["category_index"] for a in artifacts] == [1, 1, 1, 2]
+    assert [op["operation"] for op in by_path["analysis.ts"]["operations"]] == ["read", "modified"]
+    assert by_path["data.csv"]["evidence_event_ids"] == ["e1", "e8"]
+    assert by_path["gone.csv"]["exists"] is False
+    (tmp_path / "data.csv").unlink()
+    updated = derive_trace_artifacts("s", str(tmp_path), events)
+    assert [(a["artifact_id"], a["category_index"]) for a in updated] == [(a["artifact_id"], a["category_index"]) for a in artifacts]
+    assert updated[0]["exists"] is False
+
+
+def test_artifact_shell_interactions_require_explicit_operands(tmp_path: Path):
+    commands = ["python 'analysis script.py' --input data.csv", "head -n 5 data.csv",
+                "python -c 'print(\"not-a-file.csv\")'", "cd subdir && cat wrong.csv", "echo mentions.csv",
+                "cat 'report with space.md'"]
+    events = [{"event_id": f"e{i}", "sequence": i, "event_type": "command_execution", "status": "success",
+               "payload": {"name": "Bash", "input": {"command": command}}} for i, command in enumerate(commands)]
+    artifacts = derive_trace_artifacts("s", str(tmp_path), events)
+    assert [(a["path"], a["operations"][0]["operation"]) for a in artifacts] == [
+        ("analysis script.py", "executed"), ("data.csv", "read"), ("report with space.md", "read")]
 
 
 def test_transcript_only_session_builds_degraded_canonical_trajectory(tmp_path: Path):
@@ -363,14 +401,14 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
     assert len(responses) == 2
     batch = next(item for item in responses if item["payload"]["tool_use_ids"])
     assert batch["payload"]["tool_use_ids"] == ["tool-a", "tool-b"]
-    assert batch["payload"]["response_kind"] == "tool_request"
+    assert batch["event_subtype"] == "tool_request"
     tools = [item for item in first["events"] if item["event_type"] == "tool_execution"]
-    glob = next(item for item in tools if item["tool_use_id"] == "tool-a")
-    assert glob["payload"]["duration_ms"] == 25
+    glob = next(item for item in tools if item["scope"]["tool_use_id"] == "tool-a")
+    assert glob["time"]["duration_ms"] == 25
     assert glob["payload"]["structured_result"]["filenames"] == ["data.txt"]
     prompt = next(item for item in first["events"] if item["event_type"] == "user_prompt")
-    final = next(item for item in responses if item["payload"]["is_final"])
-    assert final["payload"]["response_kind"] == "text"
+    final = next(item for item in responses if item["payload"].get("stop_reason") == "end_turn")
+    assert final["event_subtype"] == "text"
     assert first["schema_version"] == "observer-trace/2.0"
     assert not any(item["event_type"] == "local_command" for item in first["events"])
     relation_triples = {
@@ -560,7 +598,7 @@ def test_transcript_trace_filters_local_commands_and_rebuilds_tool_batch(tmp_pat
 
     revalidated = revalidate_semantic_workflow(session_id, str(root))
     assert revalidated["validation"]["valid"] is True
-    assert revalidated["inference_run"]["processor_version"] == "0.6.0"
+    assert revalidated["inference_run"]["processor_version"] == "0.8.0"
 
     semantic = run_semantic_workflow(session_id, str(root), rules_only=True)
     assert semantic["validation"]["valid"] is True
@@ -734,17 +772,17 @@ def test_event_schema_v2_separates_agent_commands_and_system_telemetry(tmp_path:
     final = next(
         event
         for event in trace["events"]
-        if event["event_type"] == "model_response" and event["payload"]["is_final"]
+        if event["event_type"] == "model_response" and event["payload"].get("stop_reason") == "end_turn"
     )
 
-    assert command["event_class"] == "execution"
+    assert "event_class" not in command
     assert command["event_subtype"] == "shell_command"
-    assert command["payload"]["command"] == "python analyze.py"
+    assert command["payload"]["input"]["command"] == "python analyze.py"
     assert command["payload"]["exit_code"] == 0
     assert command["scope"]["tool_use_id"] == "command-1"
     assert control["event_subtype"] == "permission_denied"
-    assert control["event_class"] == "control"
-    assert final["payload"]["response_kind"] == "text"
+    assert "event_class" not in control
+    assert final["event_subtype"] == "text"
     assert [item["subtype"] for item in trace["telemetry"]] == ["turn_duration"]
     assert trace["metrics"]["command_execution_count"] == 1
     assert trace["metrics"]["telemetry_record_count"] == 1
@@ -1171,7 +1209,7 @@ def test_observer_trace_links_agent_tool_to_subagent_result(tmp_path: Path):
     agent_tool = next(
         event
         for event in trace["events"]
-        if event["event_type"] == "tool_execution" and event["tool_use_id"] == "tool-agent"
+        if event["event_type"] == "tool_execution" and event["scope"]["tool_use_id"] == "tool-agent"
     )
     subagent = next(event for event in trace["events"] if event["event_type"] == "subagent_result")
     relation_types = {

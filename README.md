@@ -16,6 +16,7 @@ AgentVAST 是一个面向 Coding Agent 的数据分析工作流记录器。
 
 ## 文档入口
 
+- [当前开发进度与快照说明（2026-10-28）](RELEASE_MANIFEST.md)
 - [文档索引](docs/README.md)
 - [系统设计总览](docs/AgentVAST系统设计总览.md)
 - [schema 1.3 记录字段](docs/记录字段设计.md)

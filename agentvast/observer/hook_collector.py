@@ -68,6 +68,7 @@ def collect_event(payload: Any, raw_text: str = "") -> Optional[Dict[str, Any]]:
     }
     event_name = str(payload.get("hook_event_name") or "")
     if event_name == "SessionStart":
+        manifest_update["ended_at"] = None
         manifest_update["started_at"] = event["observer_received_at"]
         if payload.get("model"):
             manifest_update["model_at_start"] = payload.get("model")

@@ -2,10 +2,16 @@
 
 ## 定位
 
+当前「工作流可视化」在此阶段产物上增加四泳道的聚合层，见 [四泳道语义聚合](SemanticSwimlanes.md)。原阶段与证据保持完整。
+
 Semantic Workflow 是对 Claude transcript 可观察行为的事后语义重建，不是 hidden
 chain-of-thought、内部 Plan 或真实因果推理。原始 `transcript.jsonl` 是不可变证据，
 `events.jsonl` 是语义分析的标准输入，`observer_trace.json` 提供关系、Turn 和产物上下文；
 语义文件不能覆盖这些来源。
+
+Event 精简存储与旧格式均通过同一适配器读取，规则见 [EventSchemaV2.md](EventSchemaV2.md)。
+工具请求/结果的冲突标记和差异证据也进入模型证据包；普通命令返回不再当作独立 stdout，
+未知超时状态保持 null。处理版本 0.8.0 不复用旧版本语义检查点。
 
 处理路径：
 
@@ -88,6 +94,23 @@ python -m agentvast.cli observe semantic <session-id> --resume semantic-xxxxxxxx
 
 恢复时会复用已冻结的 Boundary 和已经验证成功的 Episode，只重试失败 Episode 及后续阶段。
 `--force` 用于创建全新推断；`--resume` 用于继续已有推断，两者语义不同。
+
+当前项目语义模型为 `gpt-6.1-sol`，思考强度 `medium`，与 CC Switch 的交互终端模型独立。Episode 标注默认
+4 路并发，可用 `AGENTVAST_SEMANTIC_CONCURRENCY` 配置为 1–8。请求间隔限制按所有
+工作线程的请求开始时间统一执行。边界判断和关系提取仍按依赖顺序运行。标注结果按原始
+Episode 顺序组装；某一路失败后停止派发新任务，其他已启动任务完成并保存各自检查点。
+已知不支持 strict schema 的网关可配置 `AGENTVAST_SEMANTIC_RESPONSE_MODE=json_object`，
+避免每次新任务重复探测；默认 `auto` 保留 strict schema 探测与降级。JSON 结果仍需本地校验。
+
+证据摘要实行总字符预算，保留开头、结尾和优先挑选的错误、结论、数字，并记录截断标记、
+原始长度和 SHA-256。嵌套工具输入的字符串预算由所有字段共享，避免每个字段重复占满上限。
+这些限制只影响模型输入，原始 transcript 和 events 文件保持完整。
+
+`inference_run` 和检查点保存模型、并发度、总耗时、各阶段墙钟耗时、逻辑调用次数、HTTP
+请求次数及输入字符数。单次模型响应另存重试次数、格式回退后的实际 HTTP 请求数及上游
+返回的 token usage；并行请求耗时不能简单相加作为总耗时。恢复时累计实际运行时间，不计
+两次运行之间的暂停时间。前端在处理中和完成后均展示运行指标；旧版本没有指标时显示
+已有模型信息。模型、提示要求或处理版本改变时，不复用不匹配的完整结果或部分检查点。
 
 仅修改确定性 Validator 后，可以不重复调用模型，直接重算校验和校验后置信度：
 

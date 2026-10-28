@@ -178,6 +178,10 @@ control_event
 `time` 和 `provenance`。完整 Event 流同时写入 `derived/events.jsonl`；原始 transcript 继续作为
 不可变证据保存在 `raw/transcript.jsonl`，不会因为 Event 精简而被删除。
 
+新 derive 使用精简存储：关联 ID 统一在 scope，时间统一在 time，原始引用统一在 provenance；
+event_class 等旧别名在读取接口中恢复。重复 Tool Use 保留全部来源，内容不一致时标记冲突。
+具体字段与兼容方式见 [EventSchemaV2.md](EventSchemaV2.md)。
+
 `observer_trace.json` 中只有 `observed` 和可重复计算的 `derived` 数据，不生成 Exploration、
 Analysis、Validation 等语义阶段。工具调用到结果之间的 transcript 时间差记录为
 `observed_elapsed_ms`，它不是精确工具运行时间；只有原始结构化结果提供的 `durationMs` 才作为
@@ -197,7 +201,8 @@ GET /api/observations/<session-id>/trace
 `observer_trace.json`。该页面没有启动、停止、审批或修改 Claude 的控制能力。
 
 页面提供“语义工作流 / 执行轨迹”两级视图。执行轨迹保留 Event 与 transcript 行号回链，并
-显示工具执行过程中生成的本地文件节点；点击文件节点可由操作系统默认应用直接打开。语义
+在 Event 卡片右下角显示关联文件的分类图标和编号，覆盖有明确证据的读取、写入、修改及脚本运行；
+点击角标或产物目录条目可由操作系统默认应用直接打开当前本地文件。语义
 工作流属于独立的事后推断层，生成与人工校正规则见
 [SemanticWorkflowV1.md](SemanticWorkflowV1.md)。人工校正只写入 Observer 派生目录，不会
 向 Claude 发送消息或改变已记录的会话。

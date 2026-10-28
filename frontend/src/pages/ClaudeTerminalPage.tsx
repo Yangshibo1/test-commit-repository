@@ -4,8 +4,18 @@ import ClaudeTerminal, {
   SocketState,
   TerminalProcessStatus,
 } from '../components/ClaudeTerminal';
+import { WorkbenchPage } from '../types/navigation';
 
 const FALLBACK_PROJECT = '';
+const LAST_CLAUDE_SESSION_KEY = 'agentvast.lastClaudeSession';
+
+function lastClaudeSession(): string | null {
+  try {
+    return window.localStorage.getItem(LAST_CLAUDE_SESSION_KEY);
+  } catch {
+    return null;
+  }
+}
 
 interface PlanNode {
   node_id: string;
@@ -56,21 +66,28 @@ async function responseJson(response: Response) {
   return body;
 }
 
-function ClaudeTerminalPage() {
+interface Props {
+  onNavigate: (page: WorkbenchPage, sessionId?: string) => void;
+  visible: boolean;
+}
+
+function ClaudeTerminalPage({ onNavigate, visible }: Props) {
   const terminalRef = useRef<ClaudeTerminalHandle | null>(null);
   const trackedRunIdRef = useRef<string | null>(null);
   const displayedRunIdRef = useRef<string | null>(null);
   const planScrollRef = useRef<HTMLDivElement | null>(null);
   const projectRootEditedRef = useRef(false);
+  const claudeCommandEditedRef = useRef(false);
   const [projectRoot, setProjectRoot] = useState(FALLBACK_PROJECT);
   const [defaultProjectRoot, setDefaultProjectRoot] = useState(FALLBACK_PROJECT);
-  const [claudeCommand, setClaudeCommand] = useState('claude');
+  const [claudeCommand, setClaudeCommand] = useState('');
   const [backendState, setBackendState] = useState<'checking' | 'online' | 'offline'>('checking');
   const [socketState, setSocketState] = useState<SocketState>('idle');
+  const [resizeOwnership, setResizeOwnership] = useState(false);
   const [process, setProcess] = useState<TerminalProcessStatus | null>(null);
   const [workflow, setWorkflow] = useState<WorkflowState | null>(null);
   const [trackedRunId, setTrackedRunId] = useState<string | null>(null);
-  const [recoveryClaudeSessionId, setRecoveryClaudeSessionId] = useState<string | null>(null);
+  const [recoveryClaudeSessionId, setRecoveryClaudeSessionId] = useState<string | null>(lastClaudeSession);
   const [initialTask, setInitialTask] = useState('');
   const [initialInputFiles, setInitialInputFiles] = useState('');
   const [newTraceTask, setNewTraceTask] = useState('');
@@ -82,6 +99,7 @@ function ClaudeTerminalPage() {
   const [planChangeReason, setPlanChangeReason] = useState('');
   const [planRevisionRequest, setPlanRevisionRequest] = useState('');
   const [newTraceOpen, setNewTraceOpen] = useState(false);
+  const [controlsOpen, setControlsOpen] = useState(true);
   const [waitingPlanRevision, setWaitingPlanRevision] = useState<{ runId: string; baseVersion: number } | null>(null);
   const [planNotice, setPlanNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -106,34 +124,35 @@ function ClaudeTerminalPage() {
   const refresh = useCallback(async () => {
     try {
       const health = await responseJson(await fetch('/api/health'));
-      if (!Array.isArray(health.capabilities) || !health.capabilities.includes('finish_trace')) {
+      if (!Array.isArray(health.capabilities) || !health.capabilities.includes('passive_observer_terminal')) {
         throw new Error('后端版本过旧，请关闭旧服务后重新运行“启动AgentVAST.bat”');
       }
       setBackendState('online');
+      setResizeOwnership(health.capabilities.includes('terminal_size_ownership'));
       const backendDefaultProject = String(health.default_project || '').trim();
+      const backendDefaultClaudeCommand = String(health.default_claude_command || '').trim();
       setDefaultProjectRoot(backendDefaultProject);
       setProjectRoot((current) => (
         !projectRootEditedRef.current || !current.trim()
           ? backendDefaultProject
           : current
       ));
+      setClaudeCommand((current) => (
+        !claudeCommandEditedRef.current || !current.trim()
+          ? backendDefaultClaudeCommand
+          : current
+      ));
       const status = await responseJson(await fetch('/api/terminal'));
       setProcess(status.session ?? null);
-      const current = await responseJson(await fetch('/api/runs/current'));
-      if (current.state) {
-        const nextTrackedRunId = current.state.run.status === 'active' ? current.state.run.run_id : null;
-        trackedRunIdRef.current = nextTrackedRunId;
-        setWorkflow(current.state);
-        setTrackedRunId(nextTrackedRunId);
-        if (!current.state.plan) resetPlanModule();
-        setRecoveryClaudeSessionId(current.run?.claude_session_id ?? null);
-      } else {
-        trackedRunIdRef.current = null;
-        setWorkflow(null);
-        setTrackedRunId(null);
-        resetPlanModule();
-        setRecoveryClaudeSessionId(null);
+      const lastSessionId = status.session?.claude_session_id;
+      if (lastSessionId) {
+        try { window.localStorage.setItem(LAST_CLAUDE_SESSION_KEY, lastSessionId); } catch { /* Storage may be disabled. */ }
       }
+      trackedRunIdRef.current = null;
+      setWorkflow(null);
+      setTrackedRunId(null);
+      resetPlanModule();
+      setRecoveryClaudeSessionId(lastSessionId || lastClaudeSession());
       setError(null);
     } catch (caught) {
       setBackendState('offline');
@@ -215,10 +234,11 @@ function ClaudeTerminalPage() {
       }
       const request: Record<string, unknown> = {
         project_root: normalizedProjectRoot,
-        claude_command: claudeCommand.trim() || 'claude',
-        rows: 36,
-        cols: 120,
+        ...terminalRef.current?.getSize(),
       };
+      if (claudeCommandEditedRef.current && claudeCommand.trim()) {
+        request.claude_command = claudeCommand.trim();
+      }
       if (mode === 'resume' && process) {
         request.resume_claude_session_id = process.claude_session_id;
       }
@@ -540,6 +560,9 @@ function ClaudeTerminalPage() {
   };
 
   const running = process?.state === 'running';
+  useEffect(() => {
+    setControlsOpen(!running);
+  }, [running]);
   const runActive = workflow?.run.status === 'active';
   const activeNode = useMemo(
     () => workflow?.nodes.find((node) => node.status === 'active') ?? null,
@@ -613,31 +636,36 @@ function ClaudeTerminalPage() {
   };
 
   return (
-    <div className="h-full min-h-0 p-4 grid grid-cols-[minmax(640px,1fr)_390px] gap-4">
-      <section className="min-h-0 flex flex-col rounded-3xl border border-[rgba(184,165,143,0.48)] bg-[rgba(255,255,255,0.86)] shadow-lg p-3">
-        <div className="h-11 shrink-0 flex items-center px-2 gap-3">
-          <div className="flex gap-1.5">
+    <div className="relative h-full w-full min-h-0 min-w-0 flex flex-col p-2">
+      <section aria-label="Claude 终端" className="flex-1 min-w-0 min-h-0 flex flex-col rounded-2xl border border-[rgba(184,165,143,0.48)] bg-[rgba(255,255,255,0.86)] shadow-lg p-2">
+        <div className="shrink-0 flex flex-wrap items-center px-1 pb-2 gap-x-3 gap-y-1.5">
+          <div className="hidden sm:flex gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-[#d96c55]" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#dcaa55]" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#719d63]" />
           </div>
-          <span className="font-mono text-xs text-muted">Claude Code · interactive ConPTY</span>
+          <span className="font-mono text-xs text-muted">Claude Code</span>
           {runActive && (
             <span className="px-2.5 py-1 rounded-full text-[10px] font-mono text-accent bg-[#fff0e6] border border-[#e7b08d]">
               RECORDING · {phaseLabel[workflowPhase ?? 'planning'] ?? workflowPhase}
             </span>
           )}
-          <span className={`ml-auto px-2.5 py-1 rounded-full text-[10px] font-mono border ${
+          <span className={`ml-auto px-2 py-1 rounded-full text-[10px] font-mono border ${
             running && socketState === 'connected'
               ? 'text-green-700 bg-green-50 border-green-200'
               : 'text-muted bg-white border-line'
           }`}>
-            {running ? 'PROCESS RUNNING' : 'NO ACTIVE PROCESS'} · WS {socketState.toUpperCase()}
+            {running ? '运行中' : '未启动'} · WS {socketState.toUpperCase()}
           </span>
+          <button type="button" disabled={!running} onClick={()=>terminalRef.current?.redraw()} title="重新绘制屏幕，保留输入和会话历史" className="px-3 py-1.5 rounded-lg border border-line bg-white text-xs text-accent whitespace-nowrap disabled:opacity-40">重绘终端</button>
+          <button type="button" aria-expanded={controlsOpen} aria-controls="claude-session-controls" onClick={() => setControlsOpen(!controlsOpen)} className="px-3 py-1.5 rounded-lg border border-line bg-white text-xs text-accent whitespace-nowrap">{controlsOpen ? '收起设置' : '会话设置'}</button>
         </div>
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 min-w-0">
           <ClaudeTerminal
+            key={process?.session_id || 'idle-terminal'}
             ref={terminalRef}
+            visible={visible}
+            resizeOwnership={resizeOwnership}
             sessionId={process?.session_id ?? null}
             onSocketState={setSocketState}
             onProcessStatus={handleProcessStatus}
@@ -646,13 +674,15 @@ function ClaudeTerminalPage() {
         </div>
       </section>
 
-      <aside className="min-h-0 overflow-hidden flex flex-col rounded-3xl border border-[rgba(184,165,143,0.48)] bg-panel shadow-lg p-5">
+      <aside id="claude-session-controls" aria-label="Claude 会话设置" className={`${controlsOpen ? 'flex' : 'hidden'} absolute z-10 right-3 top-14 bottom-3 w-[390px] max-w-[calc(100%-1.5rem)] min-h-0 overflow-hidden flex-col rounded-2xl border border-[rgba(184,165,143,0.48)] bg-panel shadow-2xl p-4`}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="font-serif text-xl">Claude 与记录控制</h2>
-            <p className="text-xs text-muted mt-1 leading-5">普通对话和 AgentVAST 记录共用同一个 Claude 会话。</p>
+            <h2 className="font-serif text-xl">Claude 运行</h2>
+            <p className="text-xs text-muted mt-1 leading-5">在终端中执行任务，结束会话后查看原始记录和工作流。</p>
           </div>
-          <span className={`mt-1 w-2.5 h-2.5 rounded-full ${backendState === 'online' ? 'bg-green-500' : backendState === 'checking' ? 'bg-amber-400' : 'bg-red-500'}`} />
+          <button type="button" aria-label="关闭会话设置" onClick={() => setControlsOpen(false)} className="shrink-0 p-1 rounded-lg text-muted hover:bg-stone-100">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg>
+          </button>
         </div>
 
         <div ref={planScrollRef} className="flex-1 min-h-0 overflow-auto pr-1">
@@ -686,11 +716,19 @@ function ClaudeTerminalPage() {
             </label>
             <label className="block">
               <span className="block text-[10px] font-mono text-muted mb-1">CLAUDE COMMAND</span>
-              <input value={claudeCommand} onChange={(event) => setClaudeCommand(event.target.value)} className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs font-mono outline-none focus:border-accent" />
+              <input
+                value={claudeCommand}
+                onChange={(event) => {
+                  claudeCommandEditedRef.current = true;
+                  setClaudeCommand(event.target.value);
+                }}
+                className="w-full px-3 py-2 rounded-xl border border-line bg-white text-xs font-mono outline-none focus:border-accent"
+              />
+              <p className="mt-1 text-[11px] text-muted leading-4">默认读取 CC Switch / Claude 全局配置；手动修改后，下次启动或恢复会话时生效。</p>
             </label>
             <div className="p-2.5 rounded-xl border border-line bg-white text-xs">
-              Claude 统一以完全权限模式启动
-              <span className="block text-muted mt-1">跳过工具授权提问</span>
+              Passive Observer 模式
+              <span className="block text-muted mt-1">Claude 自由执行；只记录 transcript，不注入 Plan、Node 或执行门禁</span>
             </div>
             {process || recoveryClaudeSessionId ? (
               <div className="grid grid-cols-2 gap-2">
@@ -703,14 +741,14 @@ function ClaudeTerminalPage() {
               </div>
             ) : (
               <button disabled={busy || backendState !== 'online'} onClick={() => void startTerminal()} className="w-full px-4 py-3 rounded-xl bg-accent text-white text-sm font-semibold shadow-md disabled:opacity-45">
-                {busy ? '处理中…' : '启动 Claude'}
+                {busy ? '处理中…' : '启动被动记录会话'}
               </button>
             )}
           </div>
         )}
 
         {workflow && (
-          <section className="mt-5">
+          <section className="hidden mt-5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono text-muted">AGENTVAST RUN</span>
               <span className={`px-2 py-1 rounded-full text-[10px] font-mono ${runActive ? 'text-green-700 bg-green-50' : 'text-muted bg-[#f2eee9]'}`}>{workflow.run.status.toUpperCase()}</span>
@@ -842,6 +880,25 @@ function ClaudeTerminalPage() {
 
         {running && (
           <div className="shrink-0 mt-3 pt-3 border-t border-line">
+            <div className="p-3 rounded-2xl border border-[rgba(217,119,69,0.25)] bg-[#fffaf6]">
+              <div className="text-[10px] font-mono text-accent">PASSIVE OBSERVER · RECORDING</div>
+              <p className="mt-1 text-xs text-muted leading-5">
+                直接在终端中输入任务。执行记录持续更新，在执行图中选择 Turn 并点击“语义分析”后开始解析。
+              </p>
+              <div className="mt-2 text-[9px] font-mono text-muted break-all">
+                SESSION {process?.observer_session_id || process?.claude_session_id}
+              </div>
+            </div>
+            <button type="button" onClick={() => onNavigate('execution', process?.observer_session_id || process?.claude_session_id)} className="w-full mt-2 px-3 py-2 rounded-xl border border-accent bg-white text-accent text-xs">查看动态执行图</button>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button onClick={() => terminalRef.current?.interrupt()} className="px-2 py-2 rounded-xl border border-amber-300 bg-amber-50 text-amber-800 text-[10px]">Ctrl+C</button>
+              <button disabled={busy} onClick={() => void closeTerminal()} className="px-2 py-2 rounded-xl border border-red-200 bg-white text-red-700 text-[10px] disabled:opacity-40">结束会话并保存记录</button>
+            </div>
+          </div>
+        )}
+
+        {false && running && (
+          <div className="shrink-0 mt-3 pt-3 border-t border-line">
             {!runActive ? (
               <div className="p-3 rounded-2xl border border-[rgba(217,119,69,0.25)] bg-[#fffaf6]">
                 <div className="text-[10px] font-mono text-accent">当前没有活动 Trace</div>
@@ -904,6 +961,18 @@ function ClaudeTerminalPage() {
           <div className="shrink-0 mt-3 pt-3 border-t border-line space-y-1 text-[10px] font-mono">
             <div className="flex justify-between"><span className="text-muted">SERVICE</span><span>{backendState.toUpperCase()}</span></div>
             <div className="flex justify-between"><span className="text-muted">PROCESS</span><span>{process?.state.toUpperCase() ?? 'NONE'}</span></div>
+            {process?.observer_session_id && (
+              <>
+                <div className="flex justify-between"><span className="text-muted">OBSERVER</span><span>{process.observer_status.toUpperCase()}</span></div>
+                <div className="break-all text-muted">{process.observer_session_id}</div>
+                {process.observer_error && <div className="text-red-700 break-words">{process.observer_error}</div>}
+                {process.observer_derived && (
+                  <button type="button" onClick={() => onNavigate('transcript', process.observer_session_id)} className="w-full mt-2 px-3 py-2 rounded-xl border border-accent bg-white text-accent text-xs">
+                    查看原始 Transcript
+                  </button>
+                )}
+              </>
+            )}
           </div>
         )}
       </aside>

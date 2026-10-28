@@ -106,16 +106,18 @@ export interface ObserverArtifact {
   name: string;
   path: string;
   artifact_type: 'dataset' | 'report' | 'visualization' | 'code' | 'file';
+  category_index?: number;
   exists: boolean;
   evidence_event_ids: string[];
   operations: Array<{
     event_id: string;
-    operation: 'created' | 'modified';
+    operation: 'created' | 'modified' | 'read' | 'executed';
     source: string;
   }>;
 }
 
 export interface ObserverTrace {
+  live?: LiveTraceState;
   schema_version: string;
   session: {
     session_id: string;
@@ -156,4 +158,18 @@ export interface ObserverTrace {
     record_type_counts: Record<string, number>;
     notes: string[];
   };
+}
+
+export interface LiveTurnState {
+  turn_id: string; ordinal: number; prompt: string; event_count: number;
+  boundary?: {pending_background_tasks?: number};
+  revision?: number; execution_state: 'running' | 'settling' | 'completed' | 'failed' | 'interrupted';
+  analysis_state: 'idle' | 'waiting' | 'historical' | 'queued' | 'running' | 'ready' | 'partial' | 'waiting_config';
+  percent?: number; error?: string | null; message?: string;
+}
+export interface LiveTraceState {
+  analysis_mode?: 'manual';
+  enabled: boolean; session_id: string; trace_revision: number; turns: LiveTurnState[];
+  active_analysis?: {turn_id:string; revision:number; status:string; percent:number; message?:string; error?:string|null};
+  message?: string; updated_at?: string;
 }
